@@ -1,0 +1,36 @@
+# VisionTest AI - Worker Service
+# NOTE: Worker runs as root because Playwright's Chromium sandbox requires
+# SYS_ADMIN capability and root user. K8s securityContext restricts capabilities.
+FROM mcr.microsoft.com/playwright:v1.58.0-jammy
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY turbo.json ./
+COPY apps/worker/package*.json ./apps/worker/
+COPY packages/database/package*.json ./packages/database/
+COPY packages/types/package*.json ./packages/types/
+
+# Install all dependencies (use Playwright image's Node.js)
+RUN npm ci --ignore-scripts && \
+    npm rebuild sharp
+
+# Copy source files
+COPY apps/worker ./apps/worker
+COPY packages/database ./packages/database
+COPY packages/types ./packages/types
+
+# Generate Prisma client and build dependency packages
+WORKDIR /app/packages/database
+RUN npx prisma generate
+WORKDIR /app
+RUN npm run build --workspace=@visiontest/types
+RUN npm run build --workspace=@visiontest/database
+
+# Build worker
+RUN npm run build --workspace=@visiontest/worker
+
+ENV NODE_ENV=production
+
+CMD ["node", "apps/worker/dist/index.js"]

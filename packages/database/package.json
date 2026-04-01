@@ -1,0 +1,26 @@
+{
+  "name": "@visiontest/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "migrate:prod": "prisma migrate deploy",
+    "push": "prisma db push",
+    "seed": "ts-node prisma/seed.ts",
+    "studio": "prisma studio",
+    "clean": "rm -rf dist node_modules"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.3.0"
+  }
+}

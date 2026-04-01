@@ -1,0 +1,32 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System dependencies for torch / image processing
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY services/embeddings/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Pre-download models at build time so the container starts fast
+RUN python -c "\
+from transformers import AutoModel, AutoImageProcessor; \
+AutoModel.from_pretrained('facebook/dinov2-small'); \
+AutoImageProcessor.from_pretrained('facebook/dinov2-small')"
+RUN python -c "\
+from torchmetrics.image import LearnedPerceptualImagePatchSimilarity; \
+LearnedPerceptualImagePatchSimilarity(net_type='squeeze')"
+
+# Create non-root user and copy model cache
+RUN adduser --system --uid 1001 appuser
+RUN mkdir -p /home/appuser/.cache && cp -r /root/.cache/huggingface /home/appuser/.cache/ 2>/dev/null || true && chown -R appuser /home/appuser/.cache
+
+COPY --chown=appuser services/embeddings/ .
+
+EXPOSE 8100
+
+USER appuser
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8100"]

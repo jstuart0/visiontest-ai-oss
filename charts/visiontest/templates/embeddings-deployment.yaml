@@ -1,0 +1,79 @@
+{{- if .Values.embeddings.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "visiontest.fullname" . }}-embeddings
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+    app.kubernetes.io/component: embeddings
+    {{- include "visiontest.selectorLabels" (dict "component" "embeddings" "context" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.embeddings.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "visiontest.selectorLabels" (dict "component" "embeddings" "context" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "visiontest.labels" . | nindent 8 }}
+        {{- include "visiontest.selectorLabels" (dict "component" "embeddings" "context" .) | nindent 8 }}
+        app.kubernetes.io/component: embeddings
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: embeddings
+          image: {{ include "visiontest.embeddingsImage" . }}
+          imagePullPolicy: {{ .Values.embeddings.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.embeddings.port }}
+              name: http
+              protocol: TCP
+          env:
+            - name: TORCH_DEVICE
+              value: "cpu"
+          resources:
+            {{- toYaml .Values.embeddings.resources | nindent 12 }}
+          securityContext:
+            runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.embeddings.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.embeddings.port }}
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "visiontest.fullname" . }}-embeddings
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+    app.kubernetes.io/component: embeddings
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "visiontest.selectorLabels" (dict "component" "embeddings" "context" .) | nindent 4 }}
+  ports:
+    - port: {{ .Values.embeddings.port }}
+      targetPort: {{ .Values.embeddings.port }}
+      name: http
+      protocol: TCP
+{{- end }}

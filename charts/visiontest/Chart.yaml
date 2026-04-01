@@ -1,0 +1,16 @@
+apiVersion: v2
+name: visiontest
+description: AI-Powered Visual Regression Testing Platform
+type: application
+version: 1.0.0
+appVersion: "2.0.0"
+keywords:
+  - visual-testing
+  - regression-testing
+  - ai
+  - playwright
+home: https://github.com/visiontest-ai/visiontest-ai
+sources:
+  - https://github.com/visiontest-ai/visiontest-ai
+maintainers:
+  - name: VisionTest AI Contributors

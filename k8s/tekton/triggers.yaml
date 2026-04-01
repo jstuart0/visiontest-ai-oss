@@ -1,0 +1,89 @@
+# Extract fields from GitHub push webhook payload
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: visiontest-push-binding
+  namespace: tekton-builds
+spec:
+  params:
+    - name: revision
+      value: $(body.after)
+    - name: repo-url
+      value: $(body.repository.clone_url)
+---
+# Template for creating a PipelineRun from a GitHub push event
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: visiontest-push-template
+  namespace: tekton-builds
+spec:
+  params:
+    - name: revision
+      description: Git commit SHA from the push event
+    - name: repo-url
+      description: Git repository clone URL
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: visiontest-build-
+        namespace: tekton-builds
+      spec:
+        pipelineRef:
+          name: visiontest-build-deploy
+        params:
+          - name: repo-url
+            value: $(tt.params.repo-url)
+          - name: revision
+            value: main
+          - name: registry
+            value: ghcr.io/visiontest-ai
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                storageClassName: local-path
+                resources:
+                  requests:
+                    storage: 4Gi
+          - name: git-credentials
+            secret:
+              secretName: git-credentials
+        serviceAccountName: tekton-build-sa
+        taskRunTemplate:
+          serviceAccountName: tekton-build-sa
+---
+# Webhook receiver: validates GitHub HMAC, filters for main branch pushes
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: visiontest-webhook
+  namespace: tekton-builds
+spec:
+  serviceAccountName: tekton-build-sa
+  triggers:
+    - name: github-push
+      interceptors:
+        # Validate HMAC signature from GitHub
+        - ref:
+            name: "github"
+          params:
+            - name: "secretRef"
+              value:
+                secretName: github-webhook-secret
+                secretKey: secret
+            - name: "eventTypes"
+              value: ["push"]
+        # Only trigger on pushes to main
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.ref == 'refs/heads/main'"
+      bindings:
+        - ref: visiontest-push-binding
+      template:
+        ref: visiontest-push-template

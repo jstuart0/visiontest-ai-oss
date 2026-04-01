@@ -1,0 +1,267 @@
+{{- if .Values.networkPolicy.enabled }}
+# Default deny all ingress and egress traffic in the namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "visiontest.fullname" . }}-default-deny
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# API: allow ingress from ingress controller, egress to Redis, MinIO, Postgres, DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "visiontest.fullname" . }}-api
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "visiontest.selectorLabels" (dict "component" "api" "context" .) | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress controller namespace (typically default or ingress-nginx)
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - port: {{ .Values.api.port }}
+          protocol: TCP
+  egress:
+    # Redis
+    {{- if .Values.redis.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "redis" "context" .) | nindent 14 }}
+      ports:
+        - port: 6379
+          protocol: TCP
+    {{- end }}
+    # MinIO
+    {{- if .Values.minio.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "minio" "context" .) | nindent 14 }}
+      ports:
+        - port: 9000
+          protocol: TCP
+    {{- end }}
+    # External PostgreSQL and HTTPS
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+      ports:
+        - port: 5432
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+    # DNS
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# Web: allow ingress from ingress controller, no egress needed (static site)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "visiontest.fullname" . }}-web
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "visiontest.selectorLabels" (dict "component" "web" "context" .) | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - port: {{ .Values.web.port }}
+          protocol: TCP
+  egress: []
+---
+# Worker: no ingress, egress to Redis, MinIO, Embeddings, Postgres, and external (HTTP/HTTPS for Playwright)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "visiontest.fullname" . }}-worker
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "visiontest.selectorLabels" (dict "component" "worker" "context" .) | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    # Redis
+    {{- if .Values.redis.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "redis" "context" .) | nindent 14 }}
+      ports:
+        - port: 6379
+          protocol: TCP
+    {{- end }}
+    # MinIO
+    {{- if .Values.minio.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "minio" "context" .) | nindent 14 }}
+      ports:
+        - port: 9000
+          protocol: TCP
+    {{- end }}
+    # Embeddings
+    {{- if .Values.embeddings.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "embeddings" "context" .) | nindent 14 }}
+      ports:
+        - port: {{ .Values.embeddings.port }}
+          protocol: TCP
+    {{- end }}
+    # External: PostgreSQL, HTTPS, HTTP (Playwright needs to reach target sites)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+      ports:
+        - port: 5432
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+        - port: 80
+          protocol: TCP
+    # DNS
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+# Redis: allow ingress from API and Worker only
+{{- if .Values.redis.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "visiontest.fullname" . }}-redis
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "visiontest.selectorLabels" (dict "component" "redis" "context" .) | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "api" "context" .) | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "worker" "context" .) | nindent 14 }}
+      ports:
+        - port: 6379
+          protocol: TCP
+  egress: []
+{{- end }}
+---
+# MinIO: allow ingress from API and Worker only
+{{- if .Values.minio.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "visiontest.fullname" . }}-minio
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "visiontest.selectorLabels" (dict "component" "minio" "context" .) | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "api" "context" .) | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "worker" "context" .) | nindent 14 }}
+      ports:
+        - port: 9000
+          protocol: TCP
+        - port: {{ .Values.minio.consolePort }}
+          protocol: TCP
+  egress: []
+{{- end }}
+---
+# Embeddings: allow ingress from Worker only, egress for model downloads
+{{- if .Values.embeddings.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "visiontest.fullname" . }}-embeddings
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "visiontest.selectorLabels" (dict "component" "embeddings" "context" .) | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "visiontest.selectorLabels" (dict "component" "worker" "context" .) | nindent 14 }}
+      ports:
+        - port: {{ .Values.embeddings.port }}
+          protocol: TCP
+  egress:
+    # HTTPS for downloading models
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+      ports:
+        - port: 443
+          protocol: TCP
+    # DNS
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+{{- end }}
+{{- end }}

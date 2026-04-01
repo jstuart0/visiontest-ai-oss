@@ -1,0 +1,51 @@
+VisionTest AI has been deployed!
+
+Access the web interface:
+{{- if .Values.ingress.enabled }}
+  https://{{ .Values.ingress.hosts.web }}
+{{- else }}
+  kubectl port-forward svc/{{ include "visiontest.fullname" . }}-web {{ .Values.web.port }}:{{ .Values.web.port }}
+{{- end }}
+
+API endpoint:
+{{- if .Values.ingress.enabled }}
+  https://{{ .Values.ingress.hosts.api }}
+{{- else }}
+  kubectl port-forward svc/{{ include "visiontest.fullname" . }}-api 3001:{{ .Values.api.port }}
+{{- end }}
+
+Default login:
+  Email: admin@visiontest.local
+  Password: admin123!
+
+Components deployed:
+  - API Server:  {{ .Values.api.replicaCount }} replica(s)
+  - Web Frontend: {{ .Values.web.replicaCount }} replica(s)
+  - Worker:      {{ .Values.worker.replicaCount }} replica(s)
+{{- if .Values.embeddings.enabled }}
+  - Embeddings:  {{ .Values.embeddings.replicaCount }} replica(s)
+{{- end }}
+{{- if .Values.redis.enabled }}
+  - Redis:       built-in (1 replica)
+{{- else if .Values.externalRedis.enabled }}
+  - Redis:       external
+{{- end }}
+{{- if .Values.minio.enabled }}
+  - MinIO:       built-in (1 replica)
+{{- else if .Values.externalMinio.enabled }}
+  - MinIO:       external
+{{- end }}
+
+{{- if not .Values.secrets.jwtSecret }}
+
+WARNING: No JWT secret is configured. Set secrets.jwtSecret for production use:
+  helm upgrade {{ .Release.Name }} visiontest --set secrets.jwtSecret=$(openssl rand -base64 32)
+{{- end }}
+
+{{- if not .Values.secrets.databaseUrl }}
+
+WARNING: No database URL is configured. The application will not start without a PostgreSQL database.
+  helm upgrade {{ .Release.Name }} visiontest --set secrets.databaseUrl=postgresql://user:pass@host:5432/visiontest
+{{- end }}
+
+To customize, see: https://github.com/visiontest-ai/visiontest-ai/tree/main/charts/visiontest

@@ -1,0 +1,20 @@
+node_modules/
+.turbo/
+dist/
+coverage/
+.env
+.env.local
+.env.production
+*.log
+*.pem
+*.key
+
+# Kubernetes secrets (never commit actual secrets)
+k8s/overlays/*/secrets.yaml
+!k8s/overlays/*/secrets.yaml.example
+
+# Test artifacts
+tests/personal-diary/auth-state.json
+tests/personal-diary/screenshots/
+tests/personal-diary/test-results/
+tests/personal-diary/reports/

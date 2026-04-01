@@ -1,0 +1,137 @@
+# Full CI/CD pipeline: clone -> build api -> build web -> build worker -> rollout restart
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: visiontest-build-deploy
+  namespace: tekton-builds
+spec:
+  params:
+    - name: repo-url
+      type: string
+      default: https://github.com/visiontest-ai/visiontest-ai.git
+    - name: revision
+      type: string
+      default: main
+    - name: registry
+      type: string
+      default: ghcr.io/visiontest-ai
+  workspaces:
+    - name: shared-workspace
+    - name: git-credentials
+
+  tasks:
+    # 1. Clone the repository
+    - name: clone
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: git-credentials
+          workspace: git-credentials
+      params:
+        - name: repo-url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.revision)
+
+    # 2. Build API image (Express + Prisma)
+    - name: build-api
+      runAfter: ["clone"]
+      taskRef:
+        name: kaniko-build
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: image
+          value: $(params.registry)/visiontest-api
+        - name: tag
+          value: sha-$(tasks.clone.results.COMMIT_SHA)
+        - name: context
+          value: .
+        - name: dockerfile
+          value: Dockerfile.api
+        - name: extra-args
+          value:
+            - --build-arg=NODE_BASE_IMAGE=node:20-slim
+
+    # 3. Build web image (Next.js) - sequential due to RWO PVC
+    - name: build-web
+      runAfter: ["build-api"]
+      taskRef:
+        name: kaniko-build
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: image
+          value: $(params.registry)/visiontest-web
+        - name: tag
+          value: sha-$(tasks.clone.results.COMMIT_SHA)
+        - name: context
+          value: .
+        - name: dockerfile
+          value: Dockerfile.web
+        - name: extra-args
+          value:
+            - --build-arg=NODE_BASE_IMAGE=node:20-slim
+
+    # 4. Build worker image (Playwright + BullMQ) - MCR base, no mirror needed
+    - name: build-worker
+      runAfter: ["build-web"]
+      taskRef:
+        name: kaniko-build
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: image
+          value: $(params.registry)/visiontest-worker
+        - name: tag
+          value: sha-$(tasks.clone.results.COMMIT_SHA)
+        - name: context
+          value: .
+        - name: dockerfile
+          value: Dockerfile.worker
+
+    # 5. Build embeddings sidecar (Python + ML models)
+    - name: build-embeddings
+      runAfter: ["build-worker"]
+      taskRef:
+        name: kaniko-build
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: image
+          value: $(params.registry)/visiontest-embeddings
+        - name: tag
+          value: sha-$(tasks.clone.results.COMMIT_SHA)
+        - name: context
+          value: .
+        - name: dockerfile
+          value: Dockerfile.embeddings
+
+    # 6. Rollout restart all deployments
+    - name: deploy
+      runAfter: ["build-embeddings"]
+      taskRef:
+        name: rollout-restart
+      params:
+        - name: deployments
+          value: "visiontest-api visiontest-web visiontest-worker visiontest-embeddings"
+        - name: namespace
+          value: visiontest
+
+  finally:
+    - name: notify
+      taskRef:
+        name: telegram-notify
+      params:
+        - name: pipeline-name
+          value: $(context.pipeline.name)
+        - name: pipeline-run
+          value: $(context.pipelineRun.name)
+        - name: status
+          value: $(tasks.status)

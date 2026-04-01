@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: visiontest
+
+resources:
+  - ../../base
+  - secrets.yaml
+
+# Image tags for production - update to your registry
+images:
+  - name: visiontest-api
+    newName: ghcr.io/visiontest-ai/visiontest-api
+    newTag: latest
+  - name: visiontest-worker
+    newName: ghcr.io/visiontest-ai/visiontest-worker
+    newTag: latest
+  - name: visiontest-web
+    newName: ghcr.io/visiontest-ai/visiontest-web
+    newTag: latest
+
+# Production replicas - start with 1 for now
+replicas:
+  - name: visiontest-api
+    count: 1
+  - name: visiontest-web
+    count: 1
+  - name: visiontest-worker
+    count: 1

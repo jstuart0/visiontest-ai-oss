@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: visiontest
+
+resources:
+  - namespace.yaml
+  - redis.yaml
+  - minio.yaml
+  - api-deployment.yaml
+  - worker-deployment.yaml
+  - web-deployment.yaml
+  - embeddings-deployment.yaml
+  - ingress.yaml
+  - network-policy.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: visiontest-ai
+      app.kubernetes.io/managed-by: kustomize

@@ -1,0 +1,9 @@
+# Default owners for everything
+* @visiontest-ai/maintainers
+
+# Security-sensitive files require additional review
+apps/api/src/middleware/auth.ts @visiontest-ai/security
+apps/api/src/utils/urlValidator.ts @visiontest-ai/security
+packages/database/src/crypto.ts @visiontest-ai/security
+k8s/base/network-policy.yaml @visiontest-ai/security
+charts/visiontest/templates/network-policy.yaml @visiontest-ai/security

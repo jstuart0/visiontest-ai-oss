@@ -1,0 +1,166 @@
+# VisionTest AI Helm Values
+# See README for full configuration reference
+
+global:
+  imageRegistry: ghcr.io/visiontest-ai
+
+# API Server
+api:
+  replicaCount: 2
+  image:
+    repository: ""  # defaults to global.imageRegistry/visiontest-api
+    tag: latest
+    pullPolicy: Always
+  port: 3000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  env:
+    corsOrigin: ""  # Set to your frontend URL, e.g., https://visiontest.yourdomain.com
+
+# Web Frontend
+web:
+  replicaCount: 2
+  image:
+    repository: ""
+    tag: latest
+    pullPolicy: Always
+  port: 3000
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+
+# Worker
+worker:
+  replicaCount: 2
+  image:
+    repository: ""
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "2000m"
+  env:
+    concurrency: "2"
+
+# Embeddings Sidecar (AI Diff Stages 1-2)
+embeddings:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ""
+    tag: latest
+    pullPolicy: Always
+  port: 8100
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+# Ingress
+ingress:
+  enabled: true
+  className: ""  # e.g., nginx, traefik
+  annotations: {}
+  hosts:
+    web: visiontest.example.com
+    api: visiontest-api.example.com
+  tls:
+    enabled: true
+    secretName: visiontest-tls
+
+# Redis (built-in)
+redis:
+  enabled: true
+  image: redis:7-alpine
+  password: ""  # Set via secrets
+  storage: 1Gi
+  storageClassName: ""
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# MinIO (built-in)
+minio:
+  enabled: true
+  image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+  storage: 10Gi
+  storageClassName: ""
+  consolePort: 9001
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# External services (use instead of built-in)
+externalRedis:
+  enabled: false
+  url: ""  # redis://:password@host:6379
+
+externalPostgres:
+  url: ""  # postgresql://user:pass@host:5432/visiontest
+
+externalMinio:
+  enabled: false
+  endpoint: ""
+  port: 9000
+  useSSL: false
+  accessKey: ""
+  secretKey: ""
+
+# Secrets
+# These should be set via --set or a values file, NOT committed to git
+secrets:
+  databaseUrl: ""
+  redisUrl: ""
+  redisPassword: ""
+  jwtSecret: ""
+  jwtRefreshSecret: ""
+  minioAccessKey: "minioadmin"
+  minioSecretKey: "minioadmin"
+  encryptionKey: ""  # For API key encryption (openssl rand -hex 32)
+  anthropicApiKey: ""  # Optional, for AI-powered features
+
+# Network Policies
+networkPolicy:
+  enabled: true
+
+# Security Context defaults
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+# Image pull secrets (for private registries)
+imagePullSecrets: []
+
+# Override names
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account
+serviceAccount:
+  create: false
+  name: ""
+  annotations: {}

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: visiontest
+  labels:
+    app.kubernetes.io/name: visiontest
+    app.kubernetes.io/part-of: visiontest-ai

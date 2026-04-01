@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "visiontest.fullname" . }}-worker
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+    {{- include "visiontest.selectorLabels" (dict "component" "worker" "context" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "visiontest.selectorLabels" (dict "component" "worker" "context" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "visiontest.labels" . | nindent 8 }}
+        {{- include "visiontest.selectorLabels" (dict "component" "worker" "context" .) | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: worker
+          image: {{ include "visiontest.workerImage" . }}
+          imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: WORKER_CONCURRENCY
+              value: {{ .Values.worker.env.concurrency | quote }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "visiontest.secretName" . }}
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "visiontest.secretName" . }}
+                  key: redis-url
+            - name: MINIO_ENDPOINT
+              value: {{ include "visiontest.minioEndpoint" . | quote }}
+            - name: MINIO_PORT
+              value: {{ include "visiontest.minioPort" . | quote }}
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "visiontest.secretName" . }}
+                  key: minio-access-key
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "visiontest.secretName" . }}
+                  key: minio-secret-key
+            {{- if .Values.secrets.anthropicApiKey }}
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "visiontest.secretName" . }}
+                  key: anthropic-api-key
+            {{- end }}
+            {{- if .Values.embeddings.enabled }}
+            - name: EMBEDDINGS_URL
+              value: {{ printf "http://%s-embeddings:%d" (include "visiontest.fullname" .) (.Values.embeddings.port | int) | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+          # Playwright needs SYS_ADMIN for Chromium sandbox; must run as root
+          securityContext:
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - SYS_ADMIN

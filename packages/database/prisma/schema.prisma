@@ -1,0 +1,1761 @@
+// VisionTest AI - Database Schema
+// Hospital-Grade Visual Regression Testing Platform
+// Version: 2.0.0
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// AUTHENTICATION & AUTHORIZATION
+// =============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  avatar        String?
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  organizations   OrganizationUser[]
+  sessions        Session[]
+  apiKeys         ApiKey[]
+  auditLogs       AuditLog[]
+  teamMemberships TeamMember[]
+
+  @@index([email])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  keyPrefix   String    // First 8 chars for identification
+  keyHash     String    @unique
+  scopes      String[]  @default(["read", "write"])
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([keyHash])
+  @@index([userId])
+}
+
+// =============================================================================
+// ORGANIZATIONS & PROJECTS
+// =============================================================================
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     OrganizationUser[]
+  projects  Project[]
+  auditLogs AuditLog[]
+  teams     Team[]
+
+  @@index([slug])
+}
+
+model OrganizationUser {
+  id        String   @id @default(cuid())
+  userId    String
+  orgId     String
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// =============================================================================
+// PLATFORM & DEVICE PROFILES (Mobile Testing Support)
+// =============================================================================
+
+enum Platform {
+  WEB
+  IOS
+  ANDROID
+  MOBILE_WEB  // Web in mobile viewport
+}
+
+model DeviceProfile {
+  id          String    @id @default(cuid())
+  projectId   String?   // null = global
+  name        String    // "iPhone 15 Pro", "Pixel 8", etc.
+  platform    Platform
+  width       Int
+  height      Int
+  scaleFactor Float     @default(1.0)
+  userAgent   String?
+  osVersion   String?
+  isEmulator  Boolean   @default(true)
+  config      Json      @default("{}")  // Appium capabilities, etc.
+  isBuiltIn   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tests       Test[]
+  executions  Execution[]
+  screenshots Screenshot[]
+
+  @@index([projectId])
+  @@index([platform])
+  @@index([isBuiltIn])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  orgId       String
+  name        String
+  slug        String
+  description String?
+  repoUrl     String?
+  settings    Json     @default("{}")
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org            Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tests          Test[]
+  suites         TestSuite[]
+  baselines      Baseline[]
+  executions     Execution[]
+  flakyTests     FlakyTest[]
+  ignoreMasks    IgnoreMask[]
+  schedules      Schedule[]
+  branchBaselines BranchBaseline[]
+  impactMappings ImpactMapping[]
+  approvalRules  ApprovalRule[]
+  deviceProfiles DeviceProfile[]
+  webhooks       Webhook[]
+  taskBlocks     TaskBlock[]
+  workflows      Workflow[]
+
+  // Autonomous Bug Fixing relations
+  repoConnections       RepositoryConnection[]
+  bugCandidates         BugCandidate[]
+  verificationProfiles  VerificationProfile[]
+  fixPolicies           FixPolicy[]
+  fixRunners            FixRunner[]
+
+  // API Testing relations
+  apiTestDefinitions    ApiTestDefinition[]
+  apiEnvironmentBindings ApiEnvironmentBinding[]
+  apiAuthBindings       ApiAuthBinding[]
+  apiSuiteDefinitions   ApiSuiteDefinition[]
+  apiServiceBindings    ApiServiceBinding[]
+  apiExecutions         ApiExecution[]
+
+  // AI Platform relations
+  aiProviderConfigs     AIProviderConfig[]
+  aiDiffConfig          AiDiffConfig?
+  storybookConfig       StorybookConfig?
+
+  @@unique([orgId, slug])
+  @@index([orgId])
+}
+
+// =============================================================================
+// TESTS & SUITES
+// =============================================================================
+
+model Test {
+  id              String     @id @default(cuid())
+  projectId       String
+  suiteId         String?
+  name            String
+  description     String?
+  steps           Json       // Array of test steps
+  config          Json       @default("{}")
+  tags            String[]   @default([])
+  status          TestStatus @default(ACTIVE)
+  coveredFiles    String[]   @default([]) // For smart selection
+  platform        Platform   @default(WEB)
+  deviceProfileId String?
+
+  // Storybook metadata
+  storybookStoryId      String?   // "components-button--primary"
+  storybookImport       String?   // "./Button.stories.tsx"
+  storybookContentHash  String?   // SHA-256 of rendered screenshot for drift detection
+  source                String?   @default("manual") // "manual" | "storybook" | "api-import"
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  suite         TestSuite?     @relation(fields: [suiteId], references: [id], onDelete: SetNull)
+  deviceProfile DeviceProfile? @relation(fields: [deviceProfileId], references: [id], onDelete: SetNull)
+  executions    Execution[]
+  flakyData     FlakyTest?
+  ignoreMasks   IgnoreMask[]
+
+  @@index([projectId])
+  @@index([suiteId])
+  @@index([status])
+  @@index([tags])
+  @@index([platform])
+  @@index([storybookStoryId])
+  @@index([source])
+}
+
+enum TestStatus {
+  ACTIVE
+  DISABLED
+  QUARANTINED
+  ARCHIVED
+}
+
+model TestSuite {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  config      Json     @default("{}")
+  tags        String[] @default([])
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tests      Test[]
+  executions Execution[]
+  schedules  Schedule[]
+
+  @@index([projectId])
+}
+
+// =============================================================================
+// EXECUTION & RESULTS
+// =============================================================================
+
+model Execution {
+  id              String          @id @default(cuid())
+  projectId       String
+  testId          String?
+  suiteId         String?
+  status          ExecutionStatus @default(PENDING)
+  triggeredBy     TriggerType     @default(MANUAL)
+  triggerRef      String?         // PR number, schedule ID, etc.
+  startedAt       DateTime?
+  completedAt     DateTime?
+  duration        Int?            // milliseconds
+  result          Json?           // Detailed results
+  artifacts       Json?           // Artifact references
+  healingLog      Json?           // Self-healing events
+  errorMessage    String?
+  metadata        Json?           // CI metadata, commit info, etc.
+  platform        Platform        @default(WEB)
+  deviceProfileId String?
+  appVersion      String?         // Mobile app version under test
+  createdAt       DateTime        @default(now())
+
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  test          Test?          @relation(fields: [testId], references: [id], onDelete: SetNull)
+  suite         TestSuite?     @relation(fields: [suiteId], references: [id], onDelete: SetNull)
+  deviceProfile DeviceProfile? @relation(fields: [deviceProfileId], references: [id], onDelete: SetNull)
+  screenshots   Screenshot[]
+  videos        Video[]
+  checkpoints   Checkpoint[]
+  comparisons   Comparison[]
+
+  @@index([projectId, status])
+  @@index([testId, createdAt])
+  @@index([status, createdAt])
+  @@index([triggeredBy])
+  @@index([platform])
+}
+
+enum ExecutionStatus {
+  PENDING
+  QUEUED
+  RUNNING
+  PASSED
+  FAILED
+  CANCELLED
+  TIMEOUT
+  SKIPPED
+}
+
+enum TriggerType {
+  MANUAL
+  SCHEDULE
+  CI
+  API
+  WEBHOOK
+}
+
+model Screenshot {
+  id              String    @id @default(cuid())
+  executionId     String
+  stepNumber      Int
+  name            String
+  url             String    // MinIO path
+  width           Int
+  height          Int
+  deviceType      String?   // Legacy field
+  platform        Platform? // Platform this screenshot was taken on
+  deviceName      String?   // Human-readable device name (e.g., "iPhone 15 Pro")
+  deviceProfileId String?
+  deviceId        String?   // For device-specific screenshots
+  metadata        Json?     // Additional metadata (viewport, capturedAt, etc.)
+  createdAt       DateTime  @default(now())
+
+  execution     Execution      @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  deviceProfile DeviceProfile? @relation(fields: [deviceProfileId], references: [id], onDelete: SetNull)
+  comparisons   Comparison[]
+
+  @@index([executionId])
+  @@index([name])
+  @@index([platform])
+}
+
+model Video {
+  id          String    @id @default(cuid())
+  executionId String
+  url         String
+  duration    Int?
+  width       Int?
+  height      Int?
+  size        Int?
+  format      String    @default("webm")
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+
+  execution   Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+}
+
+// =============================================================================
+// VISUAL REGRESSION
+// =============================================================================
+
+model Baseline {
+  id          String       @id @default(cuid())
+  projectId   String
+  name        String
+  branch      String       @default("main")
+  type        BaselineType @default(PROJECT)
+  screenshots Json         // Array of { name, url, width, height }
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  comparisons Comparison[]
+  ignoreMasks IgnoreMask[]
+
+  @@unique([projectId, name, branch])
+  @@index([projectId, branch])
+}
+
+enum BaselineType {
+  PROJECT
+  BRANCH
+  ENVIRONMENT
+  DYNAMIC
+}
+
+model BranchBaseline {
+  id           String   @id @default(cuid())
+  projectId    String
+  branch       String
+  inheritsFrom String   @default("main")
+  overrides    Json     @default("{}") // { screenName: baselineId }
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, branch])
+  @@index([projectId])
+}
+
+model Comparison {
+  id           String           @id @default(cuid())
+  executionId  String
+  baselineId   String
+  screenshotId String?
+  diffScore    Float            // 0-100, 0 = identical
+  diffUrl      String?          // MinIO path to diff image
+  status       ComparisonStatus @default(PENDING)
+  changes      Json?            // Detected changes with categories
+  masksApplied Int              @default(0)
+  metadata     Json?
+  createdAt    DateTime         @default(now())
+  resolvedAt   DateTime?
+
+  // AI Diff Analysis fields
+  aiClassification   String?    // IDENTICAL | NOISE | MINOR | SIGNIFICANT | BREAKING
+  aiConfidence       Float?
+  aiStageReached     Int?       // 0-3, which pipeline stage produced the result
+  aiExplanation      String?    // Human-readable explanation
+  aiRegions          Json?      // AiDiffRegion[] — annotated change regions
+  aiSuggestedAction  String?    // AUTO_APPROVE | REVIEW | REJECT | ESCALATE
+  aiModelUsed        String?    // Model that produced the classification
+  aiProcessingTimeMs Int?
+  aiAnalyzedAt       DateTime?
+  aiScores           Json?      // { ssim, lpips, dinoCosineSimilarity }
+
+  execution  Execution        @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  baseline   Baseline         @relation(fields: [baselineId], references: [id], onDelete: Cascade)
+  screenshot Screenshot?      @relation(fields: [screenshotId], references: [id], onDelete: SetNull)
+  approval   ApprovalRequest?
+  aiFeedback AiDiffFeedback[]
+
+  @@index([executionId])
+  @@index([baselineId])
+  @@index([status])
+  @@index([aiClassification])
+}
+
+enum ComparisonStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  AUTO_APPROVED
+  ESCALATED
+}
+
+// =============================================================================
+// IGNORE MASKS (P0 Feature)
+// =============================================================================
+
+model IgnoreMask {
+  id         String   @id @default(cuid())
+  projectId  String?  // null = global
+  testId     String?  // null = project-wide
+  baselineId String?  // null = all baselines
+  type       MaskType
+  value      String   // JSON for rectangle, string for selector/regex
+  reason     String?
+  isGlobal   Boolean  @default(false)
+  isActive   Boolean  @default(true)
+  createdBy  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  test     Test?     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  baseline Baseline? @relation(fields: [baselineId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([testId])
+  @@index([baselineId])
+  @@index([isActive])
+}
+
+enum MaskType {
+  RECTANGLE   // { x, y, width, height }
+  SELECTOR    // CSS selector
+  XPATH       // XPath selector
+  REGEX       // Text pattern
+  AI_DETECTED // AI-suggested region
+}
+
+// =============================================================================
+// FLAKY TEST QUARANTINE (P1 Feature)
+// =============================================================================
+
+model FlakyTest {
+  id              String      @id @default(cuid())
+  testId          String      @unique
+  projectId       String
+  flakinessScore  Float       @default(0)
+  status          FlakyStatus @default(WATCHING)
+  runHistory      Json        // Array of { timestamp, passed, duration, executionId }
+  quarantinedAt   DateTime?
+  stabilizedAt    DateTime?
+  autoFixAttempts Int         @default(0)
+  lastAnalyzedAt  DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  test    Test    @relation(fields: [testId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, status])
+  @@index([flakinessScore])
+}
+
+enum FlakyStatus {
+  WATCHING
+  WARNING
+  QUARANTINED
+  STABLE
+  INVESTIGATING
+}
+
+// =============================================================================
+// SMART TEST SELECTION
+// =============================================================================
+
+model ImpactMapping {
+  id         String   @id @default(cuid())
+  projectId  String
+  filePath   String
+  components String[] // Affected components
+  tests      String[] // Affected test IDs
+  confidence Float    @default(1.0)
+  updatedAt  DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, filePath])
+  @@index([projectId])
+}
+
+// =============================================================================
+// APPROVAL DELEGATION (P2 Feature)
+// =============================================================================
+
+model ApprovalRule {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  priority    Int      @default(0)
+  conditions  Json     // { changeType, severity, component, etc. }
+  routeTo     String   // User ID, team slug, or channel
+  routeType   String   // user, team, slack, email
+  autoApprove Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, isActive])
+}
+
+model ApprovalRequest {
+  id           String         @id @default(cuid())
+  comparisonId String         @unique
+  changeType   String         // color, layout, content, etc.
+  severity     Severity       @default(MEDIUM)
+  confidence   Float
+  assignedTo   String?        // User or team
+  status       ApprovalStatus @default(PENDING)
+  approvedBy   String?
+  comment      String?
+  escalations  Int            @default(0)
+  createdAt    DateTime       @default(now())
+  resolvedAt   DateTime?
+  dueAt        DateTime?
+
+  comparison Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([assignedTo])
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ESCALATED
+  AUTO_APPROVED
+  EXPIRED
+}
+
+// =============================================================================
+// REPLAY & CHECKPOINTS (P3 Feature)
+// =============================================================================
+
+model Checkpoint {
+  id             String   @id @default(cuid())
+  executionId    String
+  stepNumber     Int
+  state          Json     // Full checkpoint state: { url, cookies, localStorage, sessionStorage, viewportSize, timestamp }
+  storageKey     String?  // Object storage key for large checkpoints
+  screenshotUrl  String?
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime @default(dbgenerated("NOW() + INTERVAL '7 days'"))
+
+  execution Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@unique([executionId, stepNumber])
+  @@index([executionId])
+  @@index([expiresAt])
+}
+
+// =============================================================================
+// SCHEDULING
+// =============================================================================
+
+model Schedule {
+  id          String   @id @default(cuid())
+  projectId   String
+  suiteId     String?
+  name        String
+  cron        String
+  timezone    String   @default("UTC")
+  config      Json     @default("{}") // platforms, environments, etc.
+  isActive    Boolean  @default(true)
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  suite   TestSuite? @relation(fields: [suiteId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, isActive])
+  @@index([nextRunAt])
+}
+
+// =============================================================================
+// SELF-HEALING
+// =============================================================================
+
+model HealingPattern {
+  id               String   @id @default(cuid())
+  projectId        String?  // null = global pattern
+  originalSelector String
+  healedSelector   String
+  pagePattern      String?  // URL pattern where this applies
+  strategy         String   // AI_INFERENCE, DOM_ANALYSIS, ATTRIBUTE_SIMILARITY
+  confidence       Float
+  successCount     Int      @default(1)
+  failCount        Int      @default(0)
+  lastUsedAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([projectId, originalSelector, pagePattern])
+  @@index([projectId])
+  @@index([originalSelector])
+}
+
+// =============================================================================
+// AUDIT LOG
+// =============================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  orgId      String
+  userId     String?
+  action     String   // create, update, delete, login, etc.
+  resource   String   // project, test, baseline, etc.
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt])
+  @@index([userId])
+  @@index([resource, resourceId])
+}
+
+// =============================================================================
+// TEAMS
+// =============================================================================
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  orgId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  members TeamMember[]
+
+  @@index([orgId])
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  role      TeamRole @default(MEMBER)
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+// =============================================================================
+// WEBHOOKS
+// =============================================================================
+
+enum WebhookEvent {
+  TEST_PASSED
+  TEST_FAILED
+  BASELINE_UPDATED
+  SCHEDULE_COMPLETED
+  FLAKY_DETECTED
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  url       String
+  events    String[] // WebhookEvent values stored as strings for flexibility
+  secret    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([projectId])
+  @@index([isActive])
+}
+
+model WebhookDelivery {
+  id          String   @id @default(cuid())
+  webhookId   String
+  event       String
+  payload     Json
+  response    Json?
+  statusCode  Int?
+  deliveredAt DateTime @default(now())
+  success     Boolean  @default(false)
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, deliveredAt])
+}
+
+// =============================================================================
+// TASK BLOCKS & WORKFLOWS
+// =============================================================================
+
+model TaskBlock {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  type        String   // e.g., authentication, navigation, form, data, assertion
+  config      Json     @default("{}")
+  isTemplate  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workflowSteps WorkflowStep[]
+
+  @@index([projectId])
+  @@index([type])
+  @@index([isTemplate])
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  steps   WorkflowStep[]
+
+  @@index([projectId])
+  @@index([isActive])
+}
+
+model WorkflowStep {
+  id         String   @id @default(cuid())
+  workflowId String
+  blockId    String?
+  order      Int
+  config     Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  workflow Workflow   @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  block    TaskBlock? @relation(fields: [blockId], references: [id], onDelete: SetNull)
+
+  @@unique([workflowId, order])
+  @@index([workflowId])
+  @@index([blockId])
+}
+
+// =============================================================================
+// AUTONOMOUS BUG FIXING - Repository Connections
+// =============================================================================
+
+enum RepoProvider {
+  GITHUB
+  GITLAB
+  BITBUCKET
+  LOCAL
+}
+
+enum RepoType {
+  SINGLE
+  MONOREPO
+  SERVICE
+}
+
+model RepositoryConnection {
+  id              String       @id @default(cuid())
+  projectId       String
+  provider        RepoProvider
+  repoUrl         String
+  defaultBranch   String       @default("main")
+  authMode        String       @default("token") // token, app, ssh, local
+  encryptedToken  String?
+  repoType        RepoType     @default(SINGLE)
+  defaultPath     String?      // monorepo sub-path
+  cloneStrategy   String       @default("shallow") // shallow, full, cached
+  allowedPaths    String[]     @default([])
+  blockedPaths    String[]     @default([])
+  ciMetadata      Json         @default("{}")
+  isActive        Boolean      @default(true)
+  lastTestedAt    DateTime?
+  lastTestResult  String?      // success, failure, pending
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  project         Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  bugCandidates   BugCandidate[]
+  fixPolicies     FixPolicy[]
+
+  @@unique([projectId, repoUrl])
+  @@index([projectId])
+}
+
+// =============================================================================
+// AUTONOMOUS BUG FIXING - Bug Candidates
+// =============================================================================
+
+enum BugCandidateStatus {
+  NEW
+  TRIAGING
+  INVESTIGATING
+  AWAITING_APPROVAL
+  APPLYING
+  VERIFYING
+  READY
+  MERGED
+  DISMISSED
+}
+
+enum FailureType {
+  VISUAL
+  RUNTIME
+  ASSERTION
+  PERFORMANCE
+  MOBILE
+  API
+  UNKNOWN
+}
+
+enum BugClassification {
+  PRODUCT_BUG
+  TEST_ISSUE
+  ENVIRONMENT_ISSUE
+  EXPECTED_CHANGE
+  UNCLASSIFIED
+}
+
+enum CreatedByMode {
+  USER
+  RULE
+  CI
+  AUTO
+}
+
+model BugCandidate {
+  id                   String              @id @default(cuid())
+  projectId            String
+  testId               String?
+  executionId          String?
+  comparisonId         String?
+  repoConnectionId     String?
+  sourceType           String              @default("execution") // execution, comparison, approval, manual
+  title                String
+  plainLanguageSummary String?
+  failureType          FailureType         @default(UNKNOWN)
+  severity             Severity            @default(MEDIUM)
+  confidenceScore      Float               @default(0.5)
+  riskScore            Float               @default(0.5)
+  status               BugCandidateStatus  @default(NEW)
+  classification       BugClassification   @default(UNCLASSIFIED)
+  branch               String?
+  commitSha            String?
+  evidence             Json?               // structured evidence bundle
+  suggestedActions     Json?               // ranked list of suggested actions
+  createdByMode        CreatedByMode       @default(USER)
+  createdByUserId      String?
+  assignedTo           String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  project              Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  repoConnection       RepositoryConnection? @relation(fields: [repoConnectionId], references: [id], onDelete: SetNull)
+  fixSessions          FixSession[]
+  analyses             InvestigationAnalysis[]
+  feedback             FixFeedback[]
+
+  @@index([projectId, status])
+  @@index([status, createdAt])
+  @@index([executionId])
+  @@index([comparisonId])
+  @@index([classification])
+  @@index([failureType])
+}
+
+// =============================================================================
+// AUTONOMOUS BUG FIXING - Fix Sessions
+// =============================================================================
+
+enum FixSessionStatus {
+  PENDING
+  INVESTIGATING
+  PLANNING
+  PATCHING
+  VERIFYING
+  COMPLETED
+  FAILED
+  CANCELLED
+  AWAITING_APPROVAL
+}
+
+enum FixSessionMode {
+  INVESTIGATE_ONLY
+  SUGGEST_PATCH
+  APPLY_PATCH
+  OPEN_PR
+}
+
+model FixSession {
+  id                   String            @id @default(cuid())
+  bugCandidateId       String
+  mode                 FixSessionMode    @default(SUGGEST_PATCH)
+  strategy             String?           // e.g., "css_fix", "component_fix", "selector_update"
+  agentModel           String?           // AI model used
+  status               FixSessionStatus  @default(PENDING)
+  startedAt            DateTime?
+  completedAt          DateTime?
+  summary              String?
+  plainLanguageSummary String?
+  technicalSummary     String?
+  confidenceScore      Float?
+  riskScore            Float?
+  patchDiff            String?           // unified diff
+  patchFiles           Json?             // list of changed files with metadata
+  branchName           String?
+  prUrl                String?
+  prNumber             Int?
+  verificationOutcome  String?           // passed, failed, partial, skipped
+  rootCauseHypothesis  String?
+  impactedFiles        Json?             // list of files identified as likely root cause
+  eventLog             Json?             // structured event timeline
+  metadata             Json?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  bugCandidate         BugCandidate      @relation(fields: [bugCandidateId], references: [id], onDelete: Cascade)
+  artifacts            FixArtifact[]
+  verificationRuns     VerificationRun[]
+  analyses             InvestigationAnalysis[]
+  feedback             FixFeedback[]
+
+  @@index([bugCandidateId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// AUTONOMOUS BUG FIXING - Fix Artifacts
+// =============================================================================
+
+enum FixArtifactType {
+  ROOT_CAUSE_REPORT
+  PATCH_DIFF
+  TEST_RERUN_REPORT
+  SCREENSHOT_BEFORE
+  SCREENSHOT_AFTER
+  LOG
+  PR_URL
+  BRANCH_NAME
+  EVIDENCE_BUNDLE
+  VERIFICATION_REPORT
+}
+
+model FixArtifact {
+  id             String          @id @default(cuid())
+  fixSessionId   String
+  type           FixArtifactType
+  name           String
+  content        String?         // inline content for small artifacts
+  storageUrl     String?         // MinIO/S3 URL for large artifacts
+  mimeType       String?
+  size           Int?
+  metadata       Json?
+  createdAt      DateTime        @default(now())
+
+  fixSession     FixSession      @relation(fields: [fixSessionId], references: [id], onDelete: Cascade)
+
+  @@index([fixSessionId])
+  @@index([type])
+}
+
+// =============================================================================
+// AUTONOMOUS BUG FIXING - Verification
+// =============================================================================
+
+enum VerificationRunStatus {
+  PENDING
+  RUNNING
+  PASSED
+  FAILED
+  PARTIAL
+  SKIPPED
+  TIMEOUT
+}
+
+model VerificationRun {
+  id                String                @id @default(cuid())
+  fixSessionId      String
+  profileId         String?
+  status            VerificationRunStatus @default(PENDING)
+  steps             Json?                 // array of { name, command, status, output, duration }
+  summary           String?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  durationMs        Int?
+  failedSteps       Int                   @default(0)
+  passedSteps       Int                   @default(0)
+  totalSteps        Int                   @default(0)
+  metadata          Json?
+  createdAt         DateTime              @default(now())
+
+  fixSession        FixSession            @relation(fields: [fixSessionId], references: [id], onDelete: Cascade)
+  profile           VerificationProfile?  @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@index([fixSessionId])
+  @@index([status])
+}
+
+model VerificationProfile {
+  id                  String              @id @default(cuid())
+  projectId           String
+  name                String
+  description         String?
+  preset              String              @default("balanced") // fast, balanced, strict, custom
+  commands            Json                // array of { name, command, timeout, required }
+  targetingStrategy   String              @default("affected") // affected, package, all
+  maxRuntimeSeconds   Int                 @default(300)
+  failurePolicy       String              @default("fail_closed") // fail_open, fail_closed
+  isDefault           Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  project             Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  verificationRuns    VerificationRun[]
+
+  @@index([projectId])
+}
+
+// =============================================================================
+// AUTONOMOUS BUG FIXING - Fix Policies
+// =============================================================================
+
+enum FixMode {
+  MANUAL
+  GUIDED
+  SEMI_AUTO
+  FULLY_AUTO
+}
+
+model FixPolicy {
+  id                      String       @id @default(cuid())
+  projectId               String
+  repoConnectionId        String?
+  name                    String
+  mode                    FixMode      @default(GUIDED)
+  maxFilesChanged         Int          @default(5)
+  maxLinesChanged         Int          @default(200)
+  allowedPaths            String[]     @default([])
+  blockedPaths            String[]     @default([])
+  allowDependencyChanges  Boolean      @default(false)
+  allowLockfileChanges    Boolean      @default(false)
+  allowMigrationChanges   Boolean      @default(false)
+  requireHumanApproval    Boolean      @default(true)
+  autoMergeConditions     Json?        // conditions under which auto-merge is allowed
+  branchPrefix            String       @default("visiontest/fix")
+  prTemplate              String?      // PR body template
+  isDefault               Boolean      @default(false)
+  isActive                Boolean      @default(true)
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+
+  project                 Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  repoConnection          RepositoryConnection? @relation(fields: [repoConnectionId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([isActive])
+}
+
+// =============================================================================
+// AUTONOMOUS BUG FIXING - Investigation Analysis
+// =============================================================================
+
+enum AnalysisType {
+  FAILURE_SUMMARY
+  VISUAL_ANALYSIS
+  ROOT_CAUSE_HYPOTHESIS
+  SUGGESTED_ACTIONS
+  CODE_CONTEXT
+  PATCH_RATIONALE
+}
+
+enum AnalysisStatus {
+  PENDING
+  STREAMING
+  COMPLETED
+  FAILED
+}
+
+model InvestigationAnalysis {
+  id               String          @id @default(cuid())
+  bugCandidateId   String
+  fixSessionId     String?
+  analysisType     AnalysisType
+  status           AnalysisStatus  @default(PENDING)
+  summary          String?
+  content          String?         // full analysis content (markdown)
+  confidence       Float?
+  createdBy        String          @default("system") // system, user
+  metadata         Json?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  bugCandidate     BugCandidate    @relation(fields: [bugCandidateId], references: [id], onDelete: Cascade)
+  fixSession       FixSession?     @relation(fields: [fixSessionId], references: [id], onDelete: SetNull)
+
+  @@index([bugCandidateId])
+  @@index([fixSessionId])
+  @@index([analysisType])
+}
+
+// =============================================================================
+// AUTONOMOUS BUG FIXING - Fix Feedback
+// =============================================================================
+
+enum FeedbackType {
+  CORRECT_FIX
+  PARTIAL_FIX
+  WRONG_ROOT_CAUSE
+  TOO_RISKY
+  TOO_BROAD
+  SHOULD_BE_BASELINE_CHANGE
+  SHOULD_BE_TEST_ISSUE
+  OTHER
+}
+
+model FixFeedback {
+  id               String        @id @default(cuid())
+  bugCandidateId   String
+  fixSessionId     String?
+  feedbackType     FeedbackType
+  comment          String?
+  createdByUserId  String
+  createdAt        DateTime      @default(now())
+
+  bugCandidate     BugCandidate  @relation(fields: [bugCandidateId], references: [id], onDelete: Cascade)
+  fixSession       FixSession?   @relation(fields: [fixSessionId], references: [id], onDelete: SetNull)
+
+  @@index([bugCandidateId])
+  @@index([fixSessionId])
+}
+
+// =============================================================================
+// AUTONOMOUS BUG FIXING - Fix Runners
+// =============================================================================
+
+enum RunnerStatus {
+  OFFLINE
+  STARTING
+  READY
+  BUSY
+  DEGRADED
+  DRAINING
+  UNHEALTHY
+}
+
+enum RunnerType {
+  MANAGED
+  SELF_HOSTED
+  LOCAL
+}
+
+model FixRunner {
+  id                  String        @id @default(cuid())
+  projectId           String?
+  name                String
+  type                RunnerType    @default(MANAGED)
+  status              RunnerStatus  @default(OFFLINE)
+  version             String?
+  protocolVersion     String?
+  capabilities        Json?         // { languages, toolchains, browsers, networkAccess, maxWorkspaceSize }
+  lastHeartbeatAt     DateTime?
+  lastJobAt           DateTime?
+  registeredAt        DateTime      @default(now())
+  metadata            Json?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  project             Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([status])
+  @@index([type])
+}
+
+// =============================================================================
+// API TESTING - Test Definitions
+// =============================================================================
+
+enum ApiProtocol {
+  REST
+  GRAPHQL
+}
+
+enum ApiTestStatus {
+  ACTIVE
+  DISABLED
+  ARCHIVED
+}
+
+model ApiTestDefinition {
+  id                String        @id @default(cuid())
+  projectId         String
+  name              String
+  description       String?
+  protocol          ApiProtocol   @default(REST)
+  method            String        @default("GET") // GET, POST, PUT, PATCH, DELETE
+  urlTemplate       String        // supports {{variable}} interpolation
+  headersTemplate   Json?         // key-value pairs with variable support
+  queryTemplate     Json?         // query params with variable support
+  bodyTemplate      String?       // JSON body or GraphQL query string
+  variablesTemplate Json?         // default variables for interpolation
+  graphqlQuery      String?       // GraphQL query/mutation text
+  graphqlVariables  Json?         // GraphQL variables
+  graphqlOperationName String?
+  authBindingId     String?
+  environmentBindingId String?
+  serviceBindingId  String?
+  tags              String[]      @default([])
+  status            ApiTestStatus @default(ACTIVE)
+  timeoutMs         Int           @default(30000)
+  retries           Int           @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  project           Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authBinding       ApiAuthBinding?      @relation(fields: [authBindingId], references: [id], onDelete: SetNull)
+  environmentBinding ApiEnvironmentBinding? @relation(fields: [environmentBindingId], references: [id], onDelete: SetNull)
+  serviceBinding    ApiServiceBinding?   @relation(fields: [serviceBindingId], references: [id], onDelete: SetNull)
+  assertions        ApiAssertion[]
+  executions        ApiExecution[]
+  suiteMembers      ApiSuiteMember[]
+
+  @@index([projectId, status])
+  @@index([protocol])
+  @@index([tags])
+}
+
+// =============================================================================
+// API TESTING - Assertions
+// =============================================================================
+
+enum ApiAssertionType {
+  STATUS_CODE
+  HEADER
+  JSON_PATH
+  SCHEMA
+  GRAPHQL_ERROR_ABSENT
+  LATENCY
+  BODY_CONTAINS
+  BODY_REGEX
+  RESPONSE_TIME
+}
+
+enum ApiAssertionOperator {
+  EQUALS
+  NOT_EQUALS
+  GREATER_THAN
+  LESS_THAN
+  CONTAINS
+  NOT_CONTAINS
+  MATCHES_REGEX
+  EXISTS
+  NOT_EXISTS
+  IS_TYPE
+  SCHEMA_VALID
+}
+
+model ApiAssertion {
+  id              String                @id @default(cuid())
+  apiTestId       String
+  type            ApiAssertionType
+  operator        ApiAssertionOperator  @default(EQUALS)
+  target          String?               // e.g., header name, JSONPath expression
+  expectedValue   String?               // expected value (stringified)
+  severity        Severity              @default(MEDIUM)
+  order           Int                   @default(0)
+  description     String?
+  isActive        Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  apiTest         ApiTestDefinition     @relation(fields: [apiTestId], references: [id], onDelete: Cascade)
+
+  @@index([apiTestId])
+  @@index([type])
+}
+
+// =============================================================================
+// API TESTING - Environment Bindings
+// =============================================================================
+
+model ApiEnvironmentBinding {
+  id                String        @id @default(cuid())
+  projectId         String
+  name              String        // e.g., "staging", "production", "local"
+  baseUrl           String
+  defaultHeaders    Json?         // key-value headers applied to all requests
+  defaultVariables  Json?         // key-value variables for interpolation
+  secretRefs        Json?         // references to secrets (never stored in plain text)
+  authBindingId     String?
+  isDefault         Boolean       @default(false)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  project           Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authBinding       ApiAuthBinding?      @relation(fields: [authBindingId], references: [id], onDelete: SetNull)
+  apiTests          ApiTestDefinition[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+// =============================================================================
+// API TESTING - Auth Bindings
+// =============================================================================
+
+enum ApiAuthType {
+  NONE
+  API_KEY
+  BEARER
+  BASIC
+  OAUTH_CLIENT_CREDENTIALS
+  CUSTOM
+}
+
+model ApiAuthBinding {
+  id                String        @id @default(cuid())
+  projectId         String
+  name              String
+  authType          ApiAuthType   @default(NONE)
+  headerName        String?       // e.g., "Authorization", "X-API-Key"
+  tokenPrefix       String?       // e.g., "Bearer", "Token"
+  secretRef         String?       // reference to stored secret
+  oauthConfig       Json?         // { tokenUrl, clientId, clientSecretRef, scopes }
+  customConfig      Json?         // arbitrary config for custom auth
+  redactionPolicy   String        @default("full") // full, partial, none
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  project           Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apiTests          ApiTestDefinition[]
+  environments      ApiEnvironmentBinding[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+// =============================================================================
+// API TESTING - Suite Definitions
+// =============================================================================
+
+enum ApiSuiteExecutionMode {
+  API_ONLY
+  MIXED
+}
+
+enum ApiSuiteOrderingMode {
+  PARALLEL
+  SEQUENTIAL
+  STAGED
+}
+
+model ApiSuiteDefinition {
+  id                String                  @id @default(cuid())
+  projectId         String
+  name              String
+  description       String?
+  executionMode     ApiSuiteExecutionMode   @default(API_ONLY)
+  orderingMode      ApiSuiteOrderingMode    @default(SEQUENTIAL)
+  setupSteps        Json?                   // pre-suite setup requests
+  teardownSteps     Json?                   // post-suite teardown requests
+  failurePolicy     String                  @default("stop_on_failure") // stop_on_failure, continue, fail_fast_stage
+  tags              String[]                @default([])
+  isActive          Boolean                 @default(true)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  project           Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  members           ApiSuiteMember[]
+  executions        ApiExecution[]
+
+  @@index([projectId])
+}
+
+model ApiSuiteMember {
+  id          String              @id @default(cuid())
+  suiteId     String
+  apiTestId   String
+  order       Int                 @default(0)
+  stage       Int                 @default(0)  // for staged execution
+  createdAt   DateTime            @default(now())
+
+  suite       ApiSuiteDefinition  @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  apiTest     ApiTestDefinition   @relation(fields: [apiTestId], references: [id], onDelete: Cascade)
+
+  @@unique([suiteId, apiTestId])
+  @@index([suiteId])
+}
+
+// =============================================================================
+// API TESTING - Service Bindings
+// =============================================================================
+
+model ApiServiceBinding {
+  id                  String        @id @default(cuid())
+  projectId           String
+  name                String
+  serviceName         String
+  repoId              String?       // link to RepositoryConnection
+  repoPath            String?       // sub-path in monorepo
+  ownerTeamId         String?       // link to Team
+  routePatterns       String[]      @default([])  // e.g., ["/api/users/*", "/api/auth/*"]
+  contractSource      String?       // URL or path to OpenAPI/GraphQL schema
+  environmentMappings Json?         // { envName: baseUrl } per environment
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  project             Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apiTests            ApiTestDefinition[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+// =============================================================================
+// API TESTING - Executions
+// =============================================================================
+
+enum ApiExecutionStatus {
+  PENDING
+  RUNNING
+  PASSED
+  FAILED
+  ERROR
+  TIMEOUT
+  CANCELLED
+  SKIPPED
+}
+
+enum ApiExecutionTrigger {
+  MANUAL
+  SCHEDULE
+  CI
+  API
+  SUITE
+}
+
+model ApiExecution {
+  id                  String              @id @default(cuid())
+  projectId           String
+  apiTestId           String?
+  suiteId             String?
+  status              ApiExecutionStatus  @default(PENDING)
+  trigger             ApiExecutionTrigger @default(MANUAL)
+  environmentName     String?
+  branch              String?
+  triggeredBy         String?             // userId or "system"
+
+  // Request snapshot
+  requestMethod       String?
+  requestUrl          String?
+  requestHeaders      Json?
+  requestBody         String?
+
+  // Response snapshot
+  responseStatus      Int?
+  responseHeaders     Json?
+  responseBody        String?             // truncated if large
+  responseBodySize    Int?
+
+  // Timing
+  startedAt           DateTime?
+  completedAt         DateTime?
+  durationMs          Int?
+  latencyMs           Int?                // time-to-first-byte
+
+  // Assertion results
+  assertionResults    Json?               // array of { assertionId, passed, actual, expected, message }
+  passedAssertions    Int                 @default(0)
+  failedAssertions    Int                 @default(0)
+  totalAssertions     Int                 @default(0)
+
+  // Analysis
+  failureSummary      String?
+  errorMessage        String?
+  metadata            Json?
+
+  createdAt           DateTime            @default(now())
+
+  project             Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apiTest             ApiTestDefinition?  @relation(fields: [apiTestId], references: [id], onDelete: SetNull)
+  suite               ApiSuiteDefinition? @relation(fields: [suiteId], references: [id], onDelete: SetNull)
+  artifacts           ApiExecutionArtifact[]
+
+  @@index([projectId, status])
+  @@index([apiTestId, createdAt])
+  @@index([suiteId])
+  @@index([status, createdAt])
+}
+
+// =============================================================================
+// API TESTING - Execution Artifacts
+// =============================================================================
+
+enum ApiArtifactType {
+  REQUEST
+  RESPONSE
+  SCHEMA_REPORT
+  GRAPHQL_RESULT
+  ANALYSIS
+  CONTRACT_DIFF
+}
+
+model ApiExecutionArtifact {
+  id                String          @id @default(cuid())
+  apiExecutionId    String
+  type              ApiArtifactType
+  name              String
+  content           String?
+  storageUrl        String?
+  mimeType          String?
+  size              Int?
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+
+  apiExecution      ApiExecution    @relation(fields: [apiExecutionId], references: [id], onDelete: Cascade)
+
+  @@index([apiExecutionId])
+  @@index([type])
+}
+
+// =============================================================================
+// AI PLATFORM - Provider Configuration
+// =============================================================================
+
+enum AIProvider {
+  ANTHROPIC
+  OPENAI
+  OPENROUTER
+  GEMINI
+  LOCAL
+}
+
+model AIProviderConfig {
+  id                  String      @id @default(cuid())
+  projectId           String
+  provider            AIProvider
+  name                String      // display name, e.g., "Claude Sonnet", "GPT-4o", "Local Ollama"
+  isActive            Boolean     @default(true)
+  isDefault           Boolean     @default(false)
+
+  // Connection
+  apiKey              String?     // encrypted; null for local
+  baseUrl             String?     // override endpoint; required for local/openrouter
+  organizationId      String?     // OpenAI org ID
+
+  // Model
+  model               String      // e.g., "claude-sonnet-4-20250514", "gpt-4o", "llama3"
+  maxTokens           Int         @default(4096)
+  temperature         Float       @default(0.2)
+
+  // Limits
+  maxRequestsPerMin   Int?
+  maxCostPerSession   Float?      // USD ceiling per fix session
+  maxRuntimeSeconds   Int         @default(120)
+
+  // Capabilities
+  supportsStreaming    Boolean     @default(true)
+  supportsImages      Boolean     @default(false)
+  supportsFunctions   Boolean     @default(false)
+
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  project             Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, isDefault])
+  @@index([provider])
+}
+
+// =============================================================================
+// AI VISUAL DIFF - Configuration & Feedback
+// =============================================================================
+
+model AiDiffConfig {
+  id                  String   @id @default(cuid())
+  projectId           String   @unique
+  enabled             Boolean  @default(true)
+
+  // Pipeline thresholds
+  ssimThreshold       Float    @default(0.97)    // Stage 1: combined score above = noise
+  lpipsThreshold      Float    @default(0.05)    // Stage 1: LPIPS below = perceptually similar
+  dinoThreshold       Float    @default(0.94)    // Stage 2: above = noise
+  maxStage            Int      @default(3)       // Limit pipeline depth (0-3)
+
+  // Auto-actions
+  autoApproveNoise    Boolean  @default(false)
+  autoApproveMinor    Boolean  @default(false)
+  escalateBreaking    Boolean  @default(true)
+
+  // VLM settings
+  aiProviderId        String?  // FK to AIProviderConfig for stage 3
+  vlmPromptOverride   String?  // Custom system prompt
+
+  // Rate limiting
+  vlmCallsPerExecution  Int    @default(50)
+  vlmMonthlyBudget      Int?
+
+  // Sidecar
+  sidecarUrl          String?  @default("http://visiontest-embeddings:8100")
+
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model AiDiffFeedback {
+  id                String     @id @default(cuid())
+  comparisonId      String
+  comparison        Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+
+  aiClassification  String     // What the AI said
+  aiConfidence      Float
+  userAction        String     // APPROVED | REJECTED | RECLASSIFIED | ESCALATED
+  userClassification String?   // What the human said (if reclassified)
+  disagreement      Boolean    @default(false)
+  orgId             String
+
+  createdAt         DateTime   @default(now())
+
+  @@index([comparisonId])
+  @@index([orgId, createdAt])
+  @@index([disagreement, createdAt])
+}
+
+// =============================================================================
+// STORYBOOK INTEGRATION - Configuration
+// =============================================================================
+
+model StorybookConfig {
+  id                String    @id @default(cuid())
+  projectId         String    @unique
+  enabled           Boolean   @default(true)
+  mode              String    @default("cli")      // cli | connected | hybrid
+  storybookUrl      String?
+  minioStaticPath   String?
+  syncMode          String    @default("manual")   // manual | polling | webhook
+  pollIntervalMin   Int?      @default(60)
+  viewports         Json?     // { name, width, height }[]
+  includePatterns   String[]  @default([])
+  excludePatterns   String[]  @default([])
+  waitAfterLoadMs   Int       @default(500)
+  indexJsonVersion  String?   // "v3" | "v4"
+  lastSyncAt        DateTime?
+  lastSyncStoryCount Int?
+  lastSyncError     String?
+
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([projectId])
+}

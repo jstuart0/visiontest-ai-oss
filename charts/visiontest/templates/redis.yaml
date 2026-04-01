@@ -1,0 +1,91 @@
+{{- if .Values.redis.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "visiontest.fullname" . }}-redis
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+    {{- include "visiontest.selectorLabels" (dict "component" "redis" "context" .) | nindent 4 }}
+spec:
+  serviceName: {{ include "visiontest.fullname" . }}-redis
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "visiontest.selectorLabels" (dict "component" "redis" "context" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "visiontest.labels" . | nindent 8 }}
+        {{- include "visiontest.selectorLabels" (dict "component" "redis" "context" .) | nindent 8 }}
+        app.kubernetes.io/component: redis
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image }}
+          {{- if .Values.secrets.redisPassword }}
+          command: ["redis-server", "--appendonly", "yes", "--requirepass", "$(REDIS_PASSWORD)"]
+          {{- else }}
+          command: ["redis-server", "--appendonly", "yes"]
+          {{- end }}
+          ports:
+            - containerPort: 6379
+              name: redis
+              protocol: TCP
+          {{- if .Values.secrets.redisPassword }}
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "visiontest.secretName" . }}
+                  key: redis-password
+          {{- end }}
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- if .Values.redis.storageClassName }}
+        storageClassName: {{ .Values.redis.storageClassName | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.redis.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "visiontest.fullname" . }}-redis
+  labels:
+    {{- include "visiontest.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "visiontest.selectorLabels" (dict "component" "redis" "context" .) | nindent 4 }}
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis
+      protocol: TCP
+{{- end }}

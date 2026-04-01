@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visiontest-embeddings
+  namespace: visiontest
+  labels:
+    app: visiontest-embeddings
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: visiontest-embeddings
+  template:
+    metadata:
+      labels:
+        app: visiontest-embeddings
+    spec:
+      containers:
+        - name: embeddings
+          image: ghcr.io/visiontest-ai/visiontest-embeddings:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8100
+              name: http
+              protocol: TCP
+          env:
+            - name: TORCH_DEVICE
+              value: "cpu"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "4Gi"
+              cpu: "2"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8100
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8100
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: visiontest-embeddings
+  namespace: visiontest
+  labels:
+    app: visiontest-embeddings
+spec:
+  selector:
+    app: visiontest-embeddings
+  ports:
+    - port: 8100
+      targetPort: 8100
+      name: http
+      protocol: TCP
+  type: ClusterIP

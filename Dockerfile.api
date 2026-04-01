@@ -1,0 +1,47 @@
+# VisionTest AI - API Service
+ARG NODE_BASE_IMAGE=node:20-slim
+FROM ${NODE_BASE_IMAGE}
+
+# Install OpenSSL for Prisma
+RUN apt-get update -y && apt-get install -y openssl wget && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nodejs
+
+# Copy package files
+COPY --chown=nodejs:nodejs package*.json ./
+COPY --chown=nodejs:nodejs turbo.json ./
+COPY --chown=nodejs:nodejs apps/api/package*.json ./apps/api/
+COPY --chown=nodejs:nodejs packages/database/package*.json ./packages/database/
+COPY --chown=nodejs:nodejs packages/types/package*.json ./packages/types/
+
+# Install all dependencies
+RUN npm ci
+
+# Copy source files
+COPY --chown=nodejs:nodejs apps/api ./apps/api
+COPY --chown=nodejs:nodejs packages/database ./packages/database
+COPY --chown=nodejs:nodejs packages/types ./packages/types
+
+# Generate Prisma client and build dependency packages
+WORKDIR /app/packages/database
+RUN npx prisma generate
+WORKDIR /app
+RUN npm run build --workspace=@visiontest/types
+RUN npm run build --workspace=@visiontest/database
+
+# Build API
+RUN npm run build --workspace=@visiontest/api
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s CMD wget --spider http://localhost:3000/health || exit 1
+
+USER nodejs
+
+CMD ["node", "apps/api/dist/index.js"]
