@@ -293,7 +293,7 @@ export default function HelpPage() {
         <CardHeader>
           <CardTitle className="text-foreground">Quick Start</CardTitle>
           <CardDescription className="text-muted-foreground">
-            VisionTest supports two ways to write tests
+            VisionTest.ai supports two ways to write tests
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -468,7 +468,7 @@ Click submit`}
             <div>
               <h4 className="font-semibold text-foreground mb-3">Smart Selectors</h4>
               <p className="text-sm text-muted-foreground mb-3">
-                When using natural language, VisionTest automatically converts common phrases to selectors:
+                When using natural language, VisionTest.ai automatically converts common phrases to selectors:
               </p>
               <table className="w-full text-sm">
                 <tbody>

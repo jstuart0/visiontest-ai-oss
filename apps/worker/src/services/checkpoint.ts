@@ -1,4 +1,4 @@
-// VisionTest AI - Checkpoint Service
+// VisionTest.ai - Checkpoint Service
 // Saves and restores test execution state for replay-from-failure
 
 import { Client } from 'minio';

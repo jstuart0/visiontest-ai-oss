@@ -1,5 +1,5 @@
 /**
- * VisionTest AI - Checkpoint Service Tests
+ * VisionTest.ai - Checkpoint Service Tests
  * Hospital-Grade Test Coverage
  * 
  * Tests for checkpoint save/load, state serialization,

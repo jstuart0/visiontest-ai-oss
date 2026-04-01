@@ -1,4 +1,4 @@
-// VisionTest AI - Comparisons Service
+// VisionTest.ai - Comparisons Service
 // Hospital-Grade: Visual comparison management
 
 import { prisma, ComparisonStatus } from '@visiontest/database';

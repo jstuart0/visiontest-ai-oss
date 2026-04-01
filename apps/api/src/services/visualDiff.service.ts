@@ -1,4 +1,4 @@
-// VisionTest AI - Visual Diff Service
+// VisionTest.ai - Visual Diff Service
 // Runs pixelmatch comparisons between screenshots and baselines
 
 import { Client as MinioClient } from 'minio';

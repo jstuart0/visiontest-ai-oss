@@ -1,4 +1,4 @@
-// VisionTest AI - Tests Service
+// VisionTest.ai - Tests Service
 // Hospital-Grade: Test management with full validation
 
 import { prisma, TestStatus, Prisma } from '@visiontest/database';

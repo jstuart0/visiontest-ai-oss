@@ -1,4 +1,4 @@
-// VisionTest AI - Organization Routes
+// VisionTest.ai - Organization Routes
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';

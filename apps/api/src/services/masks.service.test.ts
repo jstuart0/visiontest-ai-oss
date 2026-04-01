@@ -1,4 +1,4 @@
-// VisionTest AI - Masks Service Tests
+// VisionTest.ai - Masks Service Tests
 // Hospital-Grade: Ignore mask testing
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

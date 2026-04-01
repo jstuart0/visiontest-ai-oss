@@ -1,4 +1,4 @@
-// VisionTest AI - Test Execution Worker
+// VisionTest.ai - Test Execution Worker
 // Hospital-Grade Test Execution Engine
 
 import { Worker, Job } from 'bullmq';
@@ -900,7 +900,7 @@ process.on('SIGINT', shutdown);
 // START
 // =============================================================================
 
-logger.info(`VisionTest AI Worker started`, {
+logger.info(`VisionTest.ai Worker started`, {
   workerId: WORKER_ID,
   concurrency: WORKER_CONCURRENCY,
   redis: REDIS_URL.replace(/\/\/[^@]*@/, '//***@'),

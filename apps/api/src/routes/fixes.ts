@@ -1,4 +1,4 @@
-// VisionTest AI - Autonomous Bug Fixing Routes
+// VisionTest.ai - Autonomous Bug Fixing Routes
 // Manages bug candidates, fix sessions, investigation, and delivery
 
 import { Router, Request, Response, NextFunction } from 'express';

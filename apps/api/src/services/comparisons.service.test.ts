@@ -1,4 +1,4 @@
-// VisionTest AI - Comparisons Service Tests
+// VisionTest.ai - Comparisons Service Tests
 // Hospital-Grade: Visual comparison testing
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature for VisionTest AI
+description: Suggest a new feature for VisionTest.ai
 labels: ["enhancement"]
 body:
   - type: textarea

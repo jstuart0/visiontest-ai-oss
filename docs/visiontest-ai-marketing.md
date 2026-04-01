@@ -1,18 +1,18 @@
-# VisionTest AI
+# VisionTest.ai
 
 ## The Self-Hosted Platform For Visual Regression, Test Intelligence, and Automated Fix Workflows
 
-VisionTest AI helps engineering teams catch UI regressions before users do, reduce noisy test review, and turn test failures into actionable engineering workflows.
+VisionTest.ai helps engineering teams catch UI regressions before users do, reduce noisy test review, and turn test failures into actionable engineering workflows.
 
 It combines visual regression testing, live execution visibility, approval workflows, flaky-test intelligence, CI integration, API testing, and autonomous fix operations in one self-hosted platform.
 
-If your team ships fast, runs lots of tests, and is tired of brittle pipelines and manual screenshot review, VisionTest AI is built for you.
+If your team ships fast, runs lots of tests, and is tired of brittle pipelines and manual screenshot review, VisionTest.ai is built for you.
 
 ---
 
 ## Positioning
 
-VisionTest AI is for teams that want:
+VisionTest.ai is for teams that want:
 
 - visual regression testing in their own infrastructure
 - browser, mobile web, and mobile app coverage
@@ -246,7 +246,7 @@ These are key differentiators already planned and partially integrated, but shou
 
 ---
 
-## Why Teams Choose VisionTest AI
+## Why Teams Choose VisionTest.ai
 
 ### Self-Hosted By Design
 
@@ -254,7 +254,7 @@ Your screenshots, test artifacts, pipelines, and AI configuration stay under you
 
 ### More Than Visual Diffing
 
-VisionTest AI combines visual testing with execution visibility, review operations, flaky intelligence, API testing, and AI-assisted fix workflows.
+VisionTest.ai combines visual testing with execution visibility, review operations, flaky intelligence, API testing, and AI-assisted fix workflows.
 
 ### Built For Engineering Teams
 
@@ -268,7 +268,7 @@ Teams can start with visual baselines and approvals, then layer in Storybook, AI
 
 ## Ideal Customers
 
-VisionTest AI is especially strong for:
+VisionTest.ai is especially strong for:
 
 - frontend-heavy SaaS teams
 - design-system and component-library teams
@@ -286,7 +286,7 @@ Most visual testing tools force teams to choose between:
 - deep engineering control
 - meaningful workflow automation
 
-VisionTest AI is built to combine:
+VisionTest.ai is built to combine:
 
 - self-hosted deployment
 - visual regression coverage
@@ -300,7 +300,7 @@ That makes it compelling for teams that need more than screenshot snapshots and 
 
 ## Short Version
 
-VisionTest AI is a self-hosted quality platform that helps teams test UI changes, monitor executions, review visual diffs, control flaky tests, integrate with CI, and move toward AI-assisted failure triage and automated fixes.
+VisionTest.ai is a self-hosted quality platform that helps teams test UI changes, monitor executions, review visual diffs, control flaky tests, integrate with CI, and move toward AI-assisted failure triage and automated fixes.
 
 It starts with visual regression testing and grows into a broader testing and remediation system.
 

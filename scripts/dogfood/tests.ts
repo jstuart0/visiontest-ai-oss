@@ -1,7 +1,7 @@
 /**
- * VisionTest AI Dogfood - Test Definitions
+ * VisionTest.ai Dogfood - Test Definitions
  *
- * 40 visual tests that exercise every page and feature area of VisionTest AI.
+ * 40 visual tests that exercise every page and feature area of VisionTest.ai.
  * Each dashboard test begins with a login prefix so the Playwright browser
  * session is authenticated before navigating to the target page.
  */

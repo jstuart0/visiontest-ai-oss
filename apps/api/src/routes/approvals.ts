@@ -1,4 +1,4 @@
-// VisionTest AI - Approval Delegation Routes
+// VisionTest.ai - Approval Delegation Routes
 // P2 Feature: Route visual diffs to the right reviewers
 
 import { Router, Request, Response, NextFunction } from 'express';

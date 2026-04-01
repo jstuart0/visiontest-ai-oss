@@ -1,4 +1,4 @@
-// VisionTest AI - Database Client Export
+// VisionTest.ai - Database Client Export
 // Re-exports Prisma client and types for use across the monorepo
 
 export * from '@prisma/client';

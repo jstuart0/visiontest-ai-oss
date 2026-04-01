@@ -1,4 +1,4 @@
-# Contributing to VisionTest AI
+# Contributing to VisionTest.ai
 
 Thank you for your interest in contributing! This guide will help you get started.
 

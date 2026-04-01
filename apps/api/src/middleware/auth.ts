@@ -1,4 +1,4 @@
-// VisionTest AI - Authentication Middleware
+// VisionTest.ai - Authentication Middleware
 
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';

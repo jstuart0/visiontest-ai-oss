@@ -1,8 +1,8 @@
-# CLAUDE.md - VisionTest AI
+# CLAUDE.md - VisionTest.ai
 
 ## Repository Overview
 
-This is **VisionTest AI**, an AI-powered visual regression testing platform. Open-source under the MIT license.
+This is **VisionTest.ai**, an AI-powered visual regression testing platform. Open-source under the MIT license.
 
 ## Architecture
 

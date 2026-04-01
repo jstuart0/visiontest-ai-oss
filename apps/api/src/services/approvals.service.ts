@@ -1,4 +1,4 @@
-// VisionTest AI - Approvals Service
+// VisionTest.ai - Approvals Service
 // Hospital-Grade: Approval delegation for visual diffs
 
 import { prisma, ApprovalStatus, Severity } from '@visiontest/database';

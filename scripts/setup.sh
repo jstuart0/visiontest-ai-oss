@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "================================"
-echo "VisionTest AI - Initial Setup"
+echo "VisionTest.ai - Initial Setup"
 echo "================================"
 echo ""
 

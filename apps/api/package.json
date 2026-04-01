@@ -2,7 +2,7 @@
   "name": "@visiontest/api",
   "version": "2.0.0",
   "private": true,
-  "description": "VisionTest AI - Backend API Server",
+  "description": "VisionTest.ai - Backend API Server",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

@@ -78,20 +78,20 @@ const MODE_OPTIONS: Array<{
   {
     value: 'cli',
     title: 'CLI',
-    description: 'Screenshots taken in CI, uploaded to VisionTest',
+    description: 'Screenshots taken in CI, uploaded to VisionTest.ai',
     icon: Terminal,
     recommended: true,
   },
   {
     value: 'connected',
     title: 'Connected',
-    description: 'VisionTest connects to a live Storybook URL',
+    description: 'VisionTest.ai connects to a live Storybook URL',
     icon: Globe,
   },
   {
     value: 'hybrid',
     title: 'Hybrid',
-    description: 'Upload static build, VisionTest takes screenshots',
+    description: 'Upload static build, VisionTest.ai takes screenshots',
     icon: Layers,
   },
 ];
@@ -104,7 +104,7 @@ function ChooseModeStep({ state, updateState }: WizardStepProps<StorybookWizardS
   return (
     <WizardStepLayout
       title="Choose Integration Mode"
-      description="How should VisionTest capture Storybook screenshots?"
+      description="How should VisionTest.ai capture Storybook screenshots?"
     >
       <div className="grid gap-3">
         {MODE_OPTIONS.map((option) => {
@@ -475,7 +475,7 @@ function ReviewStep({ state }: WizardStepProps<StorybookWizardState>) {
 
         {state.mode !== 'cli' && (
           <p className="text-sm text-muted-foreground">
-            After saving, VisionTest will sync stories from your Storybook instance.
+            After saving, VisionTest.ai will sync stories from your Storybook instance.
           </p>
         )}
       </div>

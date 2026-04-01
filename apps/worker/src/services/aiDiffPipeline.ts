@@ -1,4 +1,4 @@
-// VisionTest AI - AI Diff Pipeline
+// VisionTest.ai - AI Diff Pipeline
 // 4-stage cascading visual diff analysis: Pixel → SSIM/LPIPS → DINOv2 → VLM
 
 import { logger } from '../utils/logger';

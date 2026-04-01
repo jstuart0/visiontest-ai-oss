@@ -61,7 +61,7 @@ export default function RegisterPage() {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-4">
             <FlaskConical className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">VisionTest AI</h1>
+          <h1 className="text-2xl font-bold text-foreground">VisionTest.ai</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Hospital-grade visual regression testing
           </p>
@@ -72,7 +72,7 @@ export default function RegisterPage() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl text-foreground">Create account</CardTitle>
             <CardDescription className="text-muted-foreground">
-              Get started with VisionTest AI
+              Get started with VisionTest.ai
             </CardDescription>
           </CardHeader>
           <CardContent>

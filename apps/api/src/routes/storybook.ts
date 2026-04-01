@@ -1,4 +1,4 @@
-// VisionTest AI - Storybook Integration Routes
+// VisionTest.ai - Storybook Integration Routes
 // Config, sync, stories discovery, test-connection
 
 import { Router, Request, Response, NextFunction } from 'express';

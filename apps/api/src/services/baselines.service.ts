@@ -1,4 +1,4 @@
-// VisionTest AI - Baselines Service
+// VisionTest.ai - Baselines Service
 // Hospital-Grade: Branch-based baseline management
 
 import { prisma, BaselineType, Prisma } from '@visiontest/database';

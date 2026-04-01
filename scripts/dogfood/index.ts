@@ -1,8 +1,8 @@
 #!/usr/bin/env npx tsx
 /**
- * VisionTest AI Dogfood Runner
+ * VisionTest.ai Dogfood Runner
  *
- * Uses VisionTest AI's own API to create visual tests against its own UI,
+ * Uses VisionTest.ai's own API to create visual tests against its own UI,
  * run them through the Playwright-based worker, and generate a completion
  * checklist with pass/fail results.
  *
@@ -59,7 +59,7 @@ function logError(msg: string) {
 async function main() {
   console.log('');
   console.log('╔══════════════════════════════════════╗');
-  console.log('║    VisionTest AI - Dogfood Runner    ║');
+  console.log('║    VisionTest.ai - Dogfood Runner    ║');
   console.log('╚══════════════════════════════════════╝');
   console.log('');
 

@@ -1,4 +1,4 @@
-// VisionTest AI - AI Visual Diff Routes
+// VisionTest.ai - AI Visual Diff Routes
 // AI diff config, manual analysis trigger, feedback, accuracy stats
 
 import { Router, Request, Response, NextFunction } from 'express';

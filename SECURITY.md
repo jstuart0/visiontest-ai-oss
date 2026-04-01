@@ -35,7 +35,7 @@ We take security seriously. If you discover a security vulnerability, please rep
 ### Scope
 
 The following are in scope:
-- VisionTest AI application code (api, web, worker)
+- VisionTest.ai application code (api, web, worker)
 - Authentication and authorization
 - Data exposure or injection vulnerabilities
 - Cryptographic issues

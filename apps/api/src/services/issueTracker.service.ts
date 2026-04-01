@@ -1,4 +1,4 @@
-// VisionTest AI - Issue Tracker Integration Service
+// VisionTest.ai - Issue Tracker Integration Service
 // Supports creating bugs in external issue trackers (Jira, GitHub, Linear, etc.)
 
 import { prisma } from '@visiontest/database';
@@ -176,7 +176,7 @@ class IssueTrackerService {
     if (input.severity === 'CRITICAL') labels.push('priority:critical');
     else if (input.severity === 'HIGH') labels.push('priority:high');
 
-    const body = `${input.description}\n\n---\n*Created by VisionTest AI*\n\nComparison ID: \`${input.comparisonId}\``;
+    const body = `${input.description}\n\n---\n*Created by VisionTest.ai*\n\nComparison ID: \`${input.comparisonId}\``;
 
     const response = await fetch(`https://api.github.com/repos/${config.owner}/${config.repo}/issues`, {
       method: 'POST',

@@ -1,4 +1,4 @@
-// VisionTest AI - API Server Entry Point
+// VisionTest.ai - API Server Entry Point
 // Hospital-Grade Visual Regression Testing Platform
 
 import express from 'express';
@@ -297,7 +297,7 @@ async function start() {
     logger.info('✅ Database connected');
 
     httpServer.listen(PORT, async () => {
-      logger.info(`✅ VisionTest AI API running on port ${PORT}`);
+      logger.info(`✅ VisionTest.ai API running on port ${PORT}`);
       logger.info(`   Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`   API: http://localhost:${PORT}/api/v1`);
       logger.info(`   Health: http://localhost:${PORT}/health`);

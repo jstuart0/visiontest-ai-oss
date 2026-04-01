@@ -1,4 +1,4 @@
-// VisionTest AI - Test Runner Service
+// VisionTest.ai - Test Runner Service
 // Executes tests using Playwright
 
 import { chromium, firefox, webkit, Browser, Page, BrowserContext, CDPSession, devices } from 'playwright';

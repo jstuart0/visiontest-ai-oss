@@ -1,4 +1,4 @@
-// VisionTest AI - Projects & Tests Integration Tests
+// VisionTest.ai - Projects & Tests Integration Tests
 // Hospital-Grade: Full project and test management flow testing
 
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';

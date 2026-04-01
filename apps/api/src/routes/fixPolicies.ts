@@ -1,4 +1,4 @@
-// VisionTest AI - Fix Policy Routes
+// VisionTest.ai - Fix Policy Routes
 // Manages policy constraints for automated fixing
 
 import { Router, Request, Response, NextFunction } from 'express';

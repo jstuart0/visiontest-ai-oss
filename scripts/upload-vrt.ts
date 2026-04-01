@@ -1,9 +1,9 @@
 #!/usr/bin/env npx tsx
 /**
- * VisionTest VRT Upload Script
+ * VisionTest.ai VRT Upload Script
  *
  * Reads screenshots from a directory, groups them by variant (desktop-light,
- * desktop-dark, mobile), and uploads them to VisionTest as baselines and/or
+ * desktop-dark, mobile), and uploads them to VisionTest.ai as baselines and/or
  * comparison runs.
  *
  * Usage:
@@ -136,7 +136,7 @@ async function apiRequest(
 // =============================================================================
 
 async function main() {
-  console.log('=== VisionTest VRT Upload ===');
+  console.log('=== VisionTest.ai VRT Upload ===');
   console.log(`Directory: ${SCREENSHOT_DIR}`);
   console.log(`API: ${API_BASE}`);
   console.log(`Project: ${PROJECT_ID}`);

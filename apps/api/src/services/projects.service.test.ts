@@ -1,4 +1,4 @@
-// VisionTest AI - Projects Service Tests
+// VisionTest.ai - Projects Service Tests
 // Hospital-Grade: Complete CRUD testing
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

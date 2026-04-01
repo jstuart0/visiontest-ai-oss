@@ -1,5 +1,5 @@
 /**
- * VisionTest AI - Screenshot Service Tests
+ * VisionTest.ai - Screenshot Service Tests
  * Hospital-Grade Test Coverage
  * 
  * Tests for screenshot capture, storage, comparison,

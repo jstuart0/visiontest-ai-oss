@@ -1,4 +1,4 @@
-// VisionTest AI - Error Handling Middleware
+// VisionTest.ai - Error Handling Middleware
 
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';

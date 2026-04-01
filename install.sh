@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# VisionTest AI - One-Command Installer
+# VisionTest.ai - One-Command Installer
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/visiontest-ai/visiontest-ai/main/install.sh | bash
 #   OR
@@ -31,7 +31,7 @@ die()   { err "$@"; exit 1; }
 banner() {
   echo ""
   echo -e "${BOLD}╔══════════════════════════════════════╗${NC}"
-  echo -e "${BOLD}║        VisionTest AI Installer       ║${NC}"
+  echo -e "${BOLD}║        VisionTest.ai Installer       ║${NC}"
   echo -e "${BOLD}╚══════════════════════════════════════╝${NC}"
   echo ""
 }
@@ -265,7 +265,7 @@ install_helm() {
 # -------------------------------------------------------------------
 
 interactive() {
-  echo "How would you like to install VisionTest AI?"
+  echo "How would you like to install VisionTest.ai?"
   echo ""
   echo "  1) Local Development  -- Node.js + Docker Compose (infra only)"
   echo "  2) Docker Compose     -- Full production stack in containers"

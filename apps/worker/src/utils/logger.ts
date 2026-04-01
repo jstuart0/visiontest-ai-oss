@@ -1,4 +1,4 @@
-// VisionTest AI - Worker Logger
+// VisionTest.ai - Worker Logger
 
 import pino from 'pino';
 

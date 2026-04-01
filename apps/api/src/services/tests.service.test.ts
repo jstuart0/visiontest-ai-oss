@@ -1,4 +1,4 @@
-// VisionTest AI - Tests Service Tests
+// VisionTest.ai - Tests Service Tests
 // Hospital-Grade: Complete test management testing
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

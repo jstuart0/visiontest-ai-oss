@@ -1,4 +1,4 @@
-// VisionTest AI - Real-time Execution Stream (SSE)
+// VisionTest.ai - Real-time Execution Stream (SSE)
 
 import { Router, Request, Response, NextFunction } from 'express';
 import Redis from 'ioredis';

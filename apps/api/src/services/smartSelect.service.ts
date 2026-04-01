@@ -1,4 +1,4 @@
-// VisionTest AI - Smart Test Selection Service
+// VisionTest.ai - Smart Test Selection Service
 // Hospital-Grade: Run only tests affected by code changes
 
 import { prisma } from '@visiontest/database';

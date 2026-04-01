@@ -1,4 +1,4 @@
-// VisionTest AI - API Testing Routes
+// VisionTest.ai - API Testing Routes
 // CRUD for API test definitions, assertions, environments, auth, suites, services, executions
 
 import { Router, Request, Response, NextFunction } from 'express';

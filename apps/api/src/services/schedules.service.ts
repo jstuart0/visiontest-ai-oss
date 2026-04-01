@@ -1,4 +1,4 @@
-// VisionTest AI - Schedules Service
+// VisionTest.ai - Schedules Service
 // Hospital-Grade: Reliable test scheduling
 
 import { prisma, Prisma } from '@visiontest/database';

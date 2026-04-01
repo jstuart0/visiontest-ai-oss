@@ -1,4 +1,4 @@
-// VisionTest AI - Video Service
+// VisionTest.ai - Video Service
 // Handles video storage and database record creation
 
 import { Client } from 'minio';

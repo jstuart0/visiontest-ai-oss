@@ -1,4 +1,4 @@
-// VisionTest AI - Schedules Service Tests
+// VisionTest.ai - Schedules Service Tests
 // Hospital-Grade: Schedule management testing
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

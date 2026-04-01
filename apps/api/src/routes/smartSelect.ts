@@ -1,4 +1,4 @@
-// VisionTest AI - Smart Test Selection Routes
+// VisionTest.ai - Smart Test Selection Routes
 // P1 Feature: Run only tests affected by code changes
 
 import { Router, Request, Response, NextFunction } from 'express';

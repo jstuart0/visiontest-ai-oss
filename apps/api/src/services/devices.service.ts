@@ -1,4 +1,4 @@
-// VisionTest AI - Device Profiles Service
+// VisionTest.ai - Device Profiles Service
 // CRUD for device profiles + device discovery
 
 import { prisma, Platform, Prisma } from '@visiontest/database';

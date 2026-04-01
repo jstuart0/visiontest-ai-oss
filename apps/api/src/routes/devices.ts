@@ -1,4 +1,4 @@
-// VisionTest AI - Device Profile Routes
+// VisionTest.ai - Device Profile Routes
 // CRUD endpoints for mobile device profiles + device discovery
 
 import { Router, Request, Response, NextFunction } from 'express';

@@ -1,4 +1,4 @@
-// VisionTest AI - Self-Healing Service
+// VisionTest.ai - Self-Healing Service
 // Detects and heals broken selectors automatically
 
 import { prisma } from '@visiontest/database';

@@ -112,7 +112,7 @@ export default function ApiKeysPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">API Keys</h1>
           <p className="text-muted-foreground mt-1">
-            Manage API keys for programmatic access to VisionTest
+            Manage API keys for programmatic access to VisionTest.ai
           </p>
         </div>
         <Dialog open={createOpen} onOpenChange={(open) => {
@@ -252,7 +252,7 @@ export default function ApiKeysPage() {
             <Key className="w-12 h-12 text-muted-foreground/70 mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground mb-1">No API keys</h3>
             <p className="text-muted-foreground text-sm mb-4">
-              Create an API key to access VisionTest programmatically.
+              Create an API key to access VisionTest.ai programmatically.
             </p>
             <Button onClick={() => setCreateOpen(true)} className="gap-2">
               <Plus className="w-4 h-4" />

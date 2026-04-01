@@ -1,4 +1,4 @@
-// VisionTest AI - Flaky Test Quarantine Service
+// VisionTest.ai - Flaky Test Quarantine Service
 // Hospital-Grade: Zero tolerance for unreliable test detection
 
 import { prisma, FlakyStatus, TestStatus } from '@visiontest/database';

@@ -2,7 +2,7 @@
   "name": "@visiontest/worker",
   "version": "2.0.0",
   "private": true,
-  "description": "VisionTest AI - Test Execution Worker",
+  "description": "VisionTest.ai - Test Execution Worker",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

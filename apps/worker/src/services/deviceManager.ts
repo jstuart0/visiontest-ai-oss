@@ -1,4 +1,4 @@
-// VisionTest AI - Device Manager Service
+// VisionTest.ai - Device Manager Service
 // Manages iOS Simulators and Android Emulators
 
 import { exec } from 'child_process';

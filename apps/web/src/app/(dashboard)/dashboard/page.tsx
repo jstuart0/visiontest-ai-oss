@@ -290,7 +290,7 @@ export default function DashboardPage() {
                 <FlaskConical className="h-6 w-6 text-blue-400" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-foreground mb-1">Get Started with VisionTest</h3>
+                <h3 className="font-semibold text-foreground mb-1">Get Started with VisionTest.ai</h3>
                 <p className="text-sm text-muted-foreground mb-3">
                   Create your first visual regression test to start catching UI changes automatically.
                 </p>

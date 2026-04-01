@@ -1,4 +1,4 @@
-// VisionTest AI - Flaky Service Tests
+// VisionTest.ai - Flaky Service Tests
 // Hospital-Grade: Every edge case tested
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

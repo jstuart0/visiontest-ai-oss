@@ -1,4 +1,4 @@
-// VisionTest AI - Logger Configuration
+// VisionTest.ai - Logger Configuration
 
 import pino from 'pino';
 

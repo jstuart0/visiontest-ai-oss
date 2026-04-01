@@ -1,4 +1,4 @@
-// VisionTest AI - Integration Test Setup
+// VisionTest.ai - Integration Test Setup
 // Hospital-Grade Testing Infrastructure
 
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';

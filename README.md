@@ -1,11 +1,11 @@
-# VisionTest AI
+# VisionTest.ai
 
 **AI-powered visual regression testing platform.** Catch unintended UI changes before your users do.
 
 [![CI](https://github.com/visiontest-ai/visiontest-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/visiontest-ai/visiontest-ai/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-VisionTest AI automates visual regression testing by capturing screenshots of your web applications, comparing them against approved baselines using both pixel-level and AI-powered perceptual analysis, and surfacing diffs through an approval workflow. It runs in your infrastructure -- your data never leaves your network.
+VisionTest.ai automates visual regression testing by capturing screenshots of your web applications, comparing them against approved baselines using both pixel-level and AI-powered perceptual analysis, and surfacing diffs through an approval workflow. It runs in your infrastructure -- your data never leaves your network.
 
 ## Features
 

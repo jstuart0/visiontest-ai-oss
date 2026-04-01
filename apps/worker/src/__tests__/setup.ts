@@ -1,5 +1,5 @@
 /**
- * VisionTest AI - Worker Test Setup
+ * VisionTest.ai - Worker Test Setup
  * Hospital-Grade Test Infrastructure
  * 
  * Comprehensive mocks for all external dependencies:

@@ -1,4 +1,4 @@
-// VisionTest AI - Baselines Service Tests
+// VisionTest.ai - Baselines Service Tests
 // Hospital-Grade: Baseline management testing
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

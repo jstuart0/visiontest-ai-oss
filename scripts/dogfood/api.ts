@@ -1,5 +1,5 @@
 /**
- * VisionTest AI Dogfood - API Client
+ * VisionTest.ai Dogfood - API Client
  *
  * Thin HTTP wrapper for authenticating, creating tests, running executions,
  * and polling for results against the VisionTest API.

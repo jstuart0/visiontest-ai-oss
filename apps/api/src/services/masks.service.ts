@@ -1,4 +1,4 @@
-// VisionTest AI - Ignore Masks Service
+// VisionTest.ai - Ignore Masks Service
 // Hospital-Grade: Reduce false positives with precision
 
 import { prisma, MaskType } from '@visiontest/database';

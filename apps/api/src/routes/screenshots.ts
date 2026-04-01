@@ -1,4 +1,4 @@
-// VisionTest AI - Screenshot Proxy & Upload Route
+// VisionTest.ai - Screenshot Proxy & Upload Route
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { Client as MinioClient } from 'minio';

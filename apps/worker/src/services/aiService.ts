@@ -1,4 +1,4 @@
-// VisionTest AI - Unified AI Service
+// VisionTest.ai - Unified AI Service
 // Abstracts Anthropic, OpenAI, Gemini, OpenRouter, and Local LLM providers
 
 import { prisma, decryptApiKey } from '@visiontest/database';
@@ -228,7 +228,7 @@ export class AIService {
         Authorization: `Bearer ${this.config!.apiKey || ''}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://github.com/visiontest-ai/visiontest-ai',
-        'X-Title': 'VisionTest AI',
+        'X-Title': 'VisionTest.ai',
       },
       body: JSON.stringify({
         model: this.config!.model,

@@ -1,4 +1,4 @@
-// VisionTest AI - Schedule Routes
+// VisionTest.ai - Schedule Routes
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';

@@ -4,7 +4,7 @@ export default function TermsPage() {
       <div className="max-w-2xl text-muted-foreground">
         <h1 className="text-3xl font-bold text-foreground mb-6">Terms of Service</h1>
         <p className="mb-4">
-          VisionTest AI is a visual regression testing platform designed for hospital-grade reliability.
+          VisionTest.ai is a visual regression testing platform designed for hospital-grade reliability.
         </p>
         <p className="mb-4">
           By using this service, you agree to use it responsibly and in accordance with all applicable laws and regulations.

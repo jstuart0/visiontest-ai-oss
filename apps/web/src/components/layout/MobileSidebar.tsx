@@ -68,7 +68,7 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
               <FlaskConical className="w-5 h-5 text-white" />
             </div>
-            <span className="font-semibold text-foreground">VisionTest</span>
+            <span className="font-semibold text-foreground">VisionTest.ai</span>
           </Link>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
             <X className="w-4 h-4" />

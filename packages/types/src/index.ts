@@ -1,4 +1,4 @@
-// VisionTest AI - Shared Types
+// VisionTest.ai - Shared Types
 // Hospital-Grade Visual Regression Testing Platform
 
 // =============================================================================

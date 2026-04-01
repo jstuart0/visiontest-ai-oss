@@ -1,4 +1,4 @@
-// VisionTest AI - Mobile Test Runner Service
+// VisionTest.ai - Mobile Test Runner Service
 // Appium WebDriver integration for native iOS/Android testing
 
 import { logger } from '../utils/logger';

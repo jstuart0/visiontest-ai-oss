@@ -1,4 +1,4 @@
-// VisionTest AI - Test Script Parser Service
+// VisionTest.ai - Test Script Parser Service
 // Supports: Natural Language (AI) and YAML DSL
 
 import { TestStep } from './tests.service';

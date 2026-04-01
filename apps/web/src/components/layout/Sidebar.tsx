@@ -81,7 +81,7 @@ export function Sidebar() {
             <FlaskConical className="w-5 h-5 text-white" />
           </div>
           {!collapsed && (
-            <span className="font-semibold text-sidebar-foreground">VisionTest</span>
+            <span className="font-semibold text-sidebar-foreground">VisionTest.ai</span>
           )}
         </Link>
       </div>

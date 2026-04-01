@@ -1,4 +1,4 @@
-// VisionTest AI - API-side AI Service (minimal)
+// VisionTest.ai - API-side AI Service (minimal)
 // Provides LLM completion for the test parser's AI fallback.
 // This is a lightweight subset of the worker's AIService.
 
@@ -232,7 +232,7 @@ export class ApiAiService {
         Authorization: `Bearer ${this.config!.apiKey || ''}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://github.com/visiontest-ai/visiontest-ai',
-        'X-Title': 'VisionTest AI',
+        'X-Title': 'VisionTest.ai',
       },
       body: JSON.stringify({
         model: this.config!.model,

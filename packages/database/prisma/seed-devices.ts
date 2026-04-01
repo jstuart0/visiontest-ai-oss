@@ -1,4 +1,4 @@
-// VisionTest AI - Built-in Device Profiles Seed
+// VisionTest.ai - Built-in Device Profiles Seed
 // Seeds the database with common mobile device profiles
 
 import { PrismaClient } from '@prisma/client';

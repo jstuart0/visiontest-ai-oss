@@ -1,4 +1,4 @@
-// VisionTest AI - Team Routes
+// VisionTest.ai - Team Routes
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';

@@ -1,4 +1,4 @@
-// VisionTest AI - Health Check Routes
+// VisionTest.ai - Health Check Routes
 
 import { Router, Request, Response } from 'express';
 import { prisma } from '@visiontest/database';

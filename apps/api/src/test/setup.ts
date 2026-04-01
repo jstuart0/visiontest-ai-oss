@@ -1,4 +1,4 @@
-// VisionTest AI - Test Setup
+// VisionTest.ai - Test Setup
 
 import { beforeAll, afterAll, beforeEach, vi } from 'vitest';
 

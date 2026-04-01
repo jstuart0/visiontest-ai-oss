@@ -1,4 +1,4 @@
-// VisionTest AI - API Test Execution Engine
+// VisionTest.ai - API Test Execution Engine
 // REST executor, GraphQL executor, assertion engine, contract validation
 
 import { prisma } from '@visiontest/database';

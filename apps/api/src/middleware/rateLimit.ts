@@ -1,4 +1,4 @@
-// VisionTest AI - Rate Limiting Middleware
+// VisionTest.ai - Rate Limiting Middleware
 //
 // Route-class specific rate limiting:
 // - Aggressive on auth endpoints

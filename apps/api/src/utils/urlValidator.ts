@@ -1,4 +1,4 @@
-// VisionTest AI - SSRF Protection Utility
+// VisionTest.ai - SSRF Protection Utility
 // Validates external URLs to prevent Server-Side Request Forgery attacks.
 // Fail-closed: blocks private/reserved IPs, validates DNS resolution.
 

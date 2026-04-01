@@ -95,9 +95,9 @@ export default function StorybookSettingsPage() {
           <Select value={config?.mode || 'cli'} onValueChange={(v) => setConfig({ ...config, mode: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="cli">CLI (recommended) - Screenshots taken in CI, uploaded to VisionTest</SelectItem>
-              <SelectItem value="connected">Connected - VisionTest screenshots from a URL</SelectItem>
-              <SelectItem value="hybrid">Hybrid - Upload static build, VisionTest screenshots</SelectItem>
+              <SelectItem value="cli">CLI (recommended) - Screenshots taken in CI, uploaded to VisionTest.ai</SelectItem>
+              <SelectItem value="connected">Connected - VisionTest.ai screenshots from a URL</SelectItem>
+              <SelectItem value="hybrid">Hybrid - Upload static build, VisionTest.ai screenshots</SelectItem>
             </SelectContent>
           </Select>
 
@@ -190,7 +190,7 @@ export default function StorybookSettingsPage() {
                 <SelectContent>
                   <SelectItem value="manual">Manual - sync via CLI or "Sync Now" button</SelectItem>
                   <SelectItem value="polling">Polling - check for changes periodically</SelectItem>
-                  <SelectItem value="webhook">Webhook - POST to VisionTest when stories change</SelectItem>
+                  <SelectItem value="webhook">Webhook - POST to VisionTest.ai when stories change</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -1,4 +1,4 @@
-// VisionTest AI - Dashboard Routes
+// VisionTest.ai - Dashboard Routes
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';

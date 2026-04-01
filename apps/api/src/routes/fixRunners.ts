@@ -1,4 +1,4 @@
-// VisionTest AI - Fix Runner Routes
+// VisionTest.ai - Fix Runner Routes
 // Manages fix execution runners (managed, self-hosted, local)
 
 import { Router, Request, Response, NextFunction } from 'express';

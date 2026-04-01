@@ -1,5 +1,5 @@
 /**
- * VisionTest AI - Healing Service Tests
+ * VisionTest.ai - Healing Service Tests
  * Hospital-Grade Test Coverage
  * 
  * Tests for self-healing pattern recording, suggestion lookup,

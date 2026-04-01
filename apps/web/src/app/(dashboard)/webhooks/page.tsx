@@ -315,7 +315,7 @@ export default function WebhooksPage() {
             Webhook Signature Verification
           </h4>
           <p className="text-sm text-muted-foreground mb-3">
-            VisionTest signs all webhook payloads using HMAC SHA-256.
+            VisionTest.ai signs all webhook payloads using HMAC SHA-256.
           </p>
           <pre className="p-3 bg-muted rounded text-xs font-mono text-muted-foreground overflow-x-auto">
 {`const crypto = require('crypto');

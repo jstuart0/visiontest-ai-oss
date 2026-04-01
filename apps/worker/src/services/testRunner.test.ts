@@ -1,5 +1,5 @@
 /**
- * VisionTest AI - TestRunner Service Tests
+ * VisionTest.ai - TestRunner Service Tests
  * Hospital-Grade Test Coverage
  * 
  * Tests for browser automation, step execution, assertions,

@@ -1,4 +1,4 @@
-// VisionTest AI - Smart Select Service Tests
+// VisionTest.ai - Smart Select Service Tests
 // Hospital-Grade: Smart test selection testing
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

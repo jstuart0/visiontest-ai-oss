@@ -4,7 +4,7 @@ export default function PrivacyPage() {
       <div className="max-w-2xl text-muted-foreground">
         <h1 className="text-3xl font-bold text-foreground mb-6">Privacy Policy</h1>
         <p className="mb-4">
-          VisionTest AI takes your privacy seriously. We collect only the data necessary to provide our visual regression testing services.
+          VisionTest.ai takes your privacy seriously. We collect only the data necessary to provide our visual regression testing services.
         </p>
         <h2 className="text-xl font-semibold text-foreground mt-6 mb-3">Data We Collect</h2>
         <ul className="list-disc list-inside mb-4 space-y-2">

@@ -1,4 +1,4 @@
-// VisionTest AI - Flaky Test Quarantine Routes
+// VisionTest.ai - Flaky Test Quarantine Routes
 // P1 Feature: Auto-detect and isolate unreliable tests
 
 import { Router, Request, Response, NextFunction } from 'express';

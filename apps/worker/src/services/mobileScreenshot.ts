@@ -1,4 +1,4 @@
-// VisionTest AI - Mobile Screenshot Service
+// VisionTest.ai - Mobile Screenshot Service
 // Handles screenshot capture, scaling, and storage for mobile devices
 
 import { Client } from 'minio';

@@ -1,4 +1,4 @@
-// VisionTest AI - Shared Storybook Sync Service
+// VisionTest.ai - Shared Storybook Sync Service
 // Pure function: fetches index.json, applies filters, creates/updates/archives Test records.
 // Used by both the API route (manual sync) and the BullMQ worker (scheduled polling).
 

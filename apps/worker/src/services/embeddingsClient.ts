@@ -1,4 +1,4 @@
-// VisionTest AI - Embeddings Sidecar Client
+// VisionTest.ai - Embeddings Sidecar Client
 // HTTP client for the Python embeddings service (SSIM, LPIPS, DINOv2)
 
 import { logger } from '../utils/logger';

@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in VisionTest AI
+description: Report a bug in VisionTest.ai
 labels: ["bug"]
 body:
   - type: textarea

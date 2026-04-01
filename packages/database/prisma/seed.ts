@@ -1,4 +1,4 @@
-// VisionTest AI - Database Seed Script
+// VisionTest.ai - Database Seed Script
 // Creates initial data for development and testing
 
 import { PrismaClient, Role, TestStatus, BaselineType } from '@prisma/client';

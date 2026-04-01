@@ -1,4 +1,4 @@
-// VisionTest AI - Authentication Integration Tests
+// VisionTest.ai - Authentication Integration Tests
 // Hospital-Grade: Full authentication flow testing
 
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';

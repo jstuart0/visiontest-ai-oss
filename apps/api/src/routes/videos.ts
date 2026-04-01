@@ -1,4 +1,4 @@
-// VisionTest AI - Video Proxy Routes
+// VisionTest.ai - Video Proxy Routes
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { Client as MinioClient } from 'minio';

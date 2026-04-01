@@ -1,5 +1,5 @@
 /**
- * VisionTest AI Dogfood - Report Generator
+ * VisionTest.ai Dogfood - Report Generator
  *
  * Writes a progressive markdown checklist to docs/dogfood-results.md.
  * Updated after each test completes so you can watch progress in real time.
@@ -60,7 +60,7 @@ export class Reporter {
     const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(0);
 
     const lines: string[] = [
-      '# VisionTest AI - Dogfood Test Results',
+      '# VisionTest.ai - Dogfood Test Results',
       '',
       `**Run date:** ${new Date().toISOString()}`,
       `**Elapsed:** ${elapsed}s`,

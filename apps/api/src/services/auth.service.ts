@@ -1,4 +1,4 @@
-// VisionTest AI - Authentication Service
+// VisionTest.ai - Authentication Service
 // Hospital-Grade Security
 
 import bcrypt from 'bcrypt';
@@ -451,7 +451,7 @@ class AuthService {
       },
       body: JSON.stringify({
         to: email,
-        subject: 'Reset your VisionTest AI password',
+        subject: 'Reset your VisionTest.ai password',
         template: 'password-reset',
         data: {
           userName: userName || 'User',

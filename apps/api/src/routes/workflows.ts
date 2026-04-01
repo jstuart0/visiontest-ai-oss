@@ -1,4 +1,4 @@
-// VisionTest AI - Workflow Routes
+// VisionTest.ai - Workflow Routes
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';

@@ -348,7 +348,7 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>CI/CD Integrations</CardTitle>
-              <CardDescription>Connect VisionTest to your development workflow</CardDescription>
+              <CardDescription>Connect VisionTest.ai to your development workflow</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-6 rounded-lg border border-border bg-muted/30 text-center">

@@ -1,4 +1,4 @@
-# VisionTest AI - Dogfood Test Results
+# VisionTest.ai - Dogfood Test Results
 
 **Run date:** 2026-04-01T01:52:17.764Z
 **Elapsed:** 228s

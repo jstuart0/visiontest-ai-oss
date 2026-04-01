@@ -1,5 +1,5 @@
 /**
- * VisionTest AI - Worker Integration Tests
+ * VisionTest.ai - Worker Integration Tests
  * Hospital-Grade Test Coverage
  * 
  * Tests for the main worker process, job processing,

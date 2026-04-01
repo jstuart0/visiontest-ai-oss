@@ -42,7 +42,7 @@ const QUICK_REFERENCE = [
   { action: 'assert', natural: 'Verify visible', yaml: '- assert: ".selector"' },
 ];
 
-const YAML_EXAMPLE = `# VisionTest YAML Script
+const YAML_EXAMPLE = `# VisionTest.ai YAML Script
 # Each line is a step
 
 - navigate: https://example.com

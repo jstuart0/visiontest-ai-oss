@@ -8,7 +8,7 @@ import { Toaster } from '@/components/ui/sonner';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'VisionTest AI - Visual Regression Testing',
+  title: 'VisionTest.ai - Visual Regression Testing',
   description: 'Hospital-grade visual regression testing platform with AI-powered insights',
 };
 

@@ -1,4 +1,4 @@
-# VisionTest AI - Local Development Stack
+# VisionTest.ai - Local Development Stack
 # Usage: docker compose up -d
 # This starts all infrastructure dependencies.
 # Run the apps locally with: npm run dev

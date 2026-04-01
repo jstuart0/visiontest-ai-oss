@@ -1,4 +1,4 @@
-// VisionTest AI - Visual Regression Integration Tests
+// VisionTest.ai - Visual Regression Integration Tests
 // Hospital-Grade: Core VRT functionality testing
 
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';

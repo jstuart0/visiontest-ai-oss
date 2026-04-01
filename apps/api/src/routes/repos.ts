@@ -1,4 +1,4 @@
-// VisionTest AI - Repository Connection Routes
+// VisionTest.ai - Repository Connection Routes
 // Manages linked repositories for autonomous bug fixing
 
 import { Router, Request, Response, NextFunction } from 'express';

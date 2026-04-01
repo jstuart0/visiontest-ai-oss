@@ -1,4 +1,4 @@
-// VisionTest AI - Projects Service
+// VisionTest.ai - Projects Service
 // Hospital-Grade: Full CRUD with access control
 
 import { prisma, Role, Prisma } from '@visiontest/database';

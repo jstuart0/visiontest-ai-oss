@@ -86,7 +86,7 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
               <FlaskConical className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-semibold text-foreground">VisionTest</span>
+            <span className="text-lg font-semibold text-foreground">VisionTest.ai</span>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login">
@@ -114,7 +114,7 @@ export default function LandingPage() {
             </span>
           </h1>
           <p className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground">
-            VisionTest automatically detects unintended UI changes through visual regression
+            VisionTest.ai automatically detects unintended UI changes through visual regression
             testing. Compare screenshots, get AI insights, and ship with confidence.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
@@ -143,7 +143,7 @@ export default function LandingPage() {
               <div className="h-3 w-3 rounded-full bg-muted" />
               <div className="h-3 w-3 rounded-full bg-muted" />
               <div className="h-3 w-3 rounded-full bg-muted" />
-              <span className="ml-4 text-sm text-muted-foreground">VisionTest Dashboard</span>
+              <span className="ml-4 text-sm text-muted-foreground">VisionTest.ai Dashboard</span>
             </div>
             <div className="grid gap-4 p-6 md:grid-cols-3">
               <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4">
@@ -207,7 +207,7 @@ export default function LandingPage() {
         <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 p-12 text-center">
           <h2 className="mb-4 text-2xl font-bold text-white">Ready to Start Testing?</h2>
           <p className="mb-8 text-white/70">
-            Join teams who ship with confidence using VisionTest
+            Join teams who ship with confidence using VisionTest.ai
           </p>
           <Link href="/register">
             <Button size="lg" variant="secondary" className="h-11 px-6">
@@ -225,10 +225,10 @@ export default function LandingPage() {
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                 <FlaskConical className="h-3.5 w-3.5 text-white" />
               </div>
-              <span className="font-medium text-muted-foreground">VisionTest</span>
+              <span className="font-medium text-muted-foreground">VisionTest.ai</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} VisionTest. Visual regression testing made simple.
+              &copy; {new Date().getFullYear()} VisionTest.ai. Visual regression testing made simple.
             </p>
           </div>
         </div>

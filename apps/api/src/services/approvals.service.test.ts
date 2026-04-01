@@ -1,4 +1,4 @@
-// VisionTest AI - Approvals Service Tests
+// VisionTest.ai - Approvals Service Tests
 // Hospital-Grade: Approval delegation testing
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

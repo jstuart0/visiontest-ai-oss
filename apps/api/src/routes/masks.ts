@@ -1,4 +1,4 @@
-// VisionTest AI - Ignore Masks Routes
+// VisionTest.ai - Ignore Masks Routes
 // P0 Feature: Reduce false positives by masking dynamic content
 
 import { Router, Request, Response, NextFunction } from 'express';

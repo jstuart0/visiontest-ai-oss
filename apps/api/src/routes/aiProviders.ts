@@ -1,4 +1,4 @@
-// VisionTest AI - AI Provider Configuration Routes
+// VisionTest.ai - AI Provider Configuration Routes
 // Manage LLM providers (Anthropic, OpenAI, OpenRouter, Local) with dynamic model listing
 
 import { Router, Request, Response, NextFunction } from 'express';
@@ -487,7 +487,7 @@ router.post('/:id/test', authenticate, mutationLimiter, async (req: Request, res
         };
         if (config.provider === 'OPENROUTER') {
           headers['HTTP-Referer'] = 'https://github.com/visiontest-ai/visiontest-ai';
-          headers['X-Title'] = 'VisionTest AI';
+          headers['X-Title'] = 'VisionTest.ai';
         }
         const resp = await safeFetch(`${baseUrl}/chat/completions`, {
           method: 'POST',
