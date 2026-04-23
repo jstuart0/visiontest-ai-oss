@@ -27,6 +27,16 @@ model User {
   updatedAt     DateTime  @updatedAt
   lastLoginAt   DateTime?
 
+  // Anonymous sandbox (Phase 4).
+  //
+  // Anonymous rows get a synthetic email (anon_<uuid>@anon.visiontest.local)
+  // and a random passwordHash so the unique+required constraints hold
+  // without special-casing. Sign-up migration swaps email/passwordHash
+  // in place and flips isAnonymous=false + clears expiresAt atomically.
+  isAnonymous       Boolean  @default(false)
+  expiresAt         DateTime? // nightly cron reaps expired rows (cascades to org/projects/tests via FK)
+  anonSessionCookie String?  @unique // UUID stored in the HttpOnly cookie that identifies this anonymous session
+
   organizations   OrganizationUser[]
   sessions        Session[]
   apiKeys         ApiKey[]
@@ -34,6 +44,7 @@ model User {
   teamMemberships TeamMember[]
 
   @@index([email])
+  @@index([isAnonymous, expiresAt])
 }
 
 model Session {
@@ -87,6 +98,7 @@ model Organization {
   projects  Project[]
   auditLogs AuditLog[]
   teams     Team[]
+  credentials Credential[]
 
   @@index([slug])
 }
@@ -197,6 +209,10 @@ model Project {
   aiDiffConfig          AiDiffConfig?
   storybookConfig       StorybookConfig?
 
+  // Phase 1c
+  features              Feature[]
+  credentials           Credential[]
+
   @@unique([orgId, slug])
   @@index([orgId])
 }
@@ -223,7 +239,21 @@ model Test {
   storybookStoryId      String?   // "components-button--primary"
   storybookImport       String?   // "./Button.stories.tsx"
   storybookContentHash  String?   // SHA-256 of rendered screenshot for drift detection
-  source                String?   @default("manual") // "manual" | "storybook" | "api-import"
+  source                String?   @default("manual") // "manual" | "storybook" | "api-import" | "story"
+
+  // Story-based authoring (Phase 1a)
+  goal            String?    // free-form success criterion for the whole test
+  goalChecks      Json?      // compiled Layer-1 checks: [{kind, selector?, value?, unresolved?}]
+  storySource     String?    // original natural-language story for audit/re-parse
+  storyFormat     String?    // 'natural' | 'yaml' | 'json'
+
+  // Phase 1c — context fields
+  startUrl           String?  // per-test override of project base URL
+  credentialRef      String?  // key into Credential table — never inlined value
+  environment        String?  // 'local' | 'staging' | 'prod' | free-form
+  preconditionTestId String?  // chainable tests — this runs iff precondition passed
+  featureId          String?  // groups related scenarios
+  fixtureJson        Json?    // optional data fixture for {{row.x}} substitution
 
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
@@ -234,6 +264,7 @@ model Test {
   executions    Execution[]
   flakyData     FlakyTest?
   ignoreMasks   IgnoreMask[]
+  feature       Feature?       @relation(fields: [featureId], references: [id], onDelete: SetNull)
 
   @@index([projectId])
   @@index([suiteId])
@@ -242,6 +273,62 @@ model Test {
   @@index([platform])
   @@index([storybookStoryId])
   @@index([source])
+  @@index([featureId])
+}
+
+// -----------------------------------------------------------------------
+// FEATURES — Phase 1c scenario grouping with shared setup
+// -----------------------------------------------------------------------
+model Feature {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  sharedSetup String?  // prose setup prepended to every scenario's story
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tests   Test[]
+
+  @@index([projectId])
+}
+
+// -----------------------------------------------------------------------
+// CREDENTIALS — Phase 1c, strict env isolation with author-opt-in fallback
+// -----------------------------------------------------------------------
+//
+// Stories reference credentials by (scope, key, environment?) via
+// {{creds.<key>}} tokens. A rename of `key` breaks references; rotating
+// the encrypted blob does not.
+//
+// Resolution precedence at runtime when Test.environment = "prod":
+//   1. (projectId, key, "prod")
+//   2. (orgId,     key, "prod")
+//   Then hard-fail unless a null-environment row has
+//   `allowEnvironmentFallback=true`, in which case:
+//   3. (projectId, key, null) + allowEnvironmentFallback=true
+//   4. (orgId,     key, null) + allowEnvironmentFallback=true
+//
+// The opt-in is set by the credential's author on the null-env row, NOT
+// on the Test and NOT via a global flag.
+model Credential {
+  id                        String   @id @default(cuid())
+  orgId                     String
+  projectId                 String?  // null = org-wide
+  key                       String   // e.g. "admin" — referenced as {{creds.admin}}
+  environment               String?  // null = default-environment row
+  allowEnvironmentFallback  Boolean  @default(false)
+  encryptedBlob             String   // AES-256-GCM of {email, password, ...}
+  version                   Int      @default(1)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, projectId, key, environment])
+  @@index([orgId, key, environment])
 }
 
 enum TestStatus {
@@ -293,6 +380,14 @@ model Execution {
   platform        Platform        @default(WEB)
   deviceProfileId String?
   appVersion      String?         // Mobile app version under test
+
+  // Story-based goal evaluation (Phase 1a)
+  mode            ExecutionMode   @default(STANDARD) // STANDARD | EXPLORE
+  goalAchieved    Boolean?        // null iff Test.goal is empty; otherwise enforced
+  goalReasoning   String?         // human-readable explanation of which checks passed/failed
+  goalChecks      Json?           // Layer-1 check results at runtime (audit trail)
+  exploreSummary  Json?           // EXPLORE mode only: aggregate counts {ok,warn,fail,skipped}
+
   createdAt       DateTime        @default(now())
 
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -303,6 +398,7 @@ model Execution {
   videos        Video[]
   checkpoints   Checkpoint[]
   comparisons   Comparison[]
+  exploreNodes  ExploreNode[]
 
   @@index([projectId, status])
   @@index([testId, createdAt])
@@ -320,6 +416,65 @@ enum ExecutionStatus {
   CANCELLED
   TIMEOUT
   SKIPPED
+}
+
+enum ExecutionMode {
+  STANDARD
+  EXPLORE
+}
+
+// ExploreNode — canonical representation of an EXPLORE execution's crawl graph.
+//
+// Design rule: exactly one source of truth for exploratory results.
+//   - ExploreNode rows: canonical, queryable, ordered, individually updatable during the scan.
+//   - Execution.exploreSummary: aggregate counts only, derived at scan-end. Never source of truth.
+//   - Execution.result.steps: NOT USED for EXPLORE executions — set to null.
+model ExploreNode {
+  id                  String        @id @default(cuid())
+  executionId         String
+  url                 String
+  parentId            String?
+  orderIndex          Int
+  interactionKind     String        // 'navigate' | 'click' | 'type' | 'root' | 'enumerate'
+  interactionLabel    String        // "button: 'Save'" or "link: '/orders'"
+  interactionSelector String?
+  status              String        // 'ok' | 'warn' | 'fail' | 'skipped'
+  skipReason          String?
+  errorText           String?
+  httpStatus          Int?
+  screenshotPre       String?
+  screenshotPost      String?
+  consoleErrors       Json?
+  durationMs          Int?
+  createdAt           DateTime      @default(now())
+
+  execution Execution     @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  children  ExploreNode[] @relation("ExploreNodeTree")
+  parent    ExploreNode?  @relation("ExploreNodeTree", fields: [parentId], references: [id])
+
+  @@index([executionId])
+  @@index([executionId, parentId, orderIndex])
+}
+
+// -----------------------------------------------------------------------
+// STORY TEMPLATES (Phase 1b)
+// -----------------------------------------------------------------------
+// One-click scaffolds for common user journeys. Built-in templates are
+// seeded at startup; community-contributed templates are deferred.
+model Template {
+  id            String   @id @default(cuid())
+  slug          String   @unique  // "login-email-password", "code-viewer-go-to-line"
+  title         String
+  description   String
+  storyText     String   // starter story with {{baseUrl}}/{{email}} tokens
+  goalText      String?
+  source        String   @default("builtin")  // "builtin" | "community"
+  authorId      String?
+  usageCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([source])
 }
 
 enum TriggerType {
