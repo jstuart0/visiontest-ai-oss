@@ -181,11 +181,7 @@ export async function parseNaturalLanguage(
   const warnings: string[] = [];
   const steps: TestStep[] = [];
 
-  // Split by newlines, periods, or "then"/"and" keywords
-  const sentences = text
-    .split(/[.\n]|(?:\s+(?:then|and then|next|after that)\s+)/i)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
+  const sentences = splitIntoSentences(text);
 
   for (const sentence of sentences) {
     try {
@@ -216,6 +212,62 @@ export async function parseNaturalLanguage(
   }
 
   return { steps, warnings: warnings.length > 0 ? warnings : undefined };
+}
+
+/**
+ * Split a story paragraph into step-sized sentences, protecting URLs and
+ * quoted fragments so their internal periods/commas don't trigger a
+ * clause boundary. See goalCompiler.service.ts for the mirror-image
+ * implementation used for goals.
+ */
+function splitIntoSentences(text: string): string[] {
+  const URL_DOT = '\x00URLDOT\x00';
+  // Match URL body but strip trailing sentence punctuation so ". Click…"
+  // still splits at the period after the URL.
+  const protectedText = text.replace(
+    /\b(?:https?:\/\/|\/\/)[^\s]+?(?=[.,;!?]?(?:\s|$))/gi,
+    (m) => m.replace(/\./g, URL_DOT),
+  );
+
+  const raw: string[] = [];
+  let buf = '';
+  let inQuote: '"' | "'" | null = null;
+
+  const push = () => {
+    const t = buf.trim();
+    if (t) raw.push(t);
+    buf = '';
+  };
+
+  for (let i = 0; i < protectedText.length; i++) {
+    const c = protectedText[i];
+    if (inQuote) {
+      buf += c;
+      if (c === inQuote) inQuote = null;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      inQuote = c;
+      buf += c;
+      continue;
+    }
+    if (c === '.' || c === '\n' || c === ';') {
+      push();
+      continue;
+    }
+    // Split on " then ", " and then ", " next ", " after that "
+    const rest = protectedText.substring(i);
+    const m = rest.match(/^\s+(?:then|and then|next|after that)\s+/i);
+    if (m && buf.trim()) {
+      push();
+      i += m[0].length - 1; // -1 because loop increments
+      continue;
+    }
+    buf += c;
+  }
+  push();
+
+  return raw.map((s) => s.replace(new RegExp(URL_DOT, 'g'), '.'));
 }
 
 function parseSentence(sentence: string): TestStep | null {
