@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VisionTest.ai — Swiss Proof</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F1EA;
+    --paper-2:#ECE8DF;
+    --ink:#000000;
+    --ink-70:rgba(0,0,0,.70);
+    --ink-50:rgba(0,0,0,.50);
+    --ink-30:rgba(0,0,0,.28);
+    --ink-10:rgba(0,0,0,.10);
+    --accent:#E30613;
+    --rule:rgba(0,0,0,.85);
+    --grid-gutter: 24px;
+    --col-count: 12;
+    --display: "Space Grotesk", "Neue Haas Grotesk", "Helvetica Neue", Helvetica, sans-serif;
+    --body: "IBM Plex Sans", "Space Grotesk", Helvetica, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--paper);color:var(--ink);}
+  body{
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.45;
+    font-feature-settings: "ss01","tnum","kern";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+    overflow-x: hidden;
+  }
+
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--ink);color:var(--paper);}
+
+  /* -------- Grid shell -------- */
+  .shell{
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+  }
+  @media (max-width: 720px){
+    .shell{ padding: 0 18px; }
+  }
+
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(var(--col-count), 1fr);
+    column-gap: var(--grid-gutter);
+  }
+
+  /* Spans (mobile first -> desktop) */
+  .c-1{grid-column: span 12;}
+  .c-2{grid-column: span 12;}
+  .c-3{grid-column: span 12;}
+  .c-4{grid-column: span 12;}
+  .c-5{grid-column: span 12;}
+  .c-6{grid-column: span 12;}
+  .c-7{grid-column: span 12;}
+  .c-8{grid-column: span 12;}
+  .c-9{grid-column: span 12;}
+  .c-10{grid-column: span 12;}
+  .c-11{grid-column: span 12;}
+  .c-12{grid-column: span 12;}
+  @media (min-width: 820px){
+    .c-1{grid-column: span 1;}
+    .c-2{grid-column: span 2;}
+    .c-3{grid-column: span 3;}
+    .c-4{grid-column: span 4;}
+    .c-5{grid-column: span 5;}
+    .c-6{grid-column: span 6;}
+    .c-7{grid-column: span 7;}
+    .c-8{grid-column: span 8;}
+    .c-9{grid-column: span 9;}
+    .c-10{grid-column: span 10;}
+    .c-11{grid-column: span 11;}
+    .c-12{grid-column: span 12;}
+  }
+
+  /* -------- Rules -------- */
+  .rule{
+    border: 0;
+    border-top: 1px solid var(--rule);
+    width: 100%;
+    margin: 0;
+  }
+  .rule-2{ border-top-width: 2px; }
+  .rule-fullbleed{
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    width: 100vw;
+  }
+
+  /* -------- Eyebrows / labels -------- */
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 400;
+  }
+  .eyebrow .num{ color: var(--ink-50); margin-right: 6px; }
+  .eyebrow .dot{ display:inline-block; width:4px; height:4px; background:var(--accent); vertical-align: 2px; margin: 0 8px 0 6px; }
+
+  .smallcaps{
+    font-family: var(--body);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .mono{ font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .tnum{ font-variant-numeric: tabular-nums; }
+
+  /* -------- Masthead -------- */
+  .masthead{
+    padding: 18px 0 14px;
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 50;
+  }
+  .masthead .grid{ align-items: baseline; }
+  .mast-title{
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+  .mast-title .mark{
+    display:inline-block; width:10px; height:10px; background:var(--accent);
+    margin-right: 10px; transform: translateY(1px);
+  }
+  .mast-meta{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-70);
+    letter-spacing: 0.04em;
+  }
+  .mast-nav{
+    display:flex; gap: 28px; justify-content: flex-end;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .mast-nav a{ position: relative; }
+  .mast-nav a:hover{ color: var(--accent); }
+  @media (max-width: 820px){
+    .mast-nav{ justify-content: flex-start; margin-top: 10px; gap: 18px; flex-wrap: wrap;}
+  }
+
+  /* -------- Hero -------- */
+  .hero{
+    padding: 64px 0 48px;
+    position: relative;
+  }
+
+  .hero-eyebrow-row{
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--grid-gutter);
+    align-items: end;
+    padding-bottom: 22px;
+  }
+
+  .display{
+    font-family: var(--display);
+    font-weight: 500;
+    line-height: 0.88;
+    letter-spacing: -0.035em;
+    font-size: clamp(68px, 14vw, 232px);
+  }
+  .display .accent{ color: var(--accent); }
+  .display .thin{ font-weight: 300; font-style: italic;}
+  .display .outline{
+    -webkit-text-stroke: 2px var(--ink);
+    color: transparent;
+  }
+
+  .hero-headline{
+    padding-top: 12px;
+    padding-bottom: 18px;
+  }
+
+  .hero-byline{
+    grid-column: span 12;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--grid-gutter);
+    padding-top: 26px;
+  }
+  .hero-body{
+    grid-column: 1 / span 4;
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.45;
+    max-width: 44ch;
+  }
+  .hero-body .drop{
+    font-family: var(--display);
+    font-weight: 500;
+    float:left;
+    font-size: 56px;
+    line-height: 0.85;
+    padding: 4px 10px 0 0;
+    color: var(--accent);
+  }
+  .hero-meta{
+    grid-column: 6 / span 3;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+  }
+  .hero-meta dt{ color: var(--ink-50); text-transform: uppercase; font-size: 10px; letter-spacing: 0.16em; padding-bottom: 4px;}
+  .hero-meta dd{ padding-bottom: 16px; }
+  .hero-cta{
+    grid-column: 10 / span 3;
+    align-self: end;
+  }
+  .cta{
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--display); font-weight: 500;
+    font-size: 18px;
+    padding: 14px 22px 14px 22px;
+    background: var(--ink); color: var(--paper);
+    border: 1px solid var(--ink);
+    transition: background .2s, color .2s;
+  }
+  .cta:hover{ background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  .cta .arrow{ width: 28px; height: 1px; background: var(--paper); position: relative; display:inline-block;}
+  .cta .arrow::after{
+    content:""; position:absolute; right: 0; top: -4px;
+    width: 9px; height: 9px; border-top: 1px solid var(--paper); border-right: 1px solid var(--paper);
+    transform: rotate(45deg) translate(-1px, 1px);
+  }
+  .cta.ghost{ background: transparent; color: var(--ink); }
+  .cta.ghost:hover{ background: var(--ink); color: var(--paper); }
+  .cta.ghost .arrow{ background: var(--ink); }
+  .cta.ghost .arrow::after{ border-color: var(--ink); }
+  .cta.ghost:hover .arrow{ background: var(--paper); }
+  .cta.ghost:hover .arrow::after{ border-color: var(--paper); }
+
+  @media (max-width: 820px){
+    .hero-body, .hero-meta, .hero-cta{ grid-column: span 12; padding-bottom: 20px; }
+  }
+
+  /* Hero figure — a small crosshair / target mark drawn in CSS */
+  .hero-mark{
+    grid-column: 9 / span 4;
+    aspect-ratio: 1 / 1;
+    position: relative;
+    border: 1px solid var(--ink);
+    overflow: hidden;
+    background: var(--paper);
+  }
+  .hero-mark::before, .hero-mark::after{
+    content:""; position: absolute; background: var(--ink);
+  }
+  .hero-mark::before{ left: 0; right: 0; top: 50%; height: 1px; }
+  .hero-mark::after{ top: 0; bottom: 0; left: 50%; width: 1px; }
+  .hero-mark .ring{
+    position: absolute; inset: 18%;
+    border: 1px solid var(--ink); border-radius: 50%;
+  }
+  .hero-mark .ring.inner{ inset: 38%; border-color: var(--accent); }
+  .hero-mark .tick{ position:absolute; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--ink-70);}
+  .hero-mark .tick.tl{ top:8px; left:10px; }
+  .hero-mark .tick.tr{ top:8px; right:10px; }
+  .hero-mark .tick.bl{ bottom:8px; left:10px; }
+  .hero-mark .tick.br{ bottom:8px; right:10px; }
+  .hero-mark .dotCenter{
+    position:absolute; left:50%; top:50%; width:8px; height:8px; background: var(--accent);
+    transform: translate(-50%,-50%);
+  }
+
+  @media (max-width: 820px){
+    .hero-mark{ grid-column: span 12; margin-top: 20px;}
+  }
+
+  /* Reveal anim — Swiss is still, a single fade */
+  .reveal{ opacity: 0; transform: translateY(8px); animation: rise .9s cubic-bezier(.2,.6,.2,1) forwards; }
+  .reveal.d1{ animation-delay: .05s; }
+  .reveal.d2{ animation-delay: .15s; }
+  .reveal.d3{ animation-delay: .25s; }
+  .reveal.d4{ animation-delay: .35s; }
+  .reveal.d5{ animation-delay: .45s; }
+  .reveal.d6{ animation-delay: .55s; }
+  @keyframes rise{
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  /* -------- Ticker bar -------- */
+  .ticker{
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    overflow: hidden;
+    background: var(--paper);
+    padding: 10px 0;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .ticker .row{
+    display: flex; gap: 48px;
+    white-space: nowrap;
+  }
+  .ticker .row span .dot{
+    display:inline-block; width:5px; height:5px; background: var(--accent);
+    margin-right:8px; vertical-align: 2px;
+  }
+  .ticker .row span.green .dot{ background: var(--ink); }
+
+  /* -------- Section header -------- */
+  .section-head{
+    padding: 56px 0 24px;
+    position: relative;
+  }
+  .section-head .label{
+    grid-column: span 3;
+  }
+  .section-head .title{
+    grid-column: span 6;
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(34px, 4.6vw, 62px);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+  }
+  .section-head .lede{
+    grid-column: 10 / span 3;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-70);
+    padding-top: 6px;
+    align-self: end;
+  }
+  @media (max-width: 820px){
+    .section-head .label, .section-head .title, .section-head .lede{ grid-column: span 12; padding-bottom: 16px;}
+  }
+
+  /* -------- Dashboard newspaper -------- */
+  .dash{ padding-bottom: 80px; }
+  .dash-headstack{
+    grid-column: span 6;
+    display: grid;
+    gap: 2px;
+    align-content: start;
+  }
+  .dash-big{
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(120px, 20vw, 340px);
+    line-height: 0.82;
+    letter-spacing: -0.045em;
+  }
+  .dash-big .pct{ font-size: 0.5em; vertical-align: top; padding-left: 8px;}
+  .dash-subbig{
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(28px, 3.3vw, 44px);
+    line-height: 1;
+    color: var(--ink);
+    padding-top: 18px;
+    border-top: 2px solid var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .dash-subbig .count{ color: var(--accent); font-weight: 600; }
+  .dash-micro{
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--ink-70);
+    padding-top: 16px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+
+  .dash-runs{
+    grid-column: span 6;
+    border-top: 2px solid var(--ink);
+  }
+  @media (max-width: 820px){
+    .dash-headstack, .dash-runs{ grid-column: span 12; }
+    .dash-runs{ margin-top: 32px; }
+  }
+
+  .run{
+    display: grid;
+    grid-template-columns: 56px 1fr 88px 150px;
+    column-gap: 14px;
+    align-items: baseline;
+    padding: 18px 0 16px;
+    border-bottom: 1px solid var(--ink);
+    position: relative;
+  }
+  .run:hover{ background: var(--paper-2); }
+  .run .idx{
+    font-family: var(--mono); font-size: 11px; color: var(--ink-50);
+    letter-spacing: 0.05em;
+  }
+  .run .main{}
+  .run .name{
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  .run .sub{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-70);
+    letter-spacing: 0.04em;
+    padding-top: 4px;
+  }
+  .run .sub .sep{ color: var(--ink-30); padding: 0 8px; }
+  .run .time{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-70);
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+  .run .status{
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    text-align: right;
+    display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  }
+  .run .status .sq{
+    display:inline-block; width: 8px; height: 8px; background: var(--ink);
+  }
+  .run.pass .status{ color: var(--ink); }
+  .run.fail .status{ color: var(--accent); }
+  .run.fail .status .sq{ background: var(--accent); }
+  .run.flaky .status{ color: var(--ink); }
+  .run.flaky .status .sq{
+    background: transparent; border: 1px solid var(--ink);
+    position: relative;
+  }
+  .run.flaky .status .sq::before{
+    content:""; position:absolute; inset:0; background: repeating-linear-gradient(45deg, var(--ink) 0 1px, transparent 1px 3px);
+  }
+  .run.running .status .sq{
+    background: var(--accent);
+    animation: blink 1.2s steps(2) infinite;
+  }
+  @keyframes blink{ 50%{ opacity: 0.2; } }
+  .run.quarantine .status{ color: var(--ink); }
+  .run.quarantine .status .sq{ background: var(--ink); }
+
+  @media (max-width: 820px){
+    .run{ grid-template-columns: 40px 1fr; row-gap: 6px; }
+    .run .time, .run .status{ grid-column: 2 / -1; text-align: left; justify-content: flex-start; }
+  }
+
+  /* -------- Diff gallery plate -------- */
+  .gallery{
+    padding: 24px 0 80px;
+    background: var(--paper);
+  }
+
+  .plate{
+    grid-column: span 12;
+    border-top: 2px solid var(--ink);
+    padding-top: 30px;
+  }
+
+  .plate-head{
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--grid-gutter);
+    padding-bottom: 26px;
+    align-items: end;
+  }
+  .plate-head .no{
+    grid-column: span 2;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-70);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .plate-head .title{
+    grid-column: span 7;
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(26px, 3.4vw, 44px);
+    line-height: 1;
+    letter-spacing: -0.015em;
+  }
+  .plate-head .title .accent{ color: var(--accent);}
+  .plate-head .meta{
+    grid-column: 10 / span 3;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-70);
+    text-align: right;
+    letter-spacing: 0.04em;
+    line-height: 1.7;
+  }
+  @media (max-width: 820px){
+    .plate-head .no, .plate-head .title, .plate-head .meta{
+      grid-column: span 12; text-align: left; padding-bottom: 8px;
+    }
+  }
+
+  .plate-frames{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--grid-gutter);
+    row-gap: 22px;
+  }
+  @media (max-width: 720px){
+    .plate-frames{ grid-template-columns: 1fr; }
+  }
+
+  .frame{
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    position: relative;
+    aspect-ratio: 16 / 11;
+    overflow: hidden;
+  }
+  .frame .tab{
+    position: absolute; top:0; left: 0; right: 0;
+    height: 22px; border-bottom: 1px solid var(--ink);
+    display: flex; align-items: center; padding: 0 10px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--paper);
+    justify-content: space-between;
+  }
+  .frame .tab .dotrow{ display:flex; gap: 5px; align-items: center;}
+  .frame .tab .dotrow i{ display:inline-block; width:7px; height:7px; border:1px solid var(--ink); border-radius:50%;}
+
+  /* Drawn "screenshot" content — a minimal wireframed page, pure CSS/SVG */
+  .frame .page{
+    position: absolute; left: 0; right: 0; top: 22px; bottom: 0;
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 10px;
+    color: var(--ink);
+  }
+  .frame .logo{
+    grid-column: 1 / span 2; display:flex; align-items:center; gap:8px;
+    font-family: var(--display); font-weight: 600; font-size: 14px;
+  }
+  .frame .logo i{ width:12px; height:12px; background: var(--ink);}
+  .frame .nav{
+    grid-column: 3 / span 2; display:flex; gap:14px; justify-content: flex-end;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-70);
+  }
+  .frame .hl{
+    grid-column: 1 / span 4;
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(18px, 2.5vw, 32px);
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    padding: 14px 0 6px;
+    border-top: 1px solid var(--ink);
+  }
+  .frame .col-body{
+    grid-column: 1 / span 2; display:grid; gap:5px;
+  }
+  .frame .col-body span{
+    height: 8px; background: var(--ink); opacity: .78;
+  }
+  .frame .col-body span:nth-child(1){ width: 92%;}
+  .frame .col-body span:nth-child(2){ width: 76%;}
+  .frame .col-body span:nth-child(3){ width: 84%;}
+  .frame .col-body span:nth-child(4){ width: 48%;}
+  .frame .aside{
+    grid-column: 3 / span 2; display:grid; grid-template-rows: 1fr auto;
+    border: 1px solid var(--ink);
+  }
+  .frame .aside .pic{
+    background:
+      linear-gradient(135deg, var(--ink) 25%, transparent 25%) 0 0 / 8px 8px,
+      linear-gradient(135deg, var(--ink) 25%, transparent 25%) 4px 4px / 8px 8px;
+    opacity: .28;
+  }
+  .frame .aside .cap{
+    padding: 6px 8px; border-top: 1px solid var(--ink);
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    display:flex; justify-content: space-between;
+  }
+  .frame .ftr{
+    grid-column: 1 / span 4;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-70);
+    border-top: 1px solid var(--ink);
+    padding-top: 8px;
+    display: flex; justify-content: space-between;
+  }
+
+  /* B-frame — the "after" has diff markers on top */
+  .frame.after .hl{ color: var(--ink); }
+  .frame.after .hl::after{
+    content:""; display:inline-block; width: 62%; height: 2px; background: var(--accent);
+    vertical-align: middle; margin-left: 10px;
+  }
+  .frame.after .col-body span:nth-child(3){ background: var(--accent); }
+  .frame.after .aside{ border-color: var(--accent); }
+  .frame.after .aside .cap{ border-top-color: var(--accent); color: var(--accent);}
+  .frame.after .marker{
+    position: absolute;
+    border: 1px solid var(--accent);
+    pointer-events: none;
+  }
+  .frame.after .marker.m1{ left: 48%; right: 6%; top: 34%; height: 18%;}
+  .frame.after .marker.m2{ left: 8%; right: 58%; top: 62%; height: 6%;}
+  .frame.after .marker::after{
+    content: attr(data-label);
+    position: absolute; top: -16px; left: -1px;
+    background: var(--accent); color: var(--paper);
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 2px 6px;
+  }
+
+  .frame .badge-tl{
+    position: absolute; top: 32px; left: 12px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink);
+    background: var(--paper); padding: 2px 6px; border: 1px solid var(--ink);
+  }
+  .frame.after .badge-tl{ color: var(--paper); background: var(--accent); border-color: var(--accent);}
+
+  .caption{
+    grid-column: span 1;
+    padding-top: 4px;
+    padding-bottom: 2px;
+    border-top: 1px solid var(--ink);
+  }
+  .caption .kick{
+    font-family: var(--mono);
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-70);
+    padding: 8px 0 4px;
+    display:flex; justify-content: space-between;
+  }
+  .caption .body{
+    font-family: var(--body);
+    font-size: 12.5px;
+    line-height: 1.45;
+    max-width: 48ch;
+  }
+  .caption .body em{ font-style: normal; color: var(--accent); font-weight: 500;}
+
+  .diff-metrics{
+    grid-column: span 12;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--grid-gutter);
+    row-gap: 14px;
+    padding-top: 36px;
+    border-top: 1px solid var(--ink);
+    margin-top: 38px;
+  }
+  .metric{
+    grid-column: span 3;
+    padding-top: 10px;
+    border-top: 1px solid var(--ink);
+  }
+  .metric .k{
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-70);
+  }
+  .metric .v{
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(34px, 4vw, 56px);
+    line-height: 1; letter-spacing: -0.02em;
+    padding-top: 8px;
+  }
+  .metric .v.accent{ color: var(--accent); }
+  .metric .u{
+    font-family: var(--mono); font-size: 11px; color: var(--ink-50);
+    padding-top: 4px; letter-spacing: 0.04em;
+  }
+  @media (max-width: 820px){
+    .metric{ grid-column: span 6; }
+  }
+  @media (max-width: 520px){
+    .metric{ grid-column: span 12; }
+  }
+
+  .diff-actions{
+    grid-column: span 12;
+    display: flex; gap: 14px; flex-wrap: wrap;
+    padding-top: 28px;
+  }
+
+  /* -------- Capabilities (feature index) -------- */
+  .capabilities{
+    padding: 24px 0 72px;
+    border-top: 2px solid var(--ink);
+  }
+  .cap-row{
+    display: grid;
+    grid-template-columns: 56px 2fr 3fr 1fr;
+    column-gap: var(--grid-gutter);
+    padding: 24px 0 22px;
+    border-bottom: 1px solid var(--ink);
+    align-items: start;
+  }
+  .cap-row:first-of-type{ border-top: 1px solid var(--ink); }
+  .cap-row .n{
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--ink-50);
+  }
+  .cap-row .title{
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(22px, 2.4vw, 30px);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+  .cap-row .title .hl{ color: var(--accent); }
+  .cap-row .desc{
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 50ch;
+  }
+  .cap-row .platforms{
+    font-family: var(--mono);
+    font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-70);
+    text-align: right;
+    line-height: 1.7;
+  }
+  @media (max-width: 820px){
+    .cap-row{ grid-template-columns: 40px 1fr; row-gap: 10px; }
+    .cap-row .desc, .cap-row .platforms{ grid-column: 2 / -1; text-align: left; }
+  }
+
+  /* -------- Masthead footer -------- */
+  .footer{
+    padding: 72px 0 40px;
+    border-top: 2px solid var(--ink);
+    background: var(--paper);
+  }
+  .footer-masthead{
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(80px, 14vw, 220px);
+    line-height: 0.85;
+    letter-spacing: -0.045em;
+    padding: 12px 0 24px;
+  }
+  .footer-masthead .slash{ color: var(--accent); }
+  .footer-meta{
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--grid-gutter);
+    row-gap: 18px;
+    border-top: 1px solid var(--ink);
+    padding-top: 18px;
+  }
+  .footer-meta .col{
+    grid-column: span 3;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--ink);
+  }
+  .footer-meta .col dt{
+    color: var(--ink-50); text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.16em; padding-bottom: 6px;
+  }
+  .footer-meta .col dd{
+    line-height: 1.7;
+  }
+  @media (max-width: 820px){
+    .footer-meta .col{ grid-column: span 6; }
+  }
+  @media (max-width: 520px){
+    .footer-meta .col{ grid-column: span 12; }
+  }
+
+  .colophon{
+    padding-top: 36px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--grid-gutter);
+    border-top: 1px solid var(--ink);
+    margin-top: 28px;
+  }
+  .colophon .left{
+    grid-column: span 6;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-70);
+    letter-spacing: 0.05em;
+  }
+  .colophon .right{
+    grid-column: span 6;
+    text-align: right;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-70);
+    letter-spacing: 0.05em;
+  }
+  @media (max-width: 820px){
+    .colophon .left, .colophon .right{ grid-column: span 12; text-align: left;}
+  }
+
+  /* -------- Column rulings (visible on hover for flex) -------- */
+  .with-rulings{ position: relative; }
+  .with-rulings::before{
+    content:""; position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(to right,
+      transparent 0, transparent calc((100% - 11 * var(--grid-gutter)) / 12),
+      var(--ink-10) calc((100% - 11 * var(--grid-gutter)) / 12), var(--ink-10) calc((100% - 11 * var(--grid-gutter)) / 12 + 1px),
+      transparent calc((100% - 11 * var(--grid-gutter)) / 12 + 1px), transparent calc((100% - 11 * var(--grid-gutter)) / 12 + var(--grid-gutter))
+    );
+    opacity: 0;
+    transition: opacity .25s;
+  }
+  .with-rulings:hover::before{ opacity: 1; }
+
+  /* -------- Utility -------- */
+  .spacer-l{ height: 64px; }
+  .spacer-m{ height: 32px; }
+  .spacer-s{ height: 14px; }
+  .no-wrap{ white-space: nowrap; }
+
+</style>
+</head>
+<body>
+
+  <!-- ============ MASTHEAD ============ -->
+  <header class="masthead">
+    <div class="shell">
+      <div class="grid">
+        <div class="c-4">
+          <div class="mast-title reveal d1"><span class="mark" aria-hidden="true"></span>VISIONTEST<span style="color:var(--accent)">.</span>AI</div>
+        </div>
+        <div class="c-4 reveal d2">
+          <div class="mast-meta">Vol. 02 &nbsp;·&nbsp; Issue 11 &nbsp;·&nbsp; <span class="tnum">2026&middot;04&middot;23</span> &nbsp;·&nbsp; Thursday</div>
+        </div>
+        <div class="c-4 reveal d3">
+          <nav class="mast-nav" aria-label="primary">
+            <a href="#runs">Runs</a>
+            <a href="#diff">Diff</a>
+            <a href="#capabilities">Capabilities</a>
+            <a href="#docs">Docs</a>
+            <a href="#sign-in">Sign in</a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <hr class="rule rule-fullbleed rule-2" />
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="shell">
+
+      <!-- eyebrow row: numbered kicker, edition marker, status -->
+      <div class="hero-eyebrow-row reveal d1">
+        <div class="c-4">
+          <span class="eyebrow"><span class="num">№ 001</span> THE PIXEL GAZETTE</span>
+        </div>
+        <div class="c-4" style="text-align:center">
+          <span class="eyebrow">VISUAL REGRESSION &nbsp;/&nbsp; APPROVAL PRESS</span>
+        </div>
+        <div class="c-4" style="text-align:right">
+          <span class="eyebrow"><span class="dot" aria-hidden="true"></span>ONLINE &nbsp;·&nbsp; 12 RUNNERS LIVE</span>
+        </div>
+      </div>
+
+      <hr class="rule" />
+
+      <div class="hero-headline grid with-rulings">
+        <!-- Massive asymmetric headline, broken across the grid -->
+        <div class="c-12">
+          <h1 class="display reveal d2" style="padding-top: 32px;">
+            EVERY<br/>
+            <span class="accent">PIXEL</span>, <span class="thin">accounted</span><br/>
+            <span class="outline">FOR.</span>
+          </h1>
+        </div>
+      </div>
+
+      <hr class="rule" />
+
+      <div class="hero-byline reveal d3" style="padding-top: 26px;">
+        <div class="hero-body">
+          <p><span class="drop">V</span>isionTest.ai photographs your interface in every browser, every device, every viewport — then compares, pixel-for-pixel and semantically, against a baseline you have blessed. When something shifts, we tell you <em>what</em> shifted, <em>why</em> it likely happened, and whether to approve or reject.</p>
+        </div>
+
+        <dl class="hero-meta">
+          <div>
+            <dt>Platforms</dt>
+            <dd>Web · iOS · Android<br/>Playwright + Appium</dd>
+          </div>
+          <div>
+            <dt>Comparators</dt>
+            <dd>Pixel · SSIM · LPIPS · DINOv2</dd>
+          </div>
+        </dl>
+
+        <div class="hero-cta">
+          <a class="cta" href="#start">
+            <span>Start a scan</span>
+            <span class="arrow" aria-hidden="true"></span>
+          </a>
+          <div style="padding-top:12px;">
+            <a class="cta ghost" href="#runs" style="font-size:14px; padding: 10px 16px;">
+              <span>View runs</span>
+              <span class="arrow" aria-hidden="true"></span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- optional small geometric mark rarely used in hero, Swiss composition -->
+      <div class="grid" style="margin-top: 44px;">
+        <div class="c-8 reveal d4">
+          <div class="smallcaps" style="padding-bottom: 10px;">
+            Figure 001 — Fiducial Target, used in AI visual alignment.
+          </div>
+          <p style="max-width: 58ch; font-size: 14px; line-height: 1.55;">
+            A crosshair is drawn against the top-left corner of every screenshot. It is the first thing our structural-similarity pass looks for: it collapses translation, scale, and subpixel drift into a single correspondence, so the difference you see is the difference that matters.
+          </p>
+        </div>
+        <div class="c-4 hero-mark reveal d5" aria-hidden="true">
+          <span class="tick tl">+000.00</span>
+          <span class="tick tr">+000.00</span>
+          <span class="tick bl">FID-A</span>
+          <span class="tick br">v2.14</span>
+          <span class="ring"></span>
+          <span class="ring inner"></span>
+          <span class="dotCenter"></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ TICKER ============ -->
+  <div class="ticker reveal d3" aria-label="live status ticker">
+    <div class="shell">
+      <div class="row">
+        <span><span class="dot"></span>RUN 4F2A9 &nbsp;FAIL &nbsp;Checkout · Safari 17 · 1280w</span>
+        <span class="green"><span class="dot"></span>RUN 4F2A8 &nbsp;PASS &nbsp;Login · Chromium · 1440w</span>
+        <span class="green"><span class="dot"></span>RUN 4F2A7 &nbsp;PASS &nbsp;Search · Firefox · 1024w</span>
+        <span><span class="dot"></span>RUN 4F2A6 &nbsp;FLAKE &nbsp;Profile · iOS 17 · iPhone 15 Pro</span>
+        <span class="green"><span class="dot"></span>RUN 4F2A5 &nbsp;PASS &nbsp;Settings · Android 14 · Pixel 8</span>
+        <span><span class="dot"></span>RUN 4F2A4 &nbsp;FIX &nbsp;Onboarding · Chromium · 1920w</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="dash" id="runs">
+    <div class="shell">
+
+      <div class="section-head grid">
+        <div class="label">
+          <span class="eyebrow"><span class="num">02 /</span> THE LEDGER</span>
+        </div>
+        <h2 class="title">Recent runs,<br/>set in cold type.</h2>
+        <p class="lede">Twenty-four hours of executions across web, iOS, and Android. Pass-rates set large because pass-rates are the headline; failures set smaller, because failures are the detail we investigate.</p>
+      </div>
+
+      <hr class="rule rule-2" />
+
+      <div class="grid" style="padding-top: 40px;">
+        <!-- LEFT: the big figure -->
+        <div class="dash-headstack reveal d2">
+          <div class="eyebrow"><span class="num">Period</span> 23 APR 2026 · 00:00 → NOW</div>
+          <div class="dash-big tnum" aria-label="pass rate 94.3 percent">94.3<span class="pct">%</span></div>
+          <div class="smallcaps" style="padding-top: 8px;">Pass rate · 412 executions · 9 shards · 3 platforms</div>
+
+          <div class="dash-subbig">
+            <span class="count tnum">24</span> failures<span style="color:var(--ink-50)"> &nbsp;/&nbsp; </span><span class="tnum" style="color:var(--ink-70)">7</span> flaky<span style="color:var(--ink-50)"> &nbsp;/&nbsp; </span><span class="tnum" style="color:var(--ink-70)">2</span> quarantined
+          </div>
+
+          <div class="dash-micro">
+            <span>Median run 00:41.2s</span>
+            <span>p95 02:18.0s</span>
+            <span>Chromium 61% · WebKit 23% · Firefox 11% · Mobile 5%</span>
+          </div>
+
+          <div style="padding-top: 40px;">
+            <div class="smallcaps" style="padding-bottom: 10px;">At a glance</div>
+            <p style="max-width: 44ch; font-size: 13.5px; line-height: 1.55;">
+              Failures today cluster on the checkout plate — a vendor-side font swap in Safari 17 changed the baseline width of the primary CTA by six pixels. Two runs entered quarantine automatically after a third consecutive flake.
+            </p>
+          </div>
+        </div>
+
+        <!-- RIGHT: the list of runs -->
+        <div class="dash-runs reveal d3">
+          <article class="run fail" aria-label="run 4F2A9">
+            <div class="idx">001</div>
+            <div class="main">
+              <div class="name">Checkout · place order</div>
+              <div class="sub">
+                <span>Safari 17 · macOS 14</span><span class="sep">·</span>
+                <span>1280w · 2× DPR</span><span class="sep">·</span>
+                <span>run 4F2A9E71</span>
+              </div>
+            </div>
+            <div class="time tnum">14:02:41</div>
+            <div class="status"><span class="sq" aria-hidden="true"></span>Fail</div>
+          </article>
+
+          <article class="run pass">
+            <div class="idx">002</div>
+            <div class="main">
+              <div class="name">Login · email + password</div>
+              <div class="sub">
+                <span>Chromium 124 · 1440w</span><span class="sep">·</span>
+                <span>Linux · headless</span><span class="sep">·</span>
+                <span>run 4F2A8C33</span>
+              </div>
+            </div>
+            <div class="time tnum">13:58:12</div>
+            <div class="status"><span class="sq" aria-hidden="true"></span>Pass</div>
+          </article>
+
+          <article class="run pass">
+            <div class="idx">003</div>
+            <div class="main">
+              <div class="name">Search · autocomplete open</div>
+              <div class="sub">
+                <span>Firefox 125 · 1024w</span><span class="sep">·</span>
+                <span>Story-based</span><span class="sep">·</span>
+                <span>run 4F2A741A</span>
+              </div>
+            </div>
+            <div class="time tnum">13:51:06</div>
+            <div class="status"><span class="sq" aria-hidden="true"></span>Pass</div>
+          </article>
+
+          <article class="run flaky">
+            <div class="idx">004</div>
+            <div class="main">
+              <div class="name">Profile · avatar upload</div>
+              <div class="sub">
+                <span>iOS 17.4 · iPhone 15 Pro</span><span class="sep">·</span>
+                <span>Appium · portrait</span><span class="sep">·</span>
+                <span>run 4F2A60DE</span>
+              </div>
+            </div>
+            <div class="time tnum">13:44:27</div>
+            <div class="status"><span class="sq" aria-hidden="true"></span>Flaky</div>
+          </article>
+
+          <article class="run pass">
+            <div class="idx">005</div>
+            <div class="main">
+              <div class="name">Settings · notifications</div>
+              <div class="sub">
+                <span>Android 14 · Pixel 8</span><span class="sep">·</span>
+                <span>Goal-based · "enable push"</span><span class="sep">·</span>
+                <span>run 4F2A5B09</span>
+              </div>
+            </div>
+            <div class="time tnum">13:37:55</div>
+            <div class="status"><span class="sq" aria-hidden="true"></span>Pass</div>
+          </article>
+
+          <article class="run running">
+            <div class="idx">006</div>
+            <div class="main">
+              <div class="name">Onboarding · step 3 of 5</div>
+              <div class="sub">
+                <span>Chromium 124 · 1920w</span><span class="sep">·</span>
+                <span>LLM-generated patch</span><span class="sep">·</span>
+                <span>run 4F2A4F12</span>
+              </div>
+            </div>
+            <div class="time tnum">now</div>
+            <div class="status"><span class="sq" aria-hidden="true"></span>Running</div>
+          </article>
+
+          <article class="run quarantine">
+            <div class="idx">007</div>
+            <div class="main">
+              <div class="name">Dashboard · chart render</div>
+              <div class="sub">
+                <span>WebKit · 1440w</span><span class="sep">·</span>
+                <span>3 consecutive flakes</span><span class="sep">·</span>
+                <span>run 4F2A3A88</span>
+              </div>
+            </div>
+            <div class="time tnum">13:22:10</div>
+            <div class="status"><span class="sq" aria-hidden="true"></span>Quarantine</div>
+          </article>
+
+          <article class="run fail">
+            <div class="idx">008</div>
+            <div class="main">
+              <div class="name">Checkout · coupon apply</div>
+              <div class="sub">
+                <span>Safari 17 · 1280w</span><span class="sep">·</span>
+                <span>DINOv2 Δ 0.142</span><span class="sep">·</span>
+                <span>run 4F2A2241</span>
+              </div>
+            </div>
+            <div class="time tnum">13:16:48</div>
+            <div class="status"><span class="sq" aria-hidden="true"></span>Fail</div>
+          </article>
+
+          <article class="run pass" style="border-bottom: 2px solid var(--ink);">
+            <div class="idx">009</div>
+            <div class="main">
+              <div class="name">Marketing home · hero reveal</div>
+              <div class="sub">
+                <span>Chromium · 1440w</span><span class="sep">·</span>
+                <span>Exploratory crawl, 42 pages</span><span class="sep">·</span>
+                <span>run 4F2A1007</span>
+              </div>
+            </div>
+            <div class="time tnum">13:01:03</div>
+            <div class="status"><span class="sq" aria-hidden="true"></span>Pass</div>
+          </article>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ DIFF PLATE ============ -->
+  <section class="gallery" id="diff">
+    <div class="shell">
+
+      <div class="section-head grid">
+        <div class="label">
+          <span class="eyebrow"><span class="num">03 /</span> GALLERY PLATE</span>
+        </div>
+        <h2 class="title">Two frames,<br/>one disagreement.</h2>
+        <p class="lede">A gallery plate in the manner of a typographic atlas: baseline on the left, candidate on the right, caption set small and numbered below. The AI comparator has marked two regions of concern.</p>
+      </div>
+
+      <div class="grid">
+        <div class="plate reveal d2">
+          <div class="plate-head">
+            <div class="no">PLATE №&nbsp;IV &nbsp;·&nbsp; FIG. 04-B</div>
+            <div class="title">Checkout <span class="accent">·</span> place order<br/><span style="font-weight:300; font-style:italic;">Safari 17 · 1280w</span></div>
+            <div class="meta">
+              SSIM Δ &nbsp;<span class="tnum">0.018</span><br/>
+              LPIPS Δ &nbsp;<span class="tnum">0.071</span><br/>
+              DINOv2 Δ &nbsp;<span class="tnum">0.142</span>
+            </div>
+          </div>
+
+          <div class="plate-frames">
+            <figure class="frame before" aria-label="baseline screenshot">
+              <div class="tab">
+                <span>baseline · acme-store.com/checkout</span>
+                <span class="dotrow"><i></i><i></i><i></i></span>
+              </div>
+              <div class="badge-tl">A / Baseline</div>
+              <div class="page">
+                <div class="logo"><i></i> ACME</div>
+                <div class="nav"><span>Shop</span><span>Cart</span><span>Account</span></div>
+                <div class="hl">Place your order.</div>
+                <div class="col-body">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="aside">
+                  <div class="pic"></div>
+                  <div class="cap"><span>Item · Kettle</span><span>$89.00</span></div>
+                </div>
+                <div class="ftr"><span>Step 3 of 3</span><span>Secure · HTTPS</span></div>
+              </div>
+            </figure>
+
+            <figure class="frame after" aria-label="candidate screenshot">
+              <div class="tab">
+                <span>candidate · build 4F2A9E71</span>
+                <span class="dotrow"><i></i><i></i><i></i></span>
+              </div>
+              <div class="badge-tl">B / Candidate</div>
+              <div class="page">
+                <div class="logo"><i></i> ACME</div>
+                <div class="nav"><span>Shop</span><span>Cart</span><span>Account</span></div>
+                <div class="hl">Place your order.</div>
+                <div class="col-body">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="aside">
+                  <div class="pic"></div>
+                  <div class="cap"><span>Item · Kettle</span><span>$89.00</span></div>
+                </div>
+                <div class="ftr"><span>Step 3 of 3</span><span>Secure · HTTPS</span></div>
+              </div>
+              <span class="marker m1" data-label="R-01 · CTA WIDTH"></span>
+              <span class="marker m2" data-label="R-02 · TYPE SHIFT"></span>
+            </figure>
+
+            <figcaption class="caption">
+              <div class="kick"><span>Fig. 04-A · Baseline</span><span>20 Apr 2026 · 09:14 UTC</span></div>
+              <p class="body">Baseline captured at build <span class="mono">3D19C004</span> from the golden branch. Comparator: SSIM at threshold 0.995. No regions of concern were surfaced during this snapshot window, and the plate is ratified by two reviewers.</p>
+            </figcaption>
+
+            <figcaption class="caption">
+              <div class="kick"><span>Fig. 04-B · Candidate</span><span>23 Apr 2026 · 14:02 UTC</span></div>
+              <p class="body">Candidate diverges in two regions. Semantically, the primary CTA has <em>gained six pixels of width</em> due to a vendor-side font substitution in Safari 17, and a typographic shift has occurred in the supporting copy. The autonomous bug-fix agent has drafted a patch against the design tokens.</p>
+            </figcaption>
+          </div>
+
+          <div class="diff-metrics">
+            <div class="metric">
+              <div class="k">Δ Pixels changed</div>
+              <div class="v tnum accent">1,842</div>
+              <div class="u">of 921,600 · 0.2%</div>
+            </div>
+            <div class="metric">
+              <div class="k">Regions flagged</div>
+              <div class="v tnum">02</div>
+              <div class="u">R-01, R-02 · high confidence</div>
+            </div>
+            <div class="metric">
+              <div class="k">AI confidence</div>
+              <div class="v tnum">92<span style="font-size:0.5em; vertical-align: top;">%</span></div>
+              <div class="u">DINOv2 · semantic</div>
+            </div>
+            <div class="metric">
+              <div class="k">Review status</div>
+              <div class="v" style="font-size: clamp(22px, 2.6vw, 34px); padding-top: 14px;">Awaiting<br/>2 approvers</div>
+              <div class="u" style="padding-top: 10px;">J. Stuart · pending · K. Ramos · pending</div>
+            </div>
+          </div>
+
+          <div class="diff-actions">
+            <a class="cta" href="#approve">
+              <span>Approve candidate</span>
+              <span class="arrow" aria-hidden="true"></span>
+            </a>
+            <a class="cta ghost" href="#reject">
+              <span>Reject &amp; open patch</span>
+              <span class="arrow" aria-hidden="true"></span>
+            </a>
+            <a class="cta ghost" href="#diff-raw" style="font-size: 14px; padding: 10px 16px;">
+              <span>View raw diff</span>
+              <span class="arrow" aria-hidden="true"></span>
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ CAPABILITIES ============ -->
+  <section class="capabilities" id="capabilities">
+    <div class="shell">
+      <div class="section-head grid">
+        <div class="label">
+          <span class="eyebrow"><span class="num">04 /</span> INDEX OF CAPABILITIES</span>
+        </div>
+        <h2 class="title">What the press does,<br/>set as a table of contents.</h2>
+        <p class="lede">Seven operations, one pipeline. Each entry is a function; each function is observable end-to-end.</p>
+      </div>
+
+      <div>
+        <div class="cap-row reveal d1">
+          <div class="n">01 / CATCH</div>
+          <div class="title">Automated capture <span class="hl">across platforms.</span></div>
+          <div class="desc">Screenshots are taken across Chromium, Firefox, WebKit and on real iOS and Android targets, at a matrix of viewports and pixel densities. One authored step, twelve surfaces.</div>
+          <div class="platforms">WEB · IOS · ANDROID<br/>PLAYWRIGHT · APPIUM</div>
+        </div>
+
+        <div class="cap-row reveal d2">
+          <div class="n">02 / COMPARE</div>
+          <div class="title">Pixel <span class="hl">and</span> perception.</div>
+          <div class="desc">Every frame is compared twice: once on raw pixels, and once via a structural/semantic pass using SSIM, LPIPS and DINOv2 embeddings. We prefer the one that disagrees less with human judgement.</div>
+          <div class="platforms">SSIM · LPIPS<br/>DINOv2 · PIXEL</div>
+        </div>
+
+        <div class="cap-row reveal d3">
+          <div class="n">03 / AUTHOR</div>
+          <div class="title">Story-based <span class="hl">and</span> goal-based authoring.</div>
+          <div class="desc">Write a Storybook-style fixture, or tell us the goal in plain English — "log the user in and go to the settings page." The planner decomposes intent into concrete, replayable steps.</div>
+          <div class="platforms">FIXTURE · INTENT<br/>LLM PLANNER</div>
+        </div>
+
+        <div class="cap-row reveal d4">
+          <div class="n">04 / EXPLORE</div>
+          <div class="title">Exploratory scan <span class="hl">— drop a URL.</span></div>
+          <div class="desc">Provide a URL and we will crawl the application, produce a map of routes, states and interactive affordances, and recommend coverage gaps. Useful as a first contact with an unfamiliar product.</div>
+          <div class="platforms">CRAWL · MAP<br/>COVERAGE</div>
+        </div>
+
+        <div class="cap-row reveal d5">
+          <div class="n">05 / APPROVE</div>
+          <div class="title">Human-in-the-loop <span class="hl">approval.</span></div>
+          <div class="desc">Every visual change is a proposal. Teams accept or reject, with required reviewers, per-project rules, and an audit trail that survives the pull request.</div>
+          <div class="platforms">REVIEW · AUDIT<br/>SLACK · GITHUB</div>
+        </div>
+
+        <div class="cap-row reveal d6">
+          <div class="n">06 / STABILISE</div>
+          <div class="title">Flake detection <span class="hl">and</span> quarantine.</div>
+          <div class="desc">Runs with statistically unstable outcomes are flagged, re-run with an isolation harness, and — if they continue to fail on non-deterministic conditions — quarantined automatically pending a fix.</div>
+          <div class="platforms">STATS · ISOLATE<br/>QUARANTINE</div>
+        </div>
+
+        <div class="cap-row reveal d6">
+          <div class="n">07 / REPAIR</div>
+          <div class="title">Autonomous patches, <span class="hl">drafted not merged.</span></div>
+          <div class="desc">When a regression has a plausible local cause, an LLM drafts the patch and opens a pull request against your repository. You read it. You decide. We keep receipts.</div>
+          <div class="platforms">PATCH · PR<br/>HUMAN MERGE</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER MASTHEAD ============ -->
+  <footer class="footer" id="docs">
+    <div class="shell">
+
+      <div class="eyebrow" style="padding-bottom: 6px;"><span class="num">05 /</span> COLOPHON</div>
+      <div class="footer-masthead">
+        VISIONTEST<span class="slash">.</span>AI
+      </div>
+
+      <dl class="footer-meta">
+        <div class="col">
+          <dt>Masthead</dt>
+          <dd>Editor · J. Stuart<br/>Typography · the Grotesks<br/>Printer · the browser</dd>
+        </div>
+        <div class="col">
+          <dt>Editions</dt>
+          <dd>Open Source · MIT<br/>Cloud · by request<br/>Self-hosted · docker compose up</dd>
+        </div>
+        <div class="col">
+          <dt>Correspondence</dt>
+          <dd>github.com/visiontest-ai<br/>discord · /visiontest<br/>mail · press@visiontest.ai</dd>
+        </div>
+        <div class="col">
+          <dt>Published</dt>
+          <dd>Est. MMXXV<br/>ISO 2026&middot;04&middot;23<br/>Set in Space Grotesk · IBM Plex</dd>
+        </div>
+      </dl>
+
+      <div class="colophon">
+        <div class="left">
+          © 2025–2026 VisionTest.ai · All pixels reserved · MIT License on source.
+        </div>
+        <div class="right">
+          Layout No. 06 · "Swiss" · Plate 1 of 1 · Printed on paper off-white #F4F1EA.
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+</body>
+</html>

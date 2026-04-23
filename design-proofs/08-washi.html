@@ -1,0 +1,1426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VisionTest.ai · 視覚検証 — a quiet proof</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&family=Zen+Kaku+Gothic+Antique:wght@300;400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --washi: #F2EDE1;
+    --washi-deep: #ECE5D3;
+    --washi-mist: #E8E1CF;
+    --sumi: #1B1814;
+    --sumi-soft: #2A2621;
+    --vermilion: #C9302C;
+    --vermilion-deep: #A82520;
+    --grey-mist: #9A958B;
+    --grey-paper: #BFB8A8;
+    --rule: #C9C1AE;
+
+    --lacquer: #141311;
+    --bone: #E5DFCC;
+
+    --serif: "Shippori Mincho", "Noto Serif JP", Georgia, serif;
+    --sans: "Zen Kaku Gothic New", "Inter Tight", system-ui, sans-serif;
+    --antique: "Zen Kaku Gothic Antique", system-ui, sans-serif;
+    --eyebrow: "Cormorant Garamond", "IBM Plex Serif", Georgia, serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+
+    --gutter: clamp(24px, 5vw, 96px);
+    --column: minmax(0, 1fr);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--washi);
+    color: var(--sumi);
+    font-family: var(--sans);
+    font-weight: 300;
+    line-height: 1.75;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+  }
+
+  body {
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Paper grain filter */
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.08;
+    mix-blend-mode: multiply;
+  }
+  .grain svg { width: 100%; height: 100%; }
+
+  /* Subtle fibered paper streaks */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(1200px 600px at 10% 20%, rgba(180, 160, 110, 0.06), transparent 60%),
+      radial-gradient(900px 700px at 90% 80%, rgba(120, 90, 50, 0.05), transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  main { position: relative; z-index: 2; }
+
+  /* ————— Typography primitives ————— */
+  .eyebrow {
+    font-family: var(--eyebrow);
+    font-weight: 500;
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    color: var(--grey-mist);
+    text-transform: uppercase;
+    font-variant: small-caps;
+  }
+
+  .label-kata {
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--grey-mist);
+    text-transform: none;
+  }
+
+  .mono {
+    font-family: var(--mono);
+    font-weight: 300;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--sumi-soft);
+    font-feature-settings: "tnum" 1;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--serif);
+    font-weight: 500;
+    color: var(--sumi);
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+
+  .display {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(64px, 11vw, 172px);
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    color: var(--sumi);
+  }
+
+  .display .kana {
+    display: block;
+    font-weight: 400;
+    font-size: 0.18em;
+    letter-spacing: 0.6em;
+    color: var(--grey-mist);
+    margin-top: 1.2em;
+    line-height: 1;
+  }
+
+  p { margin: 0; }
+  p + p { margin-top: 1.2em; }
+
+  hr.yoko {
+    border: 0;
+    height: 1px;
+    background: var(--rule);
+    margin: 0;
+  }
+
+  /* ————— Vertical-writing margin labels ————— */
+  .vertical-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--grey-mist);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .vertical-label .sep {
+    display: inline-block;
+    margin: 0.8em 0;
+    color: var(--grey-paper);
+  }
+  .vertical-serif {
+    writing-mode: vertical-rl;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    color: var(--sumi-soft);
+  }
+
+  /* ————— Frontispiece ————— */
+  .frontispiece {
+    min-height: 100vh;
+    position: relative;
+    display: grid;
+    grid-template-columns: 56px var(--column) 56px;
+    gap: var(--gutter);
+    padding: clamp(36px, 6vw, 80px) var(--gutter) clamp(48px, 8vw, 120px);
+  }
+
+  .front-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+  }
+
+  .front-colophon {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    align-items: center;
+  }
+
+  .front-tickmark {
+    width: 1px;
+    height: 120px;
+    background: var(--rule);
+  }
+
+  .front-body {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: calc(100vh - 160px);
+  }
+
+  .front-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: clamp(40px, 6vw, 80px);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .front-top .imprint {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .front-top .imprint .mark {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+  }
+  .front-top .imprint .mark .dot {
+    color: var(--vermilion);
+    margin: 0 0.35em;
+  }
+
+  .front-top .folio {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .front-center {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-content: center;
+    padding: clamp(40px, 8vw, 120px) 0;
+  }
+
+  .front-center .display {
+    max-width: 14ch;
+  }
+
+  .front-bottom {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: clamp(24px, 4vw, 60px);
+    padding-top: clamp(32px, 5vw, 60px);
+  }
+
+  .front-valueprop {
+    max-width: 52ch;
+  }
+  .front-valueprop .eyebrow { margin-bottom: 18px; display: block; }
+  .front-valueprop p {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(17px, 1.4vw, 20px);
+    line-height: 1.85;
+    color: var(--sumi-soft);
+    letter-spacing: 0.005em;
+  }
+
+  .front-meta {
+    justify-self: center;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 20px;
+  }
+
+  .front-seal {
+    justify-self: end;
+    align-self: end;
+    position: relative;
+  }
+
+  .front-right {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ————— Hanko seal ————— */
+  .hanko {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 78px;
+    height: 78px;
+    transform: rotate(-2.4deg);
+    filter: blur(0.35px);
+  }
+  .hanko svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hanko .chars {
+    position: relative;
+    font-family: var(--serif);
+    font-weight: 700;
+    color: var(--vermilion);
+    font-size: 26px;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 4px;
+    padding: 4px 5px 0 5px;
+    text-align: center;
+    mix-blend-mode: multiply;
+  }
+  .hanko.circle { border-radius: 50%; overflow: hidden; }
+  .hanko.small {
+    width: 40px; height: 40px;
+    transform: rotate(-3deg);
+  }
+  .hanko.small .chars { font-size: 15px; padding: 3px 4px 0; }
+
+  .hanko .bleed {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(closest-side, rgba(201,48,44,0.15), transparent 75%);
+    pointer-events: none;
+  }
+
+  /* Single-char hanko */
+  .hanko.solo .chars {
+    grid-template-columns: 1fr;
+    font-size: 34px;
+    padding-top: 3px;
+  }
+  .hanko.solo.small .chars { font-size: 22px; }
+
+  /* ————— Large frontispiece seal ————— */
+  .front-seal .hanko { width: 96px; height: 96px; }
+  .front-seal .hanko .chars { font-size: 32px; }
+  .front-seal .caption {
+    position: absolute;
+    right: 120px;
+    bottom: 12px;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .front-seal .caption .en {
+    font-family: var(--eyebrow);
+    font-style: italic;
+    font-variant: small-caps;
+    letter-spacing: 0.2em;
+    color: var(--grey-mist);
+    font-size: 12px;
+    display: block;
+  }
+  .front-seal .caption .jp {
+    font-family: var(--serif);
+    color: var(--sumi-soft);
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* ————— Ledger / run index ————— */
+  .ledger {
+    position: relative;
+    padding: clamp(100px, 14vw, 180px) var(--gutter) clamp(80px, 10vw, 140px);
+    display: grid;
+    grid-template-columns: 56px 1fr 56px;
+    gap: var(--gutter);
+  }
+
+  .ledger-left {
+    display: flex;
+    justify-content: center;
+    padding-top: 4px;
+  }
+
+  .ledger-body {
+    display: grid;
+    gap: clamp(48px, 6vw, 88px);
+  }
+
+  .section-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-head h2 {
+    font-size: clamp(34px, 4.2vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+  }
+  .section-head .title-row {
+    display: grid;
+    gap: 10px;
+  }
+  .section-head .kana {
+    font-family: var(--serif);
+    font-size: 14px;
+    letter-spacing: 0.5em;
+    color: var(--grey-mist);
+  }
+  .section-head .meta {
+    text-align: right;
+    display: grid;
+    gap: 4px;
+  }
+
+  /* Ledger rows */
+  .rows {
+    display: grid;
+    gap: 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 72px 1fr 220px 140px 80px;
+    gap: clamp(20px, 3vw, 48px);
+    padding: 28px 0 28px;
+    border-bottom: 1px solid var(--rule);
+    align-items: center;
+  }
+
+  .row:last-child { border-bottom: 0; }
+
+  .row .date {
+    writing-mode: vertical-rl;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--grey-mist);
+    justify-self: start;
+    line-height: 1.4;
+  }
+  .row .date em {
+    font-style: normal;
+    color: var(--sumi-soft);
+    font-weight: 400;
+  }
+
+  .row .name .en {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.002em;
+    color: var(--sumi);
+  }
+  .row .name .jp {
+    font-family: var(--serif);
+    font-size: 13px;
+    color: var(--grey-mist);
+    letter-spacing: 0.18em;
+    margin-top: 6px;
+    display: block;
+  }
+  .row .name .path {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--grey-paper);
+    letter-spacing: 0.04em;
+    margin-top: 10px;
+    display: block;
+  }
+
+  .row .meta-col {
+    display: grid;
+    gap: 4px;
+  }
+  .row .meta-col .k {
+    font-family: var(--eyebrow);
+    font-style: italic;
+    font-variant: small-caps;
+    letter-spacing: 0.22em;
+    font-size: 11px;
+    color: var(--grey-mist);
+  }
+  .row .meta-col .v {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--sumi);
+  }
+
+  .row .duration { font-family: var(--mono); font-size: 13px; color: var(--sumi-soft); }
+
+  .row .status {
+    justify-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .row .status .s-label {
+    font-family: var(--eyebrow);
+    font-variant: small-caps;
+    font-style: italic;
+    letter-spacing: 0.22em;
+    font-size: 10px;
+    color: var(--grey-mist);
+  }
+
+  /* quarantine / pending variants */
+  .hanko.quarantine .chars { color: var(--sumi-soft); }
+  .hanko.quarantine svg path,
+  .hanko.quarantine svg rect { stroke: var(--sumi-soft) !important; }
+
+  /* ————— Diff review plates ————— */
+  .diff {
+    padding: clamp(100px, 14vw, 180px) var(--gutter) clamp(80px, 10vw, 140px);
+    display: grid;
+    grid-template-columns: 56px 1fr 56px;
+    gap: var(--gutter);
+    position: relative;
+  }
+
+  .diff-body { display: grid; gap: clamp(60px, 8vw, 110px); }
+
+  .plates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(40px, 5vw, 72px);
+    align-items: start;
+  }
+
+  .plate { display: grid; gap: 18px; }
+
+  .plate-frame {
+    border: 1px solid var(--sumi);
+    padding: 14px;
+    background: var(--washi-deep);
+    position: relative;
+  }
+  .plate-frame::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border: 1px solid var(--rule);
+    pointer-events: none;
+  }
+
+  .plate-image {
+    aspect-ratio: 4/3;
+    width: 100%;
+    position: relative;
+    background: #fafaf4;
+    overflow: hidden;
+  }
+
+  .plate-caption {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: baseline;
+    padding: 0 2px;
+  }
+  .plate-caption .fig {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    color: var(--sumi);
+  }
+  .plate-caption .desc {
+    font-family: var(--antique);
+    font-size: 12px;
+    color: var(--sumi-soft);
+    letter-spacing: 0.02em;
+    line-height: 1.6;
+  }
+  .plate-caption .stamp {
+    font-family: var(--eyebrow);
+    font-style: italic;
+    font-variant: small-caps;
+    letter-spacing: 0.2em;
+    font-size: 11px;
+    color: var(--grey-mist);
+  }
+
+  /* Fake screenshot contents */
+  .mock {
+    position: absolute;
+    inset: 0;
+    padding: 18px 20px;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 16px;
+    color: var(--sumi);
+    font-family: var(--sans);
+  }
+  .mock .m-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--grey-mist);
+    text-transform: uppercase;
+  }
+  .mock .m-top .dots {
+    display: flex; gap: 5px;
+  }
+  .mock .m-top .dots span {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--rule);
+  }
+  .mock .m-center {
+    align-self: center;
+    justify-self: center;
+    text-align: center;
+    display: grid;
+    gap: 18px;
+    width: 72%;
+  }
+  .mock .m-center h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 20px;
+    letter-spacing: -0.005em;
+    color: var(--sumi);
+  }
+  .mock .m-input {
+    height: 34px;
+    border: 1px solid var(--rule);
+    background: #fff;
+  }
+  .mock .m-button {
+    height: 34px;
+    background: var(--sumi);
+    color: var(--washi);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-family: var(--eyebrow);
+    font-variant: small-caps;
+    font-style: italic;
+  }
+  .mock .m-bottom {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--grey-mist);
+    text-align: center;
+  }
+
+  .mock.proposed .m-center h3 { color: var(--sumi); }
+  .mock.proposed .m-button {
+    background: var(--vermilion);
+    color: #fdf6ec;
+  }
+  .mock.proposed .m-input {
+    height: 38px; /* subtle drift */
+  }
+  .mock.proposed .m-center { gap: 22px; }
+
+  /* Diff highlight strokes */
+  .highlight-box {
+    position: absolute;
+    border: 1px solid var(--vermilion);
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+  .highlight-box::before {
+    content: attr(data-tag);
+    position: absolute;
+    left: -1px;
+    top: -22px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--vermilion);
+    background: var(--washi-deep);
+    padding: 2px 6px;
+    white-space: nowrap;
+  }
+
+  /* AI observation block */
+  .observation {
+    display: grid;
+    grid-template-columns: 200px 1fr 200px;
+    gap: clamp(24px, 3vw, 48px);
+    align-items: start;
+    padding-top: clamp(40px, 5vw, 60px);
+    border-top: 1px solid var(--rule);
+  }
+  .observation .stamp-col {
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+  }
+  .observation .body {
+    display: grid;
+    gap: 22px;
+  }
+  .observation .body .eyebrow { display: block; }
+  .observation .body .note {
+    font-family: var(--serif);
+    font-size: clamp(20px, 1.9vw, 26px);
+    line-height: 1.65;
+    letter-spacing: -0.002em;
+    color: var(--sumi);
+    font-weight: 400;
+    max-width: 46ch;
+  }
+  .observation .body .note em {
+    font-style: italic;
+    color: var(--vermilion-deep);
+  }
+  .observation .metrics {
+    display: grid;
+    gap: 16px;
+    border-left: 1px solid var(--rule);
+    padding-left: 24px;
+  }
+  .observation .metrics .m {
+    display: grid;
+    gap: 3px;
+  }
+  .observation .metrics .m .k {
+    font-family: var(--eyebrow);
+    font-style: italic;
+    font-variant: small-caps;
+    letter-spacing: 0.22em;
+    font-size: 11px;
+    color: var(--grey-mist);
+  }
+  .observation .metrics .m .v {
+    font-family: var(--mono);
+    font-size: 17px;
+    color: var(--sumi);
+  }
+
+  /* Decisions row */
+  .decisions {
+    display: flex;
+    justify-content: center;
+    gap: clamp(40px, 6vw, 88px);
+    padding: clamp(50px, 7vw, 100px) 0 0;
+  }
+  .decision {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    padding: 0 28px;
+  }
+  .decision .label {
+    font-family: var(--eyebrow);
+    font-variant: small-caps;
+    font-style: italic;
+    letter-spacing: 0.3em;
+    color: var(--grey-mist);
+    font-size: 11px;
+  }
+  .decision .jp {
+    font-family: var(--serif);
+    letter-spacing: 0.4em;
+    font-size: 13px;
+    color: var(--sumi-soft);
+  }
+
+  /* ————— Capability strip ————— */
+  .capabilities {
+    padding: clamp(80px, 10vw, 140px) var(--gutter);
+    display: grid;
+    grid-template-columns: 56px 1fr 56px;
+    gap: var(--gutter);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .cap-body { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(32px, 4vw, 64px); }
+  .cap {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+  }
+  .cap .num {
+    font-family: var(--serif);
+    font-size: 13px;
+    color: var(--vermilion);
+    letter-spacing: 0.3em;
+  }
+  .cap .title {
+    font-family: var(--serif);
+    font-size: 22px;
+    line-height: 1.25;
+    letter-spacing: -0.003em;
+    color: var(--sumi);
+    font-weight: 500;
+  }
+  .cap .title .jp {
+    display: block;
+    font-size: 12px;
+    color: var(--grey-mist);
+    letter-spacing: 0.3em;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+  .cap p {
+    font-family: var(--antique);
+    font-size: 13px;
+    color: var(--sumi-soft);
+    line-height: 1.75;
+    max-width: 32ch;
+  }
+
+  /* ————— Colophon ————— */
+  .colophon {
+    padding: clamp(80px, 12vw, 160px) var(--gutter);
+    display: grid;
+    place-items: center;
+    text-align: center;
+    gap: 28px;
+  }
+  .colophon .rule {
+    width: 1px;
+    height: 80px;
+    background: var(--rule);
+  }
+  .colophon .title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 18px;
+    letter-spacing: 0.08em;
+  }
+  .colophon .title .dot { color: var(--vermilion); margin: 0 0.4em; }
+  .colophon .meta {
+    font-family: var(--antique);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    color: var(--grey-mist);
+    line-height: 2.2;
+    max-width: 46ch;
+    text-transform: uppercase;
+  }
+  .colophon .jp {
+    font-family: var(--serif);
+    font-size: 12px;
+    color: var(--grey-mist);
+    letter-spacing: 0.5em;
+  }
+  .colophon .small-seal { padding-top: 8px; }
+
+  @media (max-width: 900px) {
+    .frontispiece, .ledger, .diff, .capabilities {
+      grid-template-columns: 28px 1fr 28px;
+    }
+    .plates { grid-template-columns: 1fr; }
+    .observation { grid-template-columns: 1fr; }
+    .observation .metrics { border-left: 0; border-top: 1px solid var(--rule); padding: 20px 0 0; }
+    .cap-body { grid-template-columns: repeat(2, 1fr); }
+    .row { grid-template-columns: 48px 1fr 70px; }
+    .row .meta-col, .row .duration { display: none; }
+    .front-bottom { grid-template-columns: 1fr; }
+    .front-seal { justify-self: end; }
+    .front-seal .caption { position: relative; right: auto; bottom: auto; text-align: right; margin-right: 8px; }
+    .display { font-size: clamp(56px, 16vw, 92px); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Paper grain (inline SVG turbulence) -->
+<div class="grain" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg">
+    <filter id="paper">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 0.1
+                             0 0 0 0 0.09
+                             0 0 0 0 0.08
+                             0 0 0 0.85 0"/>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#paper)"/>
+  </svg>
+</div>
+
+<main>
+
+  <!-- ======================================================= -->
+  <!-- FRONTISPIECE                                            -->
+  <!-- ======================================================= -->
+  <section class="frontispiece">
+
+    <div class="front-left">
+      <div class="vertical-label">
+        VISIONTEST.AI <span class="sep">·</span> PROOF 08 <span class="sep">·</span> WASHI <span class="sep">·</span> 視覚検証
+      </div>
+      <div class="front-tickmark"></div>
+    </div>
+
+    <div class="front-body">
+
+      <div class="front-top">
+        <div class="imprint">
+          <span class="eyebrow">Frontispiece · 扉</span>
+          <span class="mark">V <span class="dot">·</span> T <span class="dot">·</span> ai</span>
+        </div>
+        <div class="folio">
+          <span class="eyebrow">Volume i · leaf 001</span>
+          <span class="mono">MMXXVI / 04 / 23</span>
+        </div>
+      </div>
+
+      <div class="front-center">
+        <h1 class="display">
+          A quiet<br/>proof of<br/>what you<br/>shipped.
+          <span class="kana">しっかり みる</span>
+        </h1>
+      </div>
+
+      <div class="front-bottom">
+        <div class="front-valueprop">
+          <span class="eyebrow">The argument · 要旨</span>
+          <p>
+            VisionTest.ai watches every screen your team renders — across browsers,
+            devices, and viewports — and keeps a careful record of what changed,
+            what broke, and what merely shifted. The verdict is rendered with the
+            restraint of a woodblock impression: a small vermilion seal, nothing more.
+          </p>
+        </div>
+
+        <div class="front-meta">
+          <span class="label-kata">しゅっぱん</span>
+          <span class="eyebrow">An imprint of<br/>visual regression</span>
+          <span class="mono">ed. 2.0 · mit</span>
+        </div>
+
+        <div class="front-seal">
+          <div class="caption">
+            <span class="en">Impressed by the reviewer</span>
+            <span class="jp">検 · 証</span>
+          </div>
+          <div class="hanko">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <rect x="3" y="3" width="94" height="94"
+                    fill="none" stroke="#C9302C" stroke-width="4"/>
+              <rect x="7" y="7" width="86" height="86"
+                    fill="rgba(201,48,44,0.08)" stroke="none"/>
+            </svg>
+            <div class="chars"><span>検</span><span>証</span></div>
+            <div class="bleed"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="front-right">
+      <div class="vertical-serif">
+        しずかに・たしかめる ── visual regression, in the key of paper
+      </div>
+    </div>
+
+  </section>
+
+  <hr class="yoko"/>
+
+  <!-- ======================================================= -->
+  <!-- LEDGER / RUN INDEX                                      -->
+  <!-- ======================================================= -->
+  <section class="ledger">
+
+    <div class="ledger-left">
+      <div class="vertical-label">
+        INDEX <span class="sep">·</span> 試験 台帳 <span class="sep">·</span> TEST RUNS
+      </div>
+    </div>
+
+    <div class="ledger-body">
+
+      <header class="section-head">
+        <div class="title-row">
+          <span class="eyebrow">§ ii · The ledger</span>
+          <h2>Test runs, kept<br/>like a register.</h2>
+          <span class="kana">しけん だいちょう</span>
+        </div>
+        <div class="meta">
+          <span class="mono">042 RUNS · 04 / 22 — 04 / 23</span>
+          <span class="eyebrow">auth. 三人 · jay, misha, rowan</span>
+        </div>
+      </header>
+
+      <div class="rows">
+
+        <!-- row 1 -->
+        <div class="row">
+          <div class="date">
+            <em>04/23</em> · 14:02 JST
+          </div>
+          <div class="name">
+            <span class="en">Login &amp; session handoff</span>
+            <span class="jp">ログイン · セッション</span>
+            <span class="path">apps/web/auth/login.spec · chromium · viewport 1440</span>
+          </div>
+          <div class="meta-col">
+            <span class="k">Surfaces</span>
+            <span class="v">web · ios · android</span>
+          </div>
+          <div class="duration">02:14.08</div>
+          <div class="status">
+            <div class="hanko solo">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="3" y="3" width="94" height="94" fill="none" stroke="#C9302C" stroke-width="4"/>
+                <rect x="7" y="7" width="86" height="86" fill="rgba(201,48,44,0.08)"/>
+              </svg>
+              <div class="chars"><span>合</span></div>
+              <div class="bleed"></div>
+            </div>
+            <span class="s-label">pass · 合格</span>
+          </div>
+        </div>
+
+        <!-- row 2 -->
+        <div class="row">
+          <div class="date">
+            <em>04/23</em> · 13:48 JST
+          </div>
+          <div class="name">
+            <span class="en">Checkout — promo code drift</span>
+            <span class="jp">会計 · プロモ コード</span>
+            <span class="path">apps/web/checkout/promo.story · webkit · viewport 390</span>
+          </div>
+          <div class="meta-col">
+            <span class="k">Model</span>
+            <span class="v">DINOv2 + SSIM</span>
+          </div>
+          <div class="duration">04:37.92</div>
+          <div class="status">
+            <div class="hanko solo">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="3" y="3" width="94" height="94" fill="none" stroke="#C9302C" stroke-width="4"/>
+                <rect x="7" y="7" width="86" height="86" fill="rgba(201,48,44,0.1)"/>
+              </svg>
+              <div class="chars"><span>棄</span></div>
+              <div class="bleed"></div>
+            </div>
+            <span class="s-label">reject · 棄却</span>
+          </div>
+        </div>
+
+        <!-- row 3 -->
+        <div class="row">
+          <div class="date">
+            <em>04/23</em> · 12:11 JST
+          </div>
+          <div class="name">
+            <span class="en">Onboarding, goal-authored</span>
+            <span class="jp">案内 · 目標ベース</span>
+            <span class="path">goals/first-run.yaml · firefox · viewport 1920</span>
+          </div>
+          <div class="meta-col">
+            <span class="k">Steps</span>
+            <span class="v">014 · auto-generated</span>
+          </div>
+          <div class="duration">06:02.41</div>
+          <div class="status">
+            <div class="hanko solo">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="3" y="3" width="94" height="94" fill="none" stroke="#C9302C" stroke-width="4"/>
+                <rect x="7" y="7" width="86" height="86" fill="rgba(201,48,44,0.08)"/>
+              </svg>
+              <div class="chars"><span>合</span></div>
+              <div class="bleed"></div>
+            </div>
+            <span class="s-label">pass · 合格</span>
+          </div>
+        </div>
+
+        <!-- row 4 (quarantine) -->
+        <div class="row">
+          <div class="date">
+            <em>04/23</em> · 11:26 JST
+          </div>
+          <div class="name">
+            <span class="en">Video player · scrubber handle</span>
+            <span class="jp">動画 · つまみ</span>
+            <span class="path">apps/web/player/scrubber.spec · chromium · viewport 1280</span>
+          </div>
+          <div class="meta-col">
+            <span class="k">Flakiness</span>
+            <span class="v">0.31 · quarantined</span>
+          </div>
+          <div class="duration">03:09.77</div>
+          <div class="status">
+            <div class="hanko solo quarantine">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="3" y="3" width="94" height="94" fill="none" stroke="#9A958B" stroke-width="3" stroke-dasharray="4 3"/>
+                <rect x="7" y="7" width="86" height="86" fill="rgba(154,149,139,0.08)"/>
+              </svg>
+              <div class="chars"><span>隔</span></div>
+            </div>
+            <span class="s-label">hold · 隔離</span>
+          </div>
+        </div>
+
+        <!-- row 5 -->
+        <div class="row">
+          <div class="date">
+            <em>04/22</em> · 22:58 JST
+          </div>
+          <div class="name">
+            <span class="en">Exploratory scan — dashboard</span>
+            <span class="jp">探索 · ダッシュボード</span>
+            <span class="path">crawl://dashboard · depth 3 · 087 screens</span>
+          </div>
+          <div class="meta-col">
+            <span class="k">Findings</span>
+            <span class="v">003 new · 001 ignore</span>
+          </div>
+          <div class="duration">17:41.05</div>
+          <div class="status">
+            <div class="hanko solo">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="3" y="3" width="94" height="94" fill="none" stroke="#C9302C" stroke-width="4"/>
+                <rect x="7" y="7" width="86" height="86" fill="rgba(201,48,44,0.08)"/>
+              </svg>
+              <div class="chars"><span>合</span></div>
+              <div class="bleed"></div>
+            </div>
+            <span class="s-label">pass · 合格</span>
+          </div>
+        </div>
+
+        <!-- row 6 -->
+        <div class="row">
+          <div class="date">
+            <em>04/22</em> · 20:04 JST
+          </div>
+          <div class="name">
+            <span class="en">Settings — dark mode inversion</span>
+            <span class="jp">設定 · 夜 モード</span>
+            <span class="path">apps/web/settings/theme.story · webkit · viewport 834</span>
+          </div>
+          <div class="meta-col">
+            <span class="k">Patch</span>
+            <span class="v">autonomous · llm</span>
+          </div>
+          <div class="duration">05:12.20</div>
+          <div class="status">
+            <div class="hanko solo">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="3" y="3" width="94" height="94" fill="none" stroke="#C9302C" stroke-width="4"/>
+                <rect x="7" y="7" width="86" height="86" fill="rgba(201,48,44,0.1)"/>
+              </svg>
+              <div class="chars"><span>棄</span></div>
+              <div class="bleed"></div>
+            </div>
+            <span class="s-label">reject · 棄却</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div></div>
+  </section>
+
+  <hr class="yoko"/>
+
+  <!-- ======================================================= -->
+  <!-- DIFF REVIEW                                             -->
+  <!-- ======================================================= -->
+  <section class="diff">
+
+    <div class="ledger-left">
+      <div class="vertical-label">
+        PLATE <span class="sep">·</span> 差分 検分 <span class="sep">·</span> REVIEW
+      </div>
+    </div>
+
+    <div class="diff-body">
+
+      <header class="section-head">
+        <div class="title-row">
+          <span class="eyebrow">§ iii · The plates</span>
+          <h2>Two impressions,<br/>set side by side.</h2>
+          <span class="kana">ずはん · くらべ</span>
+        </div>
+        <div class="meta">
+          <span class="mono">RUN 041 · CHECKOUT · PROMO CODE</span>
+          <span class="eyebrow">model: dinov2-b · ssim 0.9731</span>
+        </div>
+      </header>
+
+      <div class="plates">
+
+        <!-- Plate 01 baseline -->
+        <figure class="plate">
+          <div class="plate-frame">
+            <div class="plate-image">
+              <div class="mock baseline">
+                <div class="m-top">
+                  <span>shop · checkout</span>
+                  <div class="dots"><span></span><span></span><span></span></div>
+                </div>
+                <div class="m-center">
+                  <h3>Apply a promo code</h3>
+                  <div class="m-input"></div>
+                  <div class="m-button">Apply code</div>
+                </div>
+                <div class="m-bottom">total · ¥ 04,820</div>
+              </div>
+            </div>
+          </div>
+          <figcaption class="plate-caption">
+            <span class="fig">図 01</span>
+            <span class="desc">Login · baseline. Captured from <em>main</em> on 04/22 at 20:04 JST. Chromium, viewport 1440 × 900.</span>
+            <span class="stamp">baseline · 基準</span>
+          </figcaption>
+        </figure>
+
+        <!-- Plate 02 proposed -->
+        <figure class="plate">
+          <div class="plate-frame">
+            <div class="plate-image">
+              <div class="mock proposed">
+                <div class="m-top">
+                  <span>shop · checkout</span>
+                  <div class="dots"><span></span><span></span><span></span></div>
+                </div>
+                <div class="m-center">
+                  <h3>Apply a promo code</h3>
+                  <div class="m-input"></div>
+                  <div class="m-button">Apply code</div>
+                </div>
+                <div class="m-bottom">total · ¥ 04,820</div>
+                <!-- highlighted deltas -->
+                <div class="highlight-box" data-tag="Δ button · vermilion fill"
+                     style="left: 14%; right: 14%; top: 64%; height: 14%;"></div>
+                <div class="highlight-box" data-tag="Δ input · +4px height"
+                     style="left: 14%; right: 14%; top: 46%; height: 12%;"></div>
+              </div>
+            </div>
+          </div>
+          <figcaption class="plate-caption">
+            <span class="fig">図 02</span>
+            <span class="desc">Login · proposed. Pull request #184, <em>theme/cta-red</em>. Two regions flagged by the model.</span>
+            <span class="stamp">proposed · 提案</span>
+          </figcaption>
+        </figure>
+      </div>
+
+      <!-- AI observation -->
+      <div class="observation">
+        <div class="stamp-col">
+          <div class="hanko circle">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <circle cx="50" cy="50" r="47" fill="rgba(201,48,44,0.08)" stroke="#C9302C" stroke-width="3"/>
+            </svg>
+            <div class="chars" style="grid-template-columns: 1fr; font-size: 22px; padding-top: 20px;">
+              <span>観</span>
+              <span>察</span>
+            </div>
+            <div class="bleed"></div>
+          </div>
+        </div>
+
+        <div class="body">
+          <span class="eyebrow">The model's observation · 所見</span>
+          <p class="note">
+            The primary action has shifted from <em>sumi</em> to a vermilion fill
+            and the input height has grown by four pixels. The semantic affordance
+            is unchanged; the visual weight is not. A human should decide whether
+            this is the <em>new baseline</em> — or a drift to be corrected.
+          </p>
+          <p class="mono" style="color: var(--grey-mist);">
+            observed by · claude-sonnet-4.7 · 04/23 13:48:41 JST
+          </p>
+        </div>
+
+        <div class="metrics">
+          <div class="m">
+            <span class="k">SSIM</span>
+            <span class="v">0.9731</span>
+          </div>
+          <div class="m">
+            <span class="k">LPIPS</span>
+            <span class="v">0.0412</span>
+          </div>
+          <div class="m">
+            <span class="k">DINOv2 cos</span>
+            <span class="v">0.9884</span>
+          </div>
+          <div class="m">
+            <span class="k">Regions flagged</span>
+            <span class="v">002 of 014</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Decisions -->
+      <div class="decisions">
+        <div class="decision">
+          <div class="hanko solo">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <rect x="3" y="3" width="94" height="94" fill="none" stroke="#C9302C" stroke-width="4"/>
+              <rect x="7" y="7" width="86" height="86" fill="rgba(201,48,44,0.08)"/>
+            </svg>
+            <div class="chars"><span>合</span></div>
+            <div class="bleed"></div>
+          </div>
+          <span class="label">Approve · accept as new baseline</span>
+          <span class="jp">合 格</span>
+        </div>
+        <div class="decision">
+          <div class="hanko solo">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <rect x="3" y="3" width="94" height="94" fill="none" stroke="#C9302C" stroke-width="4"/>
+              <rect x="7" y="7" width="86" height="86" fill="rgba(201,48,44,0.1)"/>
+            </svg>
+            <div class="chars"><span>棄</span></div>
+            <div class="bleed"></div>
+          </div>
+          <span class="label">Reject · request a patch</span>
+          <span class="jp">棄 却</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div></div>
+  </section>
+
+  <hr class="yoko"/>
+
+  <!-- ======================================================= -->
+  <!-- CAPABILITIES — quiet strip                              -->
+  <!-- ======================================================= -->
+  <section class="capabilities">
+
+    <div class="ledger-left">
+      <div class="vertical-label">
+        MATTERS <span class="sep">·</span> 能 目 <span class="sep">·</span> WHAT IT DOES
+      </div>
+    </div>
+
+    <div class="cap-body">
+
+      <div class="cap">
+        <span class="num">壱 · 01</span>
+        <div class="title">
+          Captures every screen
+          <span class="jp">さつえい</span>
+        </div>
+        <p>Chromium, Firefox, WebKit. Three viewports per device. iOS, Android, and the open web. A single image is taken carefully; thousands are taken without fuss.</p>
+      </div>
+
+      <div class="cap">
+        <span class="num">弐 · 02</span>
+        <div class="title">
+          Compares with judgement
+          <span class="jp">ひかく</span>
+        </div>
+        <p>Pixel diff is the coarsest reading. SSIM for structure, LPIPS for perception, DINOv2 for semantics. The verdict comes last, and it is a single seal.</p>
+      </div>
+
+      <div class="cap">
+        <span class="num">参 · 03</span>
+        <div class="title">
+          Quarantines the flaky
+          <span class="jp">隔 離</span>
+        </div>
+        <p>A test that hesitates is set aside, not trusted, not thrown out. It is returned to the main register only when it has been steady for a while.</p>
+      </div>
+
+      <div class="cap">
+        <span class="num">四 · 04</span>
+        <div class="title">
+          Proposes a quiet fix
+          <span class="jp">修 繕</span>
+        </div>
+        <p>When the diff is plainly a bug, the model drafts a patch as a suggestion — never a commit — and leaves the decision, as always, with the human.</p>
+      </div>
+
+    </div>
+
+    <div></div>
+  </section>
+
+  <!-- ======================================================= -->
+  <!-- COLOPHON                                                -->
+  <!-- ======================================================= -->
+  <section class="colophon">
+    <div class="rule"></div>
+
+    <span class="eyebrow">Colophon · 奥付</span>
+
+    <div class="title">V <span class="dot">·</span> T <span class="dot">·</span> ai</div>
+
+    <p class="meta">
+      Set in Shippori Mincho &amp; Zen Kaku Gothic · Paper: washi #F2EDE1<br/>
+      Ink: sumi #1B1814 · Seal: vermilion #C9302C · Grain: fractal noise at eight percent<br/>
+      An open-source imprint under the MIT license · Edition 2.0 · Leaf 001 of 001<br/>
+      Impressed at 35.681 N, 139.767 E · 2026 spring
+    </p>
+
+    <div class="small-seal">
+      <div class="hanko circle small">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="47" fill="rgba(201,48,44,0.06)" stroke="#C9302C" stroke-width="4"/>
+        </svg>
+        <div class="chars" style="grid-template-columns: 1fr; font-size: 20px; padding-top: 3px;">
+          <span>了</span>
+        </div>
+        <div class="bleed"></div>
+      </div>
+    </div>
+
+    <span class="jp">おわり</span>
+
+    <div class="rule"></div>
+  </section>
+
+</main>
+
+</body>
+</html>

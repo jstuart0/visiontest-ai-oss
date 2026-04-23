@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VisionTest.ai — Sheet 01 of 04 — Visual Regression, Drafted</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Major+Mono+Display&family=Space+Grotesk:wght@300;400;500;600;700&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blueprint: #0A1838;
+    --blueprint-2: #0E1B42;
+    --blueprint-3: #0C1633;
+    --chalk: #A8D8E8;
+    --chalk-2: #C9E3EE;
+    --chalk-dim: #6E93A8;
+    --rev-ink: #D4A24C;
+    --rev-ink-warm: #E7B96B;
+    --reject-red: #DC3D37;
+    --accept-green: #7BB98A;
+    --paper: #E8EEF2;
+    --graphite: #2A3240;
+
+    --grid-fine: rgba(168, 216, 232, 0.07);
+    --grid-major: rgba(168, 216, 232, 0.14);
+
+    --font-disp: "Major Mono Display", "JetBrains Mono", ui-monospace, monospace;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-body: "Space Grotesk", system-ui, sans-serif;
+    --font-hand: "Caveat", "Comic Sans MS", cursive;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+
+  body{
+    font-family: var(--font-body);
+    background: var(--blueprint);
+    color: var(--chalk);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+
+    /* Fine 8px + major 64px drafting grid */
+    background-image:
+      linear-gradient(to right, var(--grid-fine) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-fine) 1px, transparent 1px),
+      linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px),
+      radial-gradient(circle at 20% 0%, #10224d 0%, transparent 40%),
+      radial-gradient(circle at 100% 100%, #0a1735 0%, transparent 60%),
+      linear-gradient(180deg, var(--blueprint) 0%, var(--blueprint-3) 100%);
+    background-size: 8px 8px, 8px 8px, 64px 64px, 64px 64px, 100% 100%, 100% 100%, 100% 100%;
+  }
+
+  /* ---------- SHEET / TITLE BLOCK SCAFFOLDING ---------- */
+  .sheet{
+    position: relative;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 48px 56px 96px 56px;
+    border-left: 1px solid rgba(168,216,232,0.18);
+    border-right: 1px solid rgba(168,216,232,0.18);
+  }
+  .sheet + .sheet{ border-top: 1px solid rgba(168,216,232,0.18); }
+
+  /* Corner crop marks */
+  .crop{ position:absolute; width:24px; height:24px; }
+  .crop::before, .crop::after{
+    content:""; position:absolute; background: var(--chalk); opacity:.55;
+  }
+  .crop::before{ left:0; top:0; width:24px; height:1px; }
+  .crop::after { left:0; top:0; width:1px; height:24px; }
+  .crop.tl{ top:16px; left:16px; }
+  .crop.tr{ top:16px; right:16px; transform: scaleX(-1); }
+  .crop.bl{ bottom:16px; left:16px; transform: scaleY(-1); }
+  .crop.br{ bottom:16px; right:16px; transform: scale(-1,-1); }
+
+  /* Mono labels / hairline text */
+  .mono{ font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .ucase{ text-transform: uppercase; letter-spacing: 0.18em; }
+  .hair { color: var(--chalk-dim); }
+  .ochre{ color: var(--rev-ink); }
+  .reject{ color: var(--reject-red); }
+
+  /* Title block in corner */
+  .title-block{
+    border: 1px solid var(--chalk);
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--chalk-2);
+    background: rgba(10,24,56,0.55);
+  }
+  .title-block > div{
+    border-right: 1px solid rgba(168,216,232,0.35);
+    border-bottom: 1px solid rgba(168,216,232,0.35);
+    padding: 8px 10px;
+  }
+  .title-block > div:nth-child(6n){ border-right:none; }
+  .title-block > div.span2{ grid-column: span 2; }
+  .title-block .k{ color: var(--chalk-dim); font-size: 8px; display:block; margin-bottom:3px; }
+  .title-block .v{ color: var(--chalk-2); font-size: 11px; letter-spacing: 0.08em; }
+  .title-block .v.big{ font-size: 14px; color: var(--chalk); }
+
+  /* Revision stamp */
+  .rev-stamp{
+    display:inline-flex; align-items:center; gap: 8px;
+    border: 1px solid var(--rev-ink);
+    color: var(--rev-ink);
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 5px 8px 5px 10px;
+    background: rgba(212,162,76,0.06);
+  }
+  .rev-stamp::before{
+    content:""; width:8px; height:8px; border:1px solid var(--rev-ink);
+    transform: rotate(45deg);
+  }
+
+  /* Dimension line helpers */
+  .dim{
+    display:inline-flex; align-items:center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing:0.14em;
+    color: var(--chalk-dim); text-transform: uppercase;
+  }
+  .dim-h{ width:100%; height: 12px; position: relative; }
+  .dim-h::before, .dim-h::after{
+    content:""; position:absolute; top:50%; height:1px; background: var(--chalk-dim);
+  }
+  .dim-h::before{ left:0; right: calc(50% + 34px); }
+  .dim-h::after { right:0; left: calc(50% + 34px); }
+  .dim-h .v{
+    position:absolute; left:50%; top:50%; transform: translate(-50%,-50%);
+    font-family: var(--font-mono); font-size: 10px; color: var(--chalk-dim); letter-spacing:0.12em;
+    background: var(--blueprint); padding: 0 8px;
+  }
+  .dim-tick{ position:absolute; top:0; bottom:0; width:1px; background: var(--chalk-dim); }
+
+  /* ---------- HERO / SHEET 01 ---------- */
+  .hero{
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 48px;
+    padding-top: 24px;
+  }
+  .hero-left h1{
+    font-family: var(--font-disp);
+    font-weight: 400;
+    color: var(--chalk);
+    font-size: clamp(44px, 6vw, 84px);
+    line-height: 0.96;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px 0;
+    text-transform: lowercase;
+  }
+  .hero-left h1 .em{ color: var(--rev-ink); }
+  .hero-left h1 .rej{ color: var(--reject-red); }
+  .hero-kicker{
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.3em; color: var(--chalk-dim);
+    text-transform: uppercase; margin-bottom: 28px;
+    display:flex; gap: 16px; align-items:center; flex-wrap: wrap;
+  }
+  .hero-kicker .bar{ flex: 1; height: 1px; background: var(--chalk-dim); opacity: .5; min-width: 40px; }
+
+  .hero-lede{
+    font-family: var(--font-body);
+    font-size: 17px; color: var(--chalk-2); max-width: 560px; line-height: 1.55;
+    margin-top: 28px;
+  }
+  .hero-lede strong{ color: var(--chalk); font-weight: 500; }
+
+  .hero-meta{
+    margin-top: 32px;
+    display:grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid rgba(168,216,232,0.25);
+    border-bottom: 1px solid rgba(168,216,232,0.25);
+  }
+  .hero-meta > div{
+    padding: 14px 16px 14px 0;
+    border-right: 1px solid rgba(168,216,232,0.18);
+  }
+  .hero-meta > div:last-child{ border-right:none; }
+  .hero-meta .k{ display:block; font-family: var(--font-mono); font-size: 9px; letter-spacing:0.22em; color: var(--chalk-dim); text-transform: uppercase; margin-bottom: 6px; }
+  .hero-meta .v{ font-family: var(--font-mono); font-size: 22px; letter-spacing: 0.04em; color: var(--chalk); }
+  .hero-meta .v small{ font-size: 11px; color: var(--chalk-dim); letter-spacing: 0.16em; margin-left: 4px; }
+
+  /* Orthographic diagram in hero right column */
+  .ortho-wrap{
+    position: relative;
+    border: 1px solid rgba(168,216,232,0.35);
+    padding: 16px;
+    background: rgba(14,27,66,0.35);
+  }
+  .ortho-wrap .tb-head{
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em; color: var(--chalk-dim);
+    text-transform: uppercase; display:flex; justify-content: space-between;
+    border-bottom: 1px solid rgba(168,216,232,0.25); padding-bottom: 6px; margin-bottom: 10px;
+  }
+  .ortho{ width: 100%; height: auto; display:block; }
+
+  /* ---------- UNIVERSAL SECTION HEADS ---------- */
+  .section-head{
+    display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap: 16px;
+    margin: 88px 0 24px 0;
+  }
+  .section-head .num{
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.26em; color: var(--rev-ink);
+    border: 1px solid var(--rev-ink); padding: 6px 10px; text-transform: uppercase;
+  }
+  .section-head .ttl{
+    font-family: var(--font-disp); font-size: 22px; color: var(--chalk);
+    letter-spacing: 0.02em; text-transform: lowercase;
+  }
+  .section-head .rule{ height:1px; background: var(--chalk); opacity: .35; }
+  .section-head .stamp{
+    font-family: var(--font-mono); font-size: 10px; color: var(--chalk-dim); letter-spacing: 0.22em; text-transform: uppercase;
+  }
+
+  /* ---------- COVERAGE MAP / ISOMETRIC ---------- */
+  .iso-stage{
+    position: relative;
+    border: 1px solid rgba(168,216,232,0.28);
+    padding: 24px;
+    background:
+      linear-gradient(to right, rgba(168,216,232,0.06) 1px, transparent 1px) 0 0 / 16px 16px,
+      linear-gradient(to bottom, rgba(168,216,232,0.06) 1px, transparent 1px) 0 0 / 16px 16px,
+      rgba(10,24,56,0.35);
+    overflow: hidden;
+  }
+  .iso-stage .tb-head{
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em; color: var(--chalk-dim);
+    text-transform: uppercase; display:flex; justify-content: space-between; gap: 24px;
+    border-bottom: 1px solid rgba(168,216,232,0.25); padding-bottom: 8px; margin-bottom: 24px;
+  }
+  .iso-scene{
+    position: relative;
+    height: 660px;
+    perspective: 1600px;
+  }
+  .iso-inner{
+    position: absolute; inset: 0;
+    transform-style: preserve-3d;
+    transform: rotateX(58deg) rotateZ(-38deg);
+  }
+  .iso-plane{
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(168,216,232,0.10) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(168,216,232,0.10) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px;
+    border: 1px dashed rgba(168,216,232,0.28);
+  }
+  .node{
+    position: absolute;
+    border: 1px solid var(--chalk);
+    background: rgba(10,24,56,0.85);
+    padding: 10px 12px;
+    min-width: 150px;
+    transform-style: preserve-3d;
+  }
+  .node.root{ border-color: var(--rev-ink); background: rgba(212,162,76,0.12); }
+  .node.fail{ border-color: var(--reject-red); background: rgba(220,61,55,0.12); }
+  .node .nm{
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
+    color: var(--chalk); text-transform: uppercase;
+  }
+  .node.root .nm{ color: var(--rev-ink); }
+  .node.fail .nm{ color: var(--reject-red); }
+  .node .sub{
+    font-family: var(--font-mono); font-size: 8.5px; color: var(--chalk-dim); letter-spacing:0.12em;
+    margin-top: 3px;
+  }
+  .node .pill{
+    display: inline-block; margin-top: 6px;
+    font-family: var(--font-mono); font-size: 8.5px;
+    padding: 2px 5px; border: 1px solid var(--chalk-dim); color: var(--chalk-dim);
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .node.fail .pill{ border-color: var(--reject-red); color: var(--reject-red); }
+  .node.root .pill{ border-color: var(--rev-ink); color: var(--rev-ink); }
+
+  .iso-legend{
+    position: absolute; right: 24px; bottom: 24px;
+    border: 1px solid rgba(168,216,232,0.35);
+    padding: 10px 14px; font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--chalk-dim);
+    background: rgba(10,24,56,0.85); min-width: 240px;
+  }
+  .iso-legend div{ display:flex; align-items:center; gap: 8px; padding: 3px 0; }
+  .legend-swatch{ width: 28px; height: 10px; border: 1px solid var(--chalk); }
+  .legend-swatch.root{ border-color: var(--rev-ink); background: rgba(212,162,76,0.2); }
+  .legend-swatch.fail{ border-color: var(--reject-red); background: rgba(220,61,55,0.2); }
+  .legend-swatch.solid{ background: var(--chalk); height:1px; border:none; }
+  .legend-swatch.dashed{ background: transparent; border:none; border-top: 1px dashed var(--chalk); height:0; }
+
+  /* ---------- DIFF SHEETS ---------- */
+  .diff-grid{
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;
+    position: relative;
+  }
+  .diff-sheet{
+    border: 1px solid rgba(168,216,232,0.32);
+    background: rgba(10,24,56,0.5);
+    padding: 14px 16px 18px 16px;
+    position: relative;
+  }
+  .diff-sheet .mini-tb{
+    display:flex; justify-content: space-between; align-items:center;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
+    color: var(--chalk-dim); text-transform: uppercase;
+    border-bottom: 1px solid rgba(168,216,232,0.22);
+    padding-bottom: 8px; margin-bottom: 12px;
+  }
+  .diff-sheet .stage{
+    aspect-ratio: 4/3; position: relative; border: 1px solid rgba(168,216,232,0.2);
+    background:
+      linear-gradient(to right, rgba(168,216,232,0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(168,216,232,0.06) 1px, transparent 1px),
+      #0b1a3f;
+    background-size: 16px 16px, 16px 16px, 100% 100%;
+    overflow: hidden;
+  }
+  .diff-sheet .footer{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px;
+    font-family: var(--font-mono); font-size: 9.5px; color: var(--chalk-dim); letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .diff-sheet .footer .k{ color: var(--chalk-dim); }
+  .diff-sheet .footer .v{ color: var(--chalk-2); text-align: right; }
+
+  .sheet-stamp{
+    position: absolute; top: -12px; right: 12px;
+    background: var(--blueprint);
+    padding: 0 8px;
+  }
+
+  .leader-layer{
+    position:absolute; inset:0; pointer-events: none;
+  }
+
+  /* Fake UI inside the diff stage */
+  .ui{ position: absolute; inset: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .ui .bar{ height: 22px; border: 1px solid rgba(168,216,232,0.35); display:flex; align-items:center; padding: 0 8px; font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 0.16em; color: var(--chalk-dim); text-transform: uppercase; gap: 8px; }
+  .ui .bar .dot{ width: 6px; height: 6px; border: 1px solid var(--chalk-dim); display:inline-block; }
+  .ui .hero{
+    flex: 1; display: grid; grid-template-columns: 2fr 1fr; gap: 8px;
+    padding: 0;
+  }
+  .ui .hero .blk{ border: 1px solid rgba(168,216,232,0.3); position: relative; overflow: hidden; }
+  .ui .hero .blk .label{
+    position: absolute; top: 6px; left: 6px; font-family: var(--font-mono); font-size: 8px;
+    color: var(--chalk-dim); letter-spacing: 0.2em; text-transform: uppercase;
+  }
+  .ui .hero .blk .btn{
+    position: absolute; bottom: 10px; left: 10px; height: 18px; padding: 0 10px;
+    border: 1px solid var(--chalk); color: var(--chalk);
+    display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .ui .hero .blk .btn.new{ background: var(--rev-ink); color: var(--blueprint); border-color: var(--rev-ink); }
+  .ui .hero .blk.chart{ display:grid; grid-template-columns: repeat(6, 1fr); align-items:end; gap: 4px; padding: 14px 8px; }
+  .ui .hero .blk.chart i{ display:block; background: var(--chalk-dim); opacity:.5; }
+  .ui .grid3{ height: 80px; display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .ui .grid3 .card{ border: 1px solid rgba(168,216,232,0.3); position: relative; }
+  .ui .grid3 .card::after{
+    content:""; position:absolute; left:8px; right:20px; top: 10px; height: 6px; background: rgba(168,216,232,0.35);
+  }
+  .ui .grid3 .card::before{
+    content:""; position:absolute; left:8px; right: 40px; top: 20px; height: 4px; background: rgba(168,216,232,0.2);
+  }
+
+  /* DIFF variant: inject a color-shift + extra pixel highlights */
+  .ui.new .hero .blk:first-child{ background: rgba(212,162,76,0.08); }
+  .ui.new .hero .blk:first-child .btn{ background: var(--rev-ink-warm); color: var(--blueprint); border-color: var(--rev-ink-warm); }
+  .ui.new .grid3 .card:nth-child(3){ border-color: var(--rev-ink); }
+  .ui.new .grid3 .card:nth-child(3)::after{ background: var(--rev-ink); }
+
+  .ui.diff{ background: rgba(220,61,55,0.02); }
+  .ui.diff .hero .blk:first-child{ outline: 1px dashed var(--rev-ink); outline-offset: -3px; }
+  .ui.diff .hero .blk:first-child .btn{ background: rgba(220,61,55,0.25); border-color: var(--reject-red); color: var(--reject-red); }
+  .ui.diff .grid3 .card:nth-child(3){ outline: 1px dashed var(--reject-red); outline-offset: -2px; }
+
+  .diff-legend{
+    margin-top: 36px; display:grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    border-top: 1px solid rgba(168,216,232,0.22);
+    border-bottom: 1px solid rgba(168,216,232,0.22);
+  }
+  .diff-legend > div{ padding: 14px 16px; border-right: 1px solid rgba(168,216,232,0.18); }
+  .diff-legend > div:last-child{ border-right:none; }
+  .diff-legend .k{ font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.24em; color: var(--chalk-dim); text-transform: uppercase; }
+  .diff-legend .v{ font-family: var(--font-mono); font-size: 24px; color: var(--chalk); margin-top: 8px; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+  .diff-legend .v.rej{ color: var(--reject-red); }
+  .diff-legend .v.ok{ color: var(--accept-green); }
+  .diff-legend .v small{ font-size: 10px; color: var(--chalk-dim); letter-spacing: 0.2em; margin-left: 6px; }
+
+  /* ---------- TIMELINE / GANTT ---------- */
+  .timeline{
+    position: relative; border: 1px solid rgba(168,216,232,0.28);
+    padding: 20px 24px 28px 24px; background: rgba(10,24,56,0.4);
+  }
+  .tl-head{
+    display:flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
+    color: var(--chalk-dim); text-transform: uppercase;
+    border-bottom: 1px solid rgba(168,216,232,0.2); padding-bottom: 10px; margin-bottom: 14px;
+  }
+  .tl-axis{
+    position: relative; height: 26px; border-bottom: 1px solid rgba(168,216,232,0.3); margin-left: 200px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; color: var(--chalk-dim);
+  }
+  .tl-axis span{
+    position: absolute; top: 0; transform: translateX(-50%);
+    padding-bottom: 8px; border-right: 1px solid rgba(168,216,232,0.2);
+    padding-right: 0;
+  }
+  .tl-axis span::after{
+    content:""; position:absolute; right: -1px; top: 18px; width:1px; height: 6px; background: var(--chalk-dim);
+  }
+  .tl-row{
+    display:grid; grid-template-columns: 200px 1fr; align-items: center;
+    height: 32px; border-bottom: 1px solid rgba(168,216,232,0.08);
+  }
+  .tl-label{
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; color: var(--chalk-2);
+    text-transform: uppercase; padding-right: 16px; border-right: 1px solid rgba(168,216,232,0.22);
+    height: 100%; display: flex; align-items:center;
+  }
+  .tl-label .ix{ color: var(--chalk-dim); margin-right: 8px; font-size: 9px; }
+  .tl-track{ position: relative; height: 100%; }
+  .tl-bar{
+    position: absolute; top: 50%; transform: translateY(-50%);
+    height: 12px; border: 1px solid var(--chalk); background: rgba(168,216,232,0.15);
+    display:flex; align-items: center; padding: 0 6px;
+    font-family: var(--font-mono); font-size: 8.5px; color: var(--chalk); letter-spacing: 0.14em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .tl-bar.ok{ background: rgba(123,185,138,0.18); border-color: var(--accept-green); color: var(--accept-green); }
+  .tl-bar.fail{ background: rgba(220,61,55,0.18); border-color: var(--reject-red); color: var(--reject-red); }
+  .tl-bar.rev{ background: rgba(212,162,76,0.2); border-color: var(--rev-ink); color: var(--rev-ink); }
+  .tl-bar.run{ background: rgba(168,216,232,0.12); }
+  .tl-tick{
+    position: absolute; top:0; bottom:0; width:1px; background: rgba(168,216,232,0.08);
+  }
+  .tl-marker{
+    position: absolute; top: -4px; bottom: 0; width: 1px; background: var(--rev-ink);
+  }
+  .tl-marker::before{
+    content: attr(data-label);
+    position: absolute; top: -14px; left: 4px; font-family: var(--font-mono); font-size: 9px;
+    color: var(--rev-ink); letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap;
+  }
+
+  /* ---------- FOOTER TITLE BLOCK ---------- */
+  .footer-tb{
+    margin-top: 48px;
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+    border: 1px solid var(--chalk);
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
+    color: var(--chalk-2); text-transform: uppercase;
+    background: rgba(10,24,56,0.5);
+  }
+  .footer-tb > div{ padding: 14px 16px; border-right: 1px solid rgba(168,216,232,0.3); }
+  .footer-tb > div:last-child{ border-right: none; }
+  .footer-tb .k{ color: var(--chalk-dim); font-size: 9px; display:block; margin-bottom: 4px; }
+  .footer-tb .v.big{ font-family: var(--font-disp); font-size: 18px; text-transform: lowercase; letter-spacing: 0.02em; color: var(--chalk); }
+
+  .annot{
+    font-family: var(--font-hand); font-size: 22px; color: var(--rev-ink-warm); line-height: 1;
+  }
+  .annot.red{ color: var(--reject-red); }
+
+  /* HR drafting rule */
+  hr.rule{
+    border: 0; border-top: 1px solid rgba(168,216,232,0.25); margin: 56px 0 0 0;
+  }
+
+  /* Utility */
+  .row{ display:flex; gap: 16px; align-items:center; }
+  .spacer{ flex:1; }
+
+  @media (max-width: 1000px){
+    .hero{ grid-template-columns: 1fr; }
+    .diff-grid{ grid-template-columns: 1fr; }
+    .hero-meta{ grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     SHEET 01 — HERO / TITLE BLOCK
+     ========================================================= -->
+<section class="sheet">
+  <span class="crop tl"></span><span class="crop tr"></span>
+  <span class="crop bl"></span><span class="crop br"></span>
+
+  <!-- Top title block -->
+  <div class="title-block">
+    <div class="span2">
+      <span class="k">Project</span>
+      <span class="v big">VISIONTEST.AI / VR-2026</span>
+    </div>
+    <div>
+      <span class="k">Sheet</span>
+      <span class="v">01 of 04</span>
+    </div>
+    <div>
+      <span class="k">Scale</span>
+      <span class="v">10 : 1</span>
+    </div>
+    <div>
+      <span class="k">Drawn</span>
+      <span class="v">J. STUART</span>
+    </div>
+    <div>
+      <span class="k">Rev.</span>
+      <span class="v ochre" style="color:var(--rev-ink);">07 · 2026-04-23</span>
+    </div>
+
+    <div class="span2">
+      <span class="k">Assembly</span>
+      <span class="v">VISUAL REGRESSION · BASELINE vs. CANDIDATE</span>
+    </div>
+    <div>
+      <span class="k">Drawing No.</span>
+      <span class="v">VT-SCH-0041-A</span>
+    </div>
+    <div>
+      <span class="k">Classification</span>
+      <span class="v">OSS / MIT · PUBLIC</span>
+    </div>
+    <div>
+      <span class="k">Checked</span>
+      <span class="v">J.S.</span>
+    </div>
+    <div>
+      <span class="k">Approved</span>
+      <span class="v ochre" style="color:var(--rev-ink);">◇ PENDING</span>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero" style="margin-top: 40px;">
+    <div class="hero-left">
+      <div class="hero-kicker">
+        <span>VT-SCH-0041-A</span>
+        <span class="bar"></span>
+        <span>Sheet 01 of 04 · Visual Regression at 10:1 Scale</span>
+      </div>
+
+      <h1>
+        pixels, drafted.<br/>
+        regressions, <span class="em">dimensioned</span>.<br/>
+        bugs, <span class="rej">rejected</span>.
+      </h1>
+
+      <div class="hero-lede">
+        <strong>VisionTest.ai</strong> drafts the difference between your app's baseline and its candidate
+        build — across Chromium, Firefox, WebKit, iOS 17, and Android 14 — then annotates every deviation
+        with the precision of an engineering schematic. SSIM, LPIPS, and DINOv2 surveyors check the work.
+        A human stamps approval. Nothing ships unchecked.
+      </div>
+
+      <!-- Dimension callout row -->
+      <div style="margin-top: 40px; position: relative; height: 52px;">
+        <svg viewBox="0 0 900 52" preserveAspectRatio="none" style="width:100%; height: 52px;" aria-hidden="true">
+          <!-- extension lines -->
+          <line x1="4" y1="4" x2="4" y2="36" stroke="#A8D8E8" stroke-opacity=".6" stroke-width="1"/>
+          <line x1="896" y1="4" x2="896" y2="36" stroke="#A8D8E8" stroke-opacity=".6" stroke-width="1"/>
+          <!-- dim line -->
+          <line x1="4" y1="26" x2="430" y2="26" stroke="#A8D8E8" stroke-opacity=".6" stroke-width="1"/>
+          <line x1="490" y1="26" x2="896" y2="26" stroke="#A8D8E8" stroke-opacity=".6" stroke-width="1"/>
+          <!-- arrowheads -->
+          <polygon points="4,26 12,22 12,30" fill="#A8D8E8" fill-opacity=".6"/>
+          <polygon points="896,26 888,22 888,30" fill="#A8D8E8" fill-opacity=".6"/>
+          <!-- label -->
+          <text x="460" y="30" text-anchor="middle" fill="#A8D8E8" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="2">1440.00 mm · VIEWPORT DESKTOP · DWG-A</text>
+          <!-- tick marks -->
+          <line x1="220" y1="22" x2="220" y2="30" stroke="#A8D8E8" stroke-opacity=".35"/>
+          <line x1="680" y1="22" x2="680" y2="30" stroke="#A8D8E8" stroke-opacity=".35"/>
+        </svg>
+      </div>
+
+      <div class="hero-meta">
+        <div>
+          <span class="k">Browsers</span>
+          <span class="v mono">05 <small>CH / FF / WK / iOS / AND</small></span>
+        </div>
+        <div>
+          <span class="k">Viewports</span>
+          <span class="v mono">12</span>
+        </div>
+        <div>
+          <span class="k">Diff algos</span>
+          <span class="v mono">04 <small>PX · SSIM · LPIPS · DINO</small></span>
+        </div>
+        <div>
+          <span class="k">Ship gate</span>
+          <span class="v mono ochre" style="color:var(--rev-ink);">◇ STAMPED</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 34px; display:flex; gap: 12px; align-items:center; flex-wrap: wrap;">
+        <div class="rev-stamp">Rev. 07 · 2026-04-23 · CHK: J.S.</div>
+        <div class="rev-stamp" style="border-color: var(--chalk); color: var(--chalk); background: rgba(168,216,232,0.05);">
+          <span style="width:8px;height:8px;border:1px solid var(--chalk);transform:rotate(45deg);display:inline-block;"></span>
+          Spec VT-0041 · MIT License
+        </div>
+        <div class="annot" style="padding-left: 6px;">↘ see Detail A, Sheet 03</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: orthographic projection of device set -->
+    <div>
+      <div class="ortho-wrap">
+        <div class="tb-head">
+          <span>Detail · Device Set</span>
+          <span>Scale 1:4</span>
+        </div>
+        <svg class="ortho" viewBox="0 0 360 520" aria-hidden="true">
+          <defs>
+            <pattern id="gp" width="8" height="8" patternUnits="userSpaceOnUse">
+              <path d="M 8 0 L 0 0 0 8" fill="none" stroke="#A8D8E8" stroke-opacity=".08" stroke-width=".5"/>
+            </pattern>
+            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#A8D8E8" fill-opacity=".7"/>
+            </marker>
+            <marker id="arrOch" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#D4A24C"/>
+            </marker>
+          </defs>
+          <rect width="360" height="520" fill="url(#gp)"/>
+
+          <!-- Desktop frame 1440x900 -->
+          <g transform="translate(20,20)">
+            <rect x="0" y="0" width="300" height="188" fill="none" stroke="#A8D8E8" stroke-width="1.1"/>
+            <rect x="8" y="8" width="284" height="14" fill="none" stroke="#A8D8E8" stroke-opacity=".55"/>
+            <circle cx="16" cy="15" r="2.5" fill="none" stroke="#A8D8E8" stroke-opacity=".6"/>
+            <circle cx="26" cy="15" r="2.5" fill="none" stroke="#A8D8E8" stroke-opacity=".6"/>
+            <circle cx="36" cy="15" r="2.5" fill="none" stroke="#A8D8E8" stroke-opacity=".6"/>
+            <rect x="16" y="36" width="140" height="86" fill="rgba(168,216,232,0.06)" stroke="#A8D8E8" stroke-opacity=".5"/>
+            <rect x="164" y="36" width="120" height="40" fill="rgba(212,162,76,0.12)" stroke="#D4A24C" stroke-opacity=".7"/>
+            <rect x="164" y="84" width="120" height="38" fill="none" stroke="#A8D8E8" stroke-opacity=".45"/>
+            <rect x="16" y="130" width="268" height="42" fill="none" stroke="#A8D8E8" stroke-opacity=".45"/>
+            <text x="150" y="200" text-anchor="middle" fill="#6E93A8" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2">DWG-A · 1440 × 900</text>
+          </g>
+
+          <!-- Tablet frame -->
+          <g transform="translate(20,234)">
+            <rect x="0" y="0" width="170" height="128" fill="none" stroke="#A8D8E8" stroke-width="1.1"/>
+            <rect x="6" y="6" width="158" height="10" fill="none" stroke="#A8D8E8" stroke-opacity=".5"/>
+            <rect x="12" y="24" width="146" height="60" fill="rgba(168,216,232,0.06)" stroke="#A8D8E8" stroke-opacity=".4"/>
+            <rect x="12" y="90" width="70" height="30" fill="none" stroke="#A8D8E8" stroke-opacity=".45"/>
+            <rect x="88" y="90" width="70" height="30" fill="rgba(212,162,76,0.12)" stroke="#D4A24C" stroke-opacity=".7"/>
+            <text x="85" y="142" text-anchor="middle" fill="#6E93A8" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2">DWG-B · 820 × 1180</text>
+          </g>
+
+          <!-- Phone frame 390x844 -->
+          <g transform="translate(210,234)">
+            <rect x="0" y="0" width="110" height="220" fill="none" stroke="#A8D8E8" stroke-width="1.1" rx="1"/>
+            <rect x="40" y="4" width="30" height="4" fill="#A8D8E8" fill-opacity=".35"/>
+            <rect x="8" y="16" width="94" height="20" fill="none" stroke="#A8D8E8" stroke-opacity=".5"/>
+            <rect x="8" y="42" width="94" height="80" fill="rgba(168,216,232,0.06)" stroke="#A8D8E8" stroke-opacity=".4"/>
+            <rect x="8" y="128" width="44" height="30" fill="rgba(220,61,55,0.15)" stroke="#DC3D37" stroke-opacity=".75"/>
+            <rect x="58" y="128" width="44" height="30" fill="none" stroke="#A8D8E8" stroke-opacity=".5"/>
+            <rect x="8" y="164" width="94" height="24" fill="none" stroke="#A8D8E8" stroke-opacity=".45"/>
+            <rect x="8" y="194" width="94" height="18" fill="none" stroke="#A8D8E8" stroke-opacity=".35"/>
+            <text x="55" y="244" text-anchor="middle" fill="#6E93A8" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2">DWG-C · 390 × 844</text>
+          </g>
+
+          <!-- dimension: desktop width -->
+          <g>
+            <line x1="20" y1="235" x2="320" y2="235" stroke="#A8D8E8" stroke-opacity=".55" marker-start="url(#arr)" marker-end="url(#arr)"/>
+            <text x="170" y="231" text-anchor="middle" fill="#A8D8E8" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2">← 1440 →</text>
+          </g>
+
+          <!-- leader to ochre cta -->
+          <g>
+            <line x1="280" y1="65" x2="340" y2="45" stroke="#D4A24C" stroke-width="1" marker-end="url(#arrOch)"/>
+            <line x1="340" y1="45" x2="340" y2="28" stroke="#D4A24C" stroke-width="1"/>
+            <text x="340" y="22" text-anchor="end" fill="#D4A24C" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2">DETAIL A</text>
+          </g>
+
+          <!-- reject leader to phone button -->
+          <g>
+            <line x1="240" y1="372" x2="200" y2="400" stroke="#DC3D37" stroke-width="1" marker-end="url(#arr)"/>
+            <text x="196" y="414" text-anchor="end" fill="#DC3D37" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2">REJ · ΔE 12.4</text>
+          </g>
+
+          <!-- ortho axis key -->
+          <g transform="translate(20,490)">
+            <line x1="0" y1="0" x2="40" y2="0" stroke="#A8D8E8" stroke-opacity=".6"/>
+            <line x1="0" y1="0" x2="0" y2="-18" stroke="#A8D8E8" stroke-opacity=".6"/>
+            <text x="46" y="3" fill="#6E93A8" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="2">X · Y · Z</text>
+          </g>
+        </svg>
+      </div>
+
+      <div style="display:flex; justify-content: space-between; margin-top: 10px;" class="mono ucase hair">
+        <span style="font-size: 9px;">ORTHOGRAPHIC · 3RD ANGLE</span>
+        <span style="font-size: 9px;">PLATES A · B · C</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =========================================================
+     SHEET 02 — COVERAGE MAP (ISOMETRIC)
+     ========================================================= -->
+<section class="sheet">
+  <span class="crop tl"></span><span class="crop tr"></span>
+  <span class="crop bl"></span><span class="crop br"></span>
+
+  <div class="section-head">
+    <span class="num">02 / 04</span>
+    <span class="ttl">exploratory scan · coverage map</span>
+    <div class="rule"></div>
+    <span class="stamp">DWG-E · AXONOMETRIC · 30° / 30°</span>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 280px; gap: 32px;">
+    <div class="iso-stage">
+      <div class="tb-head">
+        <span>SCAN-ID · SC-2026-04-23-A17 · seed: <span class="ochre" style="color:var(--rev-ink);">/dashboard</span></span>
+        <span>27 nodes · depth 04 · traversal 48.3 s</span>
+      </div>
+
+      <div class="iso-scene">
+        <!-- SVG edges layer (behind iso-inner by z-index via absolute) -->
+        <svg viewBox="0 0 900 660" preserveAspectRatio="none" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index: 3;" aria-hidden="true">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#A8D8E8" fill-opacity=".8"/>
+            </marker>
+            <marker id="arr2R" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#DC3D37"/>
+            </marker>
+          </defs>
+
+          <!-- Solid crawl edges -->
+          <path d="M 200 280 C 300 230, 360 190, 430 170" stroke="#A8D8E8" stroke-width="1.1" fill="none" marker-end="url(#arr2)"/>
+          <path d="M 200 280 C 300 320, 370 370, 430 400" stroke="#A8D8E8" stroke-width="1.1" fill="none" marker-end="url(#arr2)"/>
+          <path d="M 200 280 C 240 420, 280 490, 330 540" stroke="#A8D8E8" stroke-width="1.1" fill="none" marker-end="url(#arr2)"/>
+          <path d="M 430 170 C 520 140, 600 130, 680 140" stroke="#A8D8E8" stroke-width="1.1" fill="none" marker-end="url(#arr2)"/>
+          <path d="M 430 170 C 520 205, 600 255, 660 300" stroke="#A8D8E8" stroke-width="1.1" fill="none" marker-end="url(#arr2)"/>
+          <path d="M 430 400 C 520 400, 600 380, 670 330" stroke="#A8D8E8" stroke-width="1.1" fill="none" marker-end="url(#arr2)"/>
+          <path d="M 430 400 C 510 440, 580 480, 640 500" stroke="#A8D8E8" stroke-width="1.1" fill="none" marker-end="url(#arr2)"/>
+          <path d="M 330 540 C 420 540, 510 530, 580 520" stroke="#A8D8E8" stroke-width="1.1" fill="none" marker-end="url(#arr2)"/>
+
+          <!-- Dashed (inferred / unreachable) -->
+          <path d="M 680 140 C 720 200, 760 260, 790 300" stroke="#A8D8E8" stroke-width="1" fill="none" stroke-dasharray="4 4" marker-end="url(#arr2)"/>
+          <path d="M 640 500 C 700 460, 760 420, 790 380" stroke="#A8D8E8" stroke-width="1" fill="none" stroke-dasharray="4 4" marker-end="url(#arr2)"/>
+
+          <!-- Rejected / failed crawl -->
+          <path d="M 660 300 L 790 260" stroke="#DC3D37" stroke-width="1.2" fill="none" marker-end="url(#arr2R)"/>
+
+          <!-- depth rings -->
+          <circle cx="200" cy="280" r="90"  fill="none" stroke="#A8D8E8" stroke-opacity=".15" stroke-dasharray="2 4"/>
+          <circle cx="200" cy="280" r="200" fill="none" stroke="#A8D8E8" stroke-opacity=".12" stroke-dasharray="2 4"/>
+          <circle cx="200" cy="280" r="320" fill="none" stroke="#A8D8E8" stroke-opacity=".08" stroke-dasharray="2 4"/>
+
+          <!-- depth labels -->
+          <text x="200" y="195" fill="#6E93A8" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle" letter-spacing="2">D·1</text>
+          <text x="200" y="85"  fill="#6E93A8" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle" letter-spacing="2">D·2</text>
+          <text x="200" y="-35" fill="#6E93A8" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle" letter-spacing="2">D·3</text>
+
+          <!-- leader to failed node -->
+          <line x1="790" y1="260" x2="860" y2="210" stroke="#DC3D37" stroke-width="1"/>
+          <line x1="860" y1="210" x2="870" y2="210" stroke="#DC3D37" stroke-width="1"/>
+          <text x="875" y="207" fill="#DC3D37" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2">HTTP 500</text>
+          <text x="875" y="219" fill="#DC3D37" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="2">/billing/renew</text>
+        </svg>
+
+        <!-- isometric plane + nodes -->
+        <div class="iso-inner">
+          <div class="iso-plane"></div>
+
+          <!-- nodes positioned on untransformed overlay -->
+        </div>
+
+        <!-- Overlay nodes (flat, easier to read) -->
+        <div style="position:absolute; inset:0; z-index: 5;">
+          <div class="node root"  style="left: 130px; top: 260px;">
+            <div class="nm">◆ / dashboard</div>
+            <div class="sub">ENTRY · depth 0</div>
+            <div class="pill">SEED</div>
+          </div>
+          <div class="node" style="left: 385px; top: 140px;">
+            <div class="nm">/ projects</div>
+            <div class="sub">depth 1 · 412 ms</div>
+            <div class="pill">OK</div>
+          </div>
+          <div class="node" style="left: 385px; top: 380px;">
+            <div class="nm">/ runs · latest</div>
+            <div class="sub">depth 1 · 298 ms</div>
+            <div class="pill">OK</div>
+          </div>
+          <div class="node" style="left: 265px; top: 520px;">
+            <div class="nm">/ settings</div>
+            <div class="sub">depth 1 · 187 ms</div>
+            <div class="pill">OK</div>
+          </div>
+          <div class="node" style="left: 625px; top: 120px;">
+            <div class="nm">/ projects / new</div>
+            <div class="sub">depth 2 · 522 ms</div>
+            <div class="pill">OK</div>
+          </div>
+          <div class="node" style="left: 605px; top: 280px;">
+            <div class="nm">/ projects / :id</div>
+            <div class="sub">depth 2 · 631 ms</div>
+            <div class="pill">OK</div>
+          </div>
+          <div class="node" style="left: 605px; top: 480px;">
+            <div class="nm">/ runs / :id / diff</div>
+            <div class="sub">depth 2 · 1.24 s</div>
+            <div class="pill">OK</div>
+          </div>
+          <div class="node" style="left: 540px; top: 500px;">
+            <div class="nm">/ runs / :id</div>
+            <div class="sub">depth 2 · 714 ms</div>
+            <div class="pill">OK</div>
+          </div>
+          <div class="node fail" style="left: 745px; top: 240px;">
+            <div class="nm">/ billing / renew</div>
+            <div class="sub">depth 3 · timeout</div>
+            <div class="pill">REJ · 500</div>
+          </div>
+          <div class="node" style="left: 745px; top: 360px;">
+            <div class="nm">/ settings / team</div>
+            <div class="sub">depth 3 · 402 ms</div>
+            <div class="pill">OK</div>
+          </div>
+        </div>
+
+        <div class="iso-legend">
+          <div><span class="legend-swatch root"></span> SEED · D0</div>
+          <div><span class="legend-swatch"></span> VISITED · OK</div>
+          <div><span class="legend-swatch fail"></span> REJ · ERROR</div>
+          <div><span class="legend-swatch solid"></span> TRAVERSED EDGE</div>
+          <div><span class="legend-swatch dashed"></span> INFERRED · NOT VISITED</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coverage stats side panel -->
+    <aside>
+      <div class="title-block" style="display:block; border: 1px solid var(--chalk); background: rgba(10,24,56,0.55); padding: 0;">
+        <div style="padding: 12px 14px; border-bottom: 1px solid rgba(168,216,232,0.3);">
+          <span class="k" style="font-size:9px; color:var(--chalk-dim); display:block; margin-bottom:5px;">TITLE BLOCK</span>
+          <span class="v big" style="font-size: 14px; font-family: var(--font-mono); letter-spacing: 0.08em;">SCHEDULE OF NODES</span>
+        </div>
+        <table style="width:100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 10px; color: var(--chalk-2); letter-spacing: 0.08em;">
+          <thead>
+            <tr style="color: var(--chalk-dim); text-transform: uppercase; letter-spacing: 0.18em; font-size: 9px;">
+              <th style="text-align:left; padding: 10px 12px; border-bottom: 1px solid rgba(168,216,232,0.25);">ID</th>
+              <th style="text-align:left; padding: 10px 6px; border-bottom: 1px solid rgba(168,216,232,0.25);">Route</th>
+              <th style="text-align:right; padding: 10px 12px; border-bottom: 1px solid rgba(168,216,232,0.25);">TTL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12);">N.001</td><td style="padding: 7px 6px; border-bottom:1px solid rgba(168,216,232,0.12); color:var(--rev-ink);">/ dashboard</td><td class="mono" style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12); text-align:right;">—</td></tr>
+            <tr><td style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12);">N.002</td><td style="padding: 7px 6px; border-bottom:1px solid rgba(168,216,232,0.12);">/ projects</td><td class="mono" style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12); text-align:right;">412</td></tr>
+            <tr><td style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12);">N.003</td><td style="padding: 7px 6px; border-bottom:1px solid rgba(168,216,232,0.12);">/ runs / latest</td><td class="mono" style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12); text-align:right;">298</td></tr>
+            <tr><td style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12);">N.004</td><td style="padding: 7px 6px; border-bottom:1px solid rgba(168,216,232,0.12);">/ settings</td><td class="mono" style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12); text-align:right;">187</td></tr>
+            <tr><td style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12);">N.011</td><td style="padding: 7px 6px; border-bottom:1px solid rgba(168,216,232,0.12);">/ projects / :id</td><td class="mono" style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12); text-align:right;">631</td></tr>
+            <tr><td style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12);">N.012</td><td style="padding: 7px 6px; border-bottom:1px solid rgba(168,216,232,0.12);">/ runs / :id / diff</td><td class="mono" style="padding: 7px 12px; border-bottom:1px solid rgba(168,216,232,0.12); text-align:right;">1240</td></tr>
+            <tr><td style="padding: 7px 12px; color:var(--reject-red); border-bottom:1px solid rgba(168,216,232,0.12);">N.021</td><td style="padding: 7px 6px; color:var(--reject-red); border-bottom:1px solid rgba(168,216,232,0.12);">/ billing / renew</td><td class="mono" style="padding: 7px 12px; color:var(--reject-red); border-bottom:1px solid rgba(168,216,232,0.12); text-align:right;">TIMEOUT</td></tr>
+            <tr><td style="padding: 7px 12px;">+ 20 more</td><td style="padding: 7px 6px; color: var(--chalk-dim);">(schedule continues)</td><td class="mono hair" style="padding: 7px 12px; text-align:right; color: var(--chalk-dim);">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 18px; border-top: 1px solid rgba(168,216,232,0.25); padding-top: 16px;">
+        <div class="hair mono ucase" style="font-size: 9px;">Annotation · Sheet 02</div>
+        <div class="annot" style="margin-top: 8px; color: var(--rev-ink-warm);">
+          "depth 3 timeout on /billing — retest after stripe stub."
+        </div>
+        <div class="hair mono ucase" style="font-size: 9px; margin-top: 6px;">— J.S., 10:42</div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+
+<!-- =========================================================
+     SHEET 03 — DIFF REVIEW (3 SHEETS + LEADERS)
+     ========================================================= -->
+<section class="sheet">
+  <span class="crop tl"></span><span class="crop tr"></span>
+  <span class="crop bl"></span><span class="crop br"></span>
+
+  <div class="section-head">
+    <span class="num">03 / 04</span>
+    <span class="ttl">diff review · baseline vs. candidate</span>
+    <div class="rule"></div>
+    <span class="stamp">DWG-D · PLATE 03-A · 03-B · 03-C</span>
+  </div>
+
+  <!-- Dimension header above the three sheets -->
+  <div style="position: relative; margin-bottom: 18px;">
+    <svg viewBox="0 0 1400 28" preserveAspectRatio="none" style="width:100%; height:28px;" aria-hidden="true">
+      <line x1="0" y1="2" x2="0" y2="26" stroke="#A8D8E8" stroke-opacity=".45"/>
+      <line x1="1400" y1="2" x2="1400" y2="26" stroke="#A8D8E8" stroke-opacity=".45"/>
+      <line x1="466" y1="2" x2="466" y2="26" stroke="#A8D8E8" stroke-opacity=".35"/>
+      <line x1="934" y1="2" x2="934" y2="26" stroke="#A8D8E8" stroke-opacity=".35"/>
+
+      <line x1="0" y1="16" x2="220" y2="16" stroke="#A8D8E8" stroke-opacity=".55"/>
+      <line x1="246" y1="16" x2="466" y2="16" stroke="#A8D8E8" stroke-opacity=".55"/>
+      <line x1="466" y1="16" x2="686" y2="16" stroke="#A8D8E8" stroke-opacity=".55"/>
+      <line x1="716" y1="16" x2="934" y2="16" stroke="#A8D8E8" stroke-opacity=".55"/>
+      <line x1="934" y1="16" x2="1156" y2="16" stroke="#A8D8E8" stroke-opacity=".55"/>
+      <line x1="1184" y1="16" x2="1400" y2="16" stroke="#A8D8E8" stroke-opacity=".55"/>
+      <polygon points="0,16 8,12 8,20" fill="#A8D8E8" fill-opacity=".55"/>
+      <polygon points="466,16 458,12 458,20" fill="#A8D8E8" fill-opacity=".55"/>
+      <polygon points="466,16 474,12 474,20" fill="#A8D8E8" fill-opacity=".55"/>
+      <polygon points="934,16 926,12 926,20" fill="#A8D8E8" fill-opacity=".55"/>
+      <polygon points="934,16 942,12 942,20" fill="#A8D8E8" fill-opacity=".55"/>
+      <polygon points="1400,16 1392,12 1392,20" fill="#A8D8E8" fill-opacity=".55"/>
+
+      <text x="233" y="20" text-anchor="middle" fill="#A8D8E8" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2">PLATE 03-A</text>
+      <text x="700" y="20" text-anchor="middle" fill="#A8D8E8" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2">PLATE 03-B</text>
+      <text x="1170" y="20" text-anchor="middle" fill="#A8D8E8" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="2">PLATE 03-C</text>
+    </svg>
+  </div>
+
+  <div class="diff-grid">
+
+    <!-- BASELINE -->
+    <div class="diff-sheet">
+      <div class="sheet-stamp rev-stamp" style="border-color: var(--chalk); color: var(--chalk); background: var(--blueprint); padding: 4px 8px;">
+        <span style="width:6px;height:6px;border:1px solid var(--chalk);transform:rotate(45deg);display:inline-block;"></span>
+        BASELINE · R146
+      </div>
+      <div class="mini-tb">
+        <span>PLATE 03-A · baseline</span>
+        <span>03 · 14 · 2026</span>
+      </div>
+      <div class="stage">
+        <div class="ui">
+          <div class="bar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span>vt.app / checkout</span>
+          </div>
+          <div class="hero">
+            <div class="blk">
+              <span class="label">Hero · CTA</span>
+              <span class="btn">Reserve Now</span>
+            </div>
+            <div class="blk chart">
+              <i style="height: 30%"></i><i style="height: 55%"></i><i style="height: 40%"></i>
+              <i style="height: 70%"></i><i style="height: 85%"></i><i style="height: 62%"></i>
+            </div>
+          </div>
+          <div class="grid3">
+            <div class="card"></div>
+            <div class="card"></div>
+            <div class="card"></div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <span class="k">Commit</span><span class="v">a13f4e9</span>
+        <span class="k">Viewport</span><span class="v">1440 × 900</span>
+        <span class="k">Engine</span><span class="v">Chromium 124</span>
+        <span class="k">Captured</span><span class="v">14:22:08 UTC</span>
+      </div>
+    </div>
+
+    <!-- CANDIDATE -->
+    <div class="diff-sheet">
+      <div class="sheet-stamp rev-stamp">
+        Rev. 07 · CANDIDATE
+      </div>
+      <div class="mini-tb">
+        <span>PLATE 03-B · candidate</span>
+        <span>04 · 23 · 2026</span>
+      </div>
+      <div class="stage">
+        <div class="ui new">
+          <div class="bar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span>vt.app / checkout</span>
+          </div>
+          <div class="hero">
+            <div class="blk">
+              <span class="label">Hero · CTA</span>
+              <span class="btn new">Reserve &amp; Pay</span>
+            </div>
+            <div class="blk chart">
+              <i style="height: 30%"></i><i style="height: 55%"></i><i style="height: 40%"></i>
+              <i style="height: 70%"></i><i style="height: 85%"></i><i style="height: 62%"></i>
+            </div>
+          </div>
+          <div class="grid3">
+            <div class="card"></div>
+            <div class="card"></div>
+            <div class="card"></div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <span class="k">Commit</span><span class="v">e88b0c2</span>
+        <span class="k">Viewport</span><span class="v">1440 × 900</span>
+        <span class="k">Engine</span><span class="v">Chromium 124</span>
+        <span class="k">Captured</span><span class="v">10:04:31 UTC</span>
+      </div>
+    </div>
+
+    <!-- DIFF w/ leader lines -->
+    <div class="diff-sheet">
+      <div class="sheet-stamp rev-stamp" style="border-color: var(--reject-red); color: var(--reject-red); background: var(--blueprint);">
+        <span style="width:6px;height:6px;border:1px solid var(--reject-red);transform:rotate(45deg);display:inline-block;"></span>
+        Δ DIFF · AI
+      </div>
+      <div class="mini-tb">
+        <span>PLATE 03-C · Δ overlay</span>
+        <span>SSIM · LPIPS · DINOv2</span>
+      </div>
+      <div class="stage">
+        <div class="ui diff">
+          <div class="bar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span>vt.app / checkout</span>
+          </div>
+          <div class="hero">
+            <div class="blk">
+              <span class="label">Hero · CTA</span>
+              <span class="btn">Reserve &amp; Pay</span>
+            </div>
+            <div class="blk chart">
+              <i style="height: 30%"></i><i style="height: 55%"></i><i style="height: 40%"></i>
+              <i style="height: 70%"></i><i style="height: 85%"></i><i style="height: 62%"></i>
+            </div>
+          </div>
+          <div class="grid3">
+            <div class="card"></div>
+            <div class="card"></div>
+            <div class="card"></div>
+          </div>
+        </div>
+
+        <!-- leaders + callouts -->
+        <svg class="leader-layer" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <marker id="arrL" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#D4A24C"/>
+            </marker>
+            <marker id="arrLR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#DC3D37"/>
+            </marker>
+          </defs>
+
+          <!-- Detail A circle around CTA + leader -->
+          <circle cx="90" cy="120" r="34" fill="none" stroke="#D4A24C" stroke-width="1"/>
+          <line x1="124" y1="98" x2="180" y2="40" stroke="#D4A24C" stroke-width="1"/>
+          <line x1="180" y1="40" x2="240" y2="40" stroke="#D4A24C" stroke-width="1"/>
+          <polygon points="240,40 232,36 232,44" fill="#D4A24C"/>
+          <text x="244" y="36" fill="#D4A24C" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="1.5">DETAIL A</text>
+          <text x="244" y="48" fill="#D4A24C" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1">Label copy: "Now" → "&amp; Pay"</text>
+
+          <!-- Detail B circle around last card + leader -->
+          <circle cx="335" cy="232" r="24" fill="none" stroke="#DC3D37" stroke-width="1"/>
+          <line x1="335" y1="256" x2="335" y2="280" stroke="#DC3D37" stroke-width="1" marker-end="url(#arrLR)"/>
+          <text x="335" y="293" text-anchor="middle" fill="#DC3D37" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="1.5">DETAIL B · REJ</text>
+        </svg>
+      </div>
+      <div class="footer">
+        <span class="k">ΔE avg</span><span class="v">3.2%</span>
+        <span class="k">SSIM</span><span class="v">0.9714</span>
+        <span class="k">LPIPS</span><span class="v">0.0287</span>
+        <span class="k">DINOv2 · cos</span><span class="v">0.9841</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diff measurements -->
+  <div class="diff-legend">
+    <div>
+      <div class="k">Regions changed</div>
+      <div class="v">02 <small>/ 14</small></div>
+    </div>
+    <div>
+      <div class="k">Intentional</div>
+      <div class="v ok">01</div>
+    </div>
+    <div>
+      <div class="k">Rejected</div>
+      <div class="v rej">01</div>
+    </div>
+    <div>
+      <div class="k">Approval</div>
+      <div class="v ochre" style="color:var(--rev-ink); font-family: var(--font-mono); font-size: 22px;">◇ PENDING</div>
+    </div>
+  </div>
+
+  <!-- Detail callouts -->
+  <div style="margin-top: 36px; display:grid; grid-template-columns: 1fr 1fr; gap: 28px;">
+    <!-- DETAIL A -->
+    <div style="border: 1px solid rgba(168,216,232,0.32); padding: 16px 18px; background: rgba(10,24,56,0.4); position: relative;">
+      <div class="mini-tb" style="display:flex; justify-content: space-between;">
+        <span class="mono ucase hair" style="font-size:9px; letter-spacing:0.22em;">DETAIL A · 2:1</span>
+        <span class="mono ucase ochre" style="color:var(--rev-ink); font-size:9px; letter-spacing:0.22em;">◇ INTENTIONAL</span>
+      </div>
+      <div style="display:grid; grid-template-columns: 120px 1fr; gap: 18px; align-items: center;">
+        <svg viewBox="0 0 120 72" style="width:120px;height:72px;">
+          <rect x="2" y="2" width="116" height="68" fill="none" stroke="#A8D8E8" stroke-width="1" stroke-dasharray="3 3"/>
+          <rect x="16" y="22" width="88" height="28" fill="rgba(212,162,76,0.14)" stroke="#D4A24C" stroke-width="1"/>
+          <text x="60" y="40" text-anchor="middle" fill="#D4A24C" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="1.5">RESERVE &amp; PAY</text>
+        </svg>
+        <div>
+          <div class="mono ucase" style="font-size: 10px; letter-spacing: 0.18em; color: var(--chalk);">Button · Primary CTA</div>
+          <div class="hair mono" style="font-size: 10px; margin-top: 6px; line-height: 1.5;">
+            Copy change: <span style="color:var(--chalk-2);">"Reserve Now"</span> → <span style="color:var(--rev-ink);">"Reserve &amp; Pay"</span><br/>
+            Color shift: <span class="mono">#D4A24C · ΔE 3.2</span><br/>
+            DINOv2 attributes to intentional UX change (linked Plane ticket <span class="ochre" style="color:var(--rev-ink);">VT-312</span>).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAIL B -->
+    <div style="border: 1px solid rgba(220,61,55,0.55); padding: 16px 18px; background: rgba(220,61,55,0.04); position: relative;">
+      <div class="mini-tb" style="display:flex; justify-content: space-between;">
+        <span class="mono ucase hair" style="font-size:9px; letter-spacing:0.22em; color:var(--chalk-dim);">DETAIL B · 2:1</span>
+        <span class="mono ucase" style="color:var(--reject-red); font-size:9px; letter-spacing:0.22em;">◆ REJECTED</span>
+      </div>
+      <div style="display:grid; grid-template-columns: 120px 1fr; gap: 18px; align-items: center;">
+        <svg viewBox="0 0 120 72" style="width:120px;height:72px;">
+          <rect x="2" y="2" width="116" height="68" fill="none" stroke="#A8D8E8" stroke-width="1" stroke-dasharray="3 3"/>
+          <rect x="8" y="14" width="46" height="44" fill="none" stroke="#A8D8E8" stroke-width="1"/>
+          <rect x="62" y="14" width="46" height="44" fill="rgba(220,61,55,0.14)" stroke="#DC3D37" stroke-width="1"/>
+          <line x1="62" y1="14" x2="108" y2="58" stroke="#DC3D37" stroke-width="0.8"/>
+          <line x1="108" y1="14" x2="62" y2="58" stroke="#DC3D37" stroke-width="0.8"/>
+        </svg>
+        <div>
+          <div class="mono ucase" style="font-size: 10px; letter-spacing: 0.18em; color: var(--chalk);">Card 3 · Layout overflow</div>
+          <div class="hair mono" style="font-size: 10px; margin-top: 6px; line-height: 1.5;">
+            LPIPS spike <span class="mono">0.121</span> · content clipped 18px.<br/>
+            Quarantine flag: <span class="reject" style="color:var(--reject-red);">NOT FLAKY · DETERMINISTIC</span><br/>
+            Autonomous fix proposed: patch <span class="mono ochre" style="color:var(--rev-ink);">PATCH-04-23-118</span> · await human stamp.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- =========================================================
+     SHEET 04 — RUN TIMELINE (GANTT / SCHEMATIC)
+     ========================================================= -->
+<section class="sheet">
+  <span class="crop tl"></span><span class="crop tr"></span>
+  <span class="crop bl"></span><span class="crop br"></span>
+
+  <div class="section-head">
+    <span class="num">04 / 04</span>
+    <span class="ttl">run schedule · time-series schematic</span>
+    <div class="rule"></div>
+    <span class="stamp">DWG-T · 1 DIV = 30 s · UTC</span>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-head">
+      <span>RUN-ID · R-2026-04-23-E88B0C2 · worker pool: 8 · seed commit a13f4e9 → e88b0c2</span>
+      <span>DURATION · 04 min 12 s · SLA: 06:00.0</span>
+    </div>
+
+    <!-- Axis -->
+    <div class="tl-axis" style="position:relative;">
+      <span style="left: 0%;">T+00</span>
+      <span style="left: 12.5%;">T+30</span>
+      <span style="left: 25%;">T+60</span>
+      <span style="left: 37.5%;">T+90</span>
+      <span style="left: 50%;">T+120</span>
+      <span style="left: 62.5%;">T+150</span>
+      <span style="left: 75%;">T+180</span>
+      <span style="left: 87.5%;">T+210</span>
+      <span style="left: 100%;">T+252</span>
+    </div>
+
+    <!-- vertical ticks running across rows -->
+    <div style="position: relative; margin-left: 200px;">
+      <div class="tl-tick" style="left: 25%"></div>
+      <div class="tl-tick" style="left: 50%"></div>
+      <div class="tl-tick" style="left: 75%"></div>
+
+      <!-- Bars: we place rows inside a position:relative wrapper below -->
+    </div>
+
+    <!-- Rows -->
+    <div style="margin-top: 6px;">
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">01</span>setup · docker</div>
+        <div class="tl-track">
+          <div class="tl-bar run" style="left: 0%; width: 8%;">pull · warm</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">02</span>scan · crawl</div>
+        <div class="tl-track">
+          <div class="tl-bar run" style="left: 8%; width: 14%;">27 nodes · 48.3s</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">03</span>capture · chromium</div>
+        <div class="tl-track">
+          <div class="tl-bar ok" style="left: 22%; width: 22%;">0214 shots</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">04</span>capture · firefox</div>
+        <div class="tl-track">
+          <div class="tl-bar ok" style="left: 24%; width: 20%;">0214 shots</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">05</span>capture · webkit</div>
+        <div class="tl-track">
+          <div class="tl-bar ok" style="left: 28%; width: 23%;">0214 shots</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">06</span>capture · iOS 17</div>
+        <div class="tl-track">
+          <div class="tl-bar ok" style="left: 30%; width: 26%;">iPhone 15 · 390×844</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">07</span>capture · Android 14</div>
+        <div class="tl-track">
+          <div class="tl-bar fail" style="left: 32%; width: 18%;">pixel 8 · timeout</div>
+          <div class="tl-bar run" style="left: 52%; width: 9%;">retry · ok</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">08</span>diff · pixel + ssim</div>
+        <div class="tl-track">
+          <div class="tl-bar run" style="left: 58%; width: 12%;">214 frames</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">09</span>diff · LPIPS</div>
+        <div class="tl-track">
+          <div class="tl-bar run" style="left: 62%; width: 14%;">GPU · warm</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">10</span>diff · DINOv2 embed</div>
+        <div class="tl-track">
+          <div class="tl-bar run" style="left: 66%; width: 16%;">FastAPI sidecar</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">11</span>flaky · quarantine</div>
+        <div class="tl-track">
+          <div class="tl-bar rev" style="left: 78%; width: 7%;">02 marked</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">12</span>autopatch · LLM</div>
+        <div class="tl-track">
+          <div class="tl-bar rev" style="left: 82%; width: 10%;">PATCH-118 · draft</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-label"><span class="ix">13</span>report · review gate</div>
+        <div class="tl-track">
+          <div class="tl-bar" style="left: 90%; width: 10%; border-color: var(--rev-ink); background: rgba(212,162,76,0.18); color: var(--rev-ink);">◇ awaiting J.S.</div>
+        </div>
+      </div>
+
+      <!-- markers -->
+      <div style="position: relative; margin-left: 200px; height: 0;">
+        <div class="tl-marker" data-label="SLA · 06:00" style="left: 100%; height: 460px; top: -460px;"></div>
+        <div class="tl-marker" data-label="GPU · cold→warm" style="left: 62%; height: 460px; top: -460px; background: var(--chalk); opacity:.35;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule summary -->
+  <div style="margin-top: 36px; display:grid; grid-template-columns: repeat(5, 1fr); gap: 0; border: 1px solid rgba(168,216,232,0.25);">
+    <div style="padding: 16px; border-right: 1px solid rgba(168,216,232,0.2);">
+      <div class="mono ucase hair" style="font-size:9px; letter-spacing:0.22em;">Frames</div>
+      <div class="mono" style="font-size: 22px; color: var(--chalk); margin-top: 6px;">1 070</div>
+    </div>
+    <div style="padding: 16px; border-right: 1px solid rgba(168,216,232,0.2);">
+      <div class="mono ucase hair" style="font-size:9px; letter-spacing:0.22em;">Matrix cells</div>
+      <div class="mono" style="font-size: 22px; color: var(--chalk); margin-top: 6px;">5 × 12</div>
+    </div>
+    <div style="padding: 16px; border-right: 1px solid rgba(168,216,232,0.2);">
+      <div class="mono ucase hair" style="font-size:9px; letter-spacing:0.22em;">Δ flagged</div>
+      <div class="mono" style="font-size: 22px; color: var(--rev-ink); margin-top: 6px;">14</div>
+    </div>
+    <div style="padding: 16px; border-right: 1px solid rgba(168,216,232,0.2);">
+      <div class="mono ucase hair" style="font-size:9px; letter-spacing:0.22em;">Rejected</div>
+      <div class="mono" style="font-size: 22px; color: var(--reject-red); margin-top: 6px;">01</div>
+    </div>
+    <div style="padding: 16px;">
+      <div class="mono ucase hair" style="font-size:9px; letter-spacing:0.22em;">Autopatch</div>
+      <div class="mono" style="font-size: 22px; color: var(--accept-green); margin-top: 6px;">01 <span class="hair" style="font-size: 11px;">ready</span></div>
+    </div>
+  </div>
+
+  <!-- Annotation -->
+  <div style="margin-top: 36px; display:grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items:start;">
+    <div>
+      <div class="hair mono ucase" style="font-size: 9px; letter-spacing:0.22em;">Note · Run Schedule</div>
+      <div class="annot" style="margin-top: 10px;">
+        android capture is still the long pole — shard across two emulator pools next rev.
+      </div>
+      <div class="hair mono ucase" style="font-size: 9px; margin-top: 8px;">— j.s., 11:08 · rev 07</div>
+    </div>
+    <div style="border: 1px solid var(--rev-ink); padding: 14px 18px; background: rgba(212,162,76,0.05);">
+      <div class="mono ucase" style="color: var(--rev-ink); letter-spacing: 0.22em; font-size: 10px;">Next revision · rev 08</div>
+      <ul style="margin: 10px 0 0 0; padding: 0 0 0 18px; font-family: var(--font-mono); font-size: 11px; color: var(--chalk-2); line-height: 1.9;">
+        <li>Shard Android capture — target 2× parallelism</li>
+        <li>Promote PATCH-118 after human stamp</li>
+        <li>Retire <span class="reject" style="color:var(--reject-red);">N.021</span> from scan until billing stub lands</li>
+        <li>Increase DINOv2 batch size · 16 → 32</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer title block -->
+  <div class="footer-tb">
+    <div>
+      <span class="k">Sheet Series</span>
+      <span class="v big">visiontest.ai / vr-2026 / sheets 01 – 04</span>
+    </div>
+    <div>
+      <span class="k">Revision</span>
+      <span class="v ochre" style="color:var(--rev-ink);">07 · 2026-04-23</span>
+    </div>
+    <div>
+      <span class="k">Drawn · Checked</span>
+      <span class="v">J. STUART · J.S.</span>
+    </div>
+    <div>
+      <span class="k">Stamp</span>
+      <span class="v ochre" style="color:var(--rev-ink);">◇ FOR REVIEW</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px; display:flex; justify-content: space-between; align-items:center;" class="mono ucase hair">
+    <span style="font-size: 10px; letter-spacing: 0.22em;">VT-SCH-0041-A · Sheet 04 of 04</span>
+    <span style="font-size: 10px; letter-spacing: 0.22em;">Classification · OSS / MIT · Public</span>
+    <span style="font-size: 10px; letter-spacing: 0.22em; color: var(--rev-ink);">◇ END OF DRAWING SET</span>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,1472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VisionTest.ai — Monograph of Visual Regression Assay · Issue 1, Revision 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=Cormorant:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bone:#FAFAF7;
+    --bone-2:#F3F2EC;
+    --rule:#C4C1BA;
+    --rule-2:#9D9A92;
+    --ink:#0E0D0B;
+    --ink-2:#3A3834;
+    --ink-3:#6A675F;
+    --safety:#F05A23;
+    --safety-wash:#FBE3D6;
+    --pass-green:#2E7D5B;
+    --pass-wash:#DCEADF;
+    --fail-red:#BE2C30;
+    --fail-wash:#F3D7D6;
+    --amber:#B38427;
+    --accent-blue:#27436B;
+    --sans:"IBM Plex Sans","Inter",system-ui,sans-serif;
+    --mono:"IBM Plex Mono","JetBrains Mono",ui-monospace,monospace;
+    --serif:"Cormorant","IBM Plex Serif",serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bone);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:13px;
+    line-height:1.45;
+    letter-spacing:.005em;
+    font-feature-settings:"ss01","cv08","tnum","ss02";
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ============ PAPER FRAME ============ */
+  .paper{
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 36px 0 36px;
+    border-left:1px solid var(--rule);
+    border-right:1px solid var(--rule);
+    background:
+      repeating-linear-gradient(transparent 0 31px, rgba(196,193,186,0) 31px 32px),
+      var(--bone);
+    position:relative;
+  }
+  .paper::before,.paper::after{
+    content:"";position:absolute;top:0;bottom:0;width:1px;background:var(--rule);
+  }
+  .paper::before{left:-0;}
+  .paper::after{right:0;}
+
+  /* running header */
+  .runhead{
+    display:grid;grid-template-columns: 1fr auto 1fr;
+    gap:24px;
+    padding:10px 0 8px 0;
+    border-bottom:1px solid var(--rule);
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-2);
+  }
+  .runhead .r{ text-align:right; }
+  .runhead .c{ text-align:center; letter-spacing:.22em;}
+
+  /* ============ MONOGRAPH COVER ============ */
+  .cover{
+    padding:56px 0 40px 0;
+    border-bottom:2px solid var(--ink);
+    display:grid;
+    grid-template-columns: 1fr 320px;
+    gap:56px;
+    align-items:start;
+  }
+  .seal{
+    width:120px;height:120px;
+    border:1.5px solid var(--ink);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    margin-bottom:18px;
+  }
+  .seal::before{
+    content:"";position:absolute;inset:6px;border:1px solid var(--ink);border-radius:50%;
+  }
+  .seal::after{
+    content:"";position:absolute;inset:10px;border:1px dashed var(--rule-2);border-radius:50%;
+  }
+  .seal .sealMark{
+    font-family:var(--serif);
+    font-style:italic;
+    font-size:34px;
+    color:var(--ink);
+    line-height:1;
+    position:relative;
+    z-index:2;
+    letter-spacing:-.02em;
+  }
+  .seal .sealArc{
+    position:absolute;inset:0;width:100%;height:100%;
+  }
+  .pretitle{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--ink-2);
+    margin:0 0 10px 0;
+    display:flex;align-items:center;gap:12px;
+  }
+  .pretitle .dot{width:6px;height:6px;background:var(--safety);display:inline-block;}
+  .title{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:74px;
+    line-height:.95;
+    letter-spacing:-.015em;
+    margin:0;
+    color:var(--ink);
+  }
+  .title em{
+    font-style:italic;
+    color:var(--ink-2);
+    font-weight:400;
+  }
+  .subtitle{
+    font-family:var(--serif);
+    font-style:italic;
+    font-size:22px;
+    color:var(--ink-2);
+    margin:16px 0 0 0;
+    max-width:56ch;
+    line-height:1.3;
+  }
+  .abstract{
+    margin-top:28px;
+    max-width:68ch;
+    font-size:13.5px;
+    color:var(--ink);
+    line-height:1.6;
+    column-count:1;
+  }
+  .abstract::first-letter{
+    font-family:var(--serif);
+    font-size:44px;
+    float:left;
+    line-height:.9;
+    padding:4px 6px 0 0;
+    color:var(--ink);
+  }
+  .abstract .kw{ font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; background:var(--bone-2); padding:1px 5px; border:1px solid var(--rule); }
+
+  /* monograph sidebar header */
+  .monoSide{
+    border:1px solid var(--ink);
+    background:var(--bone);
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.04em;
+    color:var(--ink);
+  }
+  .monoSide h5{
+    margin:0;
+    padding:8px 10px;
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:10px;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    background:var(--ink);
+    color:var(--bone);
+  }
+  .monoSide dl{
+    margin:0;padding:6px 10px 10px 10px;
+    display:grid;
+    grid-template-columns:110px 1fr;
+    row-gap:4px;
+    column-gap:10px;
+  }
+  .monoSide dt{
+    color:var(--ink-3);
+    font-size:9.5px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    padding-top:3px;
+    border-top:1px dotted var(--rule);
+  }
+  .monoSide dd{
+    margin:0;
+    padding-top:3px;
+    border-top:1px dotted var(--rule);
+    font-variant-numeric:tabular-nums;
+  }
+  .monoSide dt:first-of-type, .monoSide dd:first-of-type{border-top:none;padding-top:0;}
+
+  .coverMeta{
+    margin-top:14px;
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-2);
+    display:flex; gap:18px; flex-wrap:wrap;
+  }
+  .coverMeta b{ color:var(--ink); font-weight:600; }
+
+  /* ============ SECTION PRIMITIVES ============ */
+  section{ padding:36px 0 28px 0; border-bottom:1px solid var(--rule); }
+  .sectHead{
+    display:grid;
+    grid-template-columns: 140px 1fr auto;
+    align-items:end;
+    gap:24px;
+    margin-bottom:20px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--ink);
+  }
+  .sectNum{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:.2em;
+    color:var(--ink-2);
+  }
+  .sectNum b{ color:var(--ink); font-weight:600; }
+  .sectTitle{
+    font-family:var(--serif);
+    font-weight:500;
+    font-variant:small-caps;
+    font-size:34px;
+    letter-spacing:.12em;
+    line-height:1;
+    color:var(--ink);
+  }
+  .sectTitle em{ font-style:italic; font-variant:normal; color:var(--ink-2); font-size:22px; letter-spacing:0; }
+  .sectAside{
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--ink-3);
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    text-align:right;
+  }
+
+  .subhead{
+    font-family:var(--sans);
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--ink-2);
+    margin:14px 0 10px 0;
+    padding-bottom:4px;
+    border-bottom:1px dotted var(--rule);
+    display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .subhead span{ font-family:var(--mono); font-size:10px; letter-spacing:.12em; color:var(--ink-3); }
+
+  /* ============ ASSAY TABLE ============ */
+  .tbl{
+    width:100%;
+    border-collapse:collapse;
+    font-variant-numeric:tabular-nums;
+    font-feature-settings:"tnum","cv08";
+  }
+  .tbl th, .tbl td{
+    padding:9px 10px;
+    text-align:left;
+    vertical-align:top;
+    border-bottom:1px solid var(--rule);
+    font-size:12.5px;
+    line-height:1.35;
+  }
+  .tbl thead th{
+    border-top:1px solid var(--ink);
+    border-bottom:1px solid var(--ink);
+    background:var(--bone);
+    font-family:var(--sans);
+    font-size:9.5px;
+    font-weight:600;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--ink);
+    padding:8px 10px;
+  }
+  .tbl thead th .u{
+    display:block;
+    font-family:var(--mono);
+    font-weight:400;
+    font-size:9px;
+    letter-spacing:.1em;
+    color:var(--ink-3);
+    text-transform:none;
+    margin-top:2px;
+  }
+  .tbl td.mono, .tbl th.mono{ font-family:var(--mono); font-size:11.5px; letter-spacing:.01em; }
+  .tbl td.num{ font-family:var(--mono); text-align:right; font-size:11.5px; font-variant-numeric:tabular-nums; }
+  .tbl td.num .sd{ color:var(--ink-3); font-size:10.5px; }
+  .tbl td.num .u{ color:var(--ink-3); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; margin-left:3px;}
+  .tbl tbody tr:nth-child(odd){ background:var(--bone); }
+  .tbl tbody tr:nth-child(even){ background:var(--bone-2); }
+  .tbl tbody tr.flag{ background:var(--safety-wash); }
+  .tbl tbody tr.flag td{ border-bottom:1px solid var(--safety); }
+  .tbl tbody tr.fail{ background:var(--fail-wash); }
+  .tbl tbody tr td.idx{
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--ink-3);
+    letter-spacing:.04em;
+    width:40px;
+  }
+  .tbl tfoot td{
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--ink-3);
+    padding-top:10px;
+    border-bottom:none;
+    border-top:1px solid var(--ink);
+    font-style:italic;
+  }
+
+  /* status chips — typographic, not pill */
+  .st{ font-family:var(--sans); font-size:10.5px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; font-variant:small-caps; }
+  .st.pass{ color:var(--pass-green); }
+  .st.fail{ color:var(--fail-red); }
+  .st.warn{ color:var(--safety); }
+  .st.quar{ color:var(--amber); }
+  .st.hold{ color:var(--ink-3); }
+  .st::before{ content:"·  "; color:currentColor; }
+
+  .dagger{ color:var(--safety); font-family:var(--mono); font-size:11px; margin-right:3px; }
+
+  /* ============ WARNINGS ============ */
+  .warnBar{
+    display:flex; align-items:flex-start; gap:14px;
+    border:1.5px solid var(--safety);
+    background:var(--safety-wash);
+    padding:12px 14px;
+    margin:14px 0 18px 0;
+    font-size:12px;
+  }
+  .warnBar svg{ flex-shrink:0; }
+  .warnBar .wt{ font-family:var(--sans); font-weight:700; font-size:10.5px; letter-spacing:.28em; text-transform:uppercase; color:var(--safety); margin:0 0 3px 0; }
+  .warnBar p{ margin:0; color:var(--ink); }
+  .warnBar .mono{ font-family:var(--mono); font-size:11px; }
+
+  /* ============ LAB REPORT DIFF ============ */
+  .labHead{
+    display:grid; grid-template-columns: 1fr 1fr; gap:0;
+    border:1px solid var(--ink);
+    margin-top:8px;
+  }
+  .specimen{
+    padding:14px 16px;
+    border-right:1px solid var(--ink);
+    position:relative;
+  }
+  .specimen:last-child{ border-right:none; }
+  .specimen h4{
+    margin:0 0 4px 0;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  .specimen h4 b{ color:var(--ink); }
+  .specimen .spTitle{
+    font-family:var(--serif);
+    font-weight:500;
+    font-variant:small-caps;
+    font-size:22px;
+    letter-spacing:.1em;
+    line-height:1;
+    margin-bottom:10px;
+  }
+  .specimen dl{
+    display:grid; grid-template-columns:110px 1fr;
+    font-family:var(--mono);
+    font-size:11px;
+    row-gap:3px; column-gap:12px;
+    margin:0;
+  }
+  .specimen dt{ color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase; font-size:9.5px; padding-top:2px;}
+  .specimen dd{ margin:0; color:var(--ink); }
+
+  .specFrame{
+    margin-top:12px;
+    aspect-ratio: 16/9;
+    border:1px solid var(--rule);
+    position:relative;
+    background:
+      linear-gradient(var(--bone-2),var(--bone-2)),
+      repeating-linear-gradient(0deg, var(--rule) 0 1px, transparent 1px 48px),
+      repeating-linear-gradient(90deg, var(--rule) 0 1px, transparent 1px 48px);
+    background-blend-mode:multiply;
+    overflow:hidden;
+  }
+  .specFrame .corner{ position:absolute; font-family:var(--mono); font-size:9px; color:var(--ink-3); letter-spacing:.1em; padding:3px 6px; background:var(--bone); border:1px solid var(--rule); }
+  .specFrame .tl{ top:4px; left:4px; }
+  .specFrame .tr{ top:4px; right:4px; }
+  .specFrame .bl{ bottom:4px; left:4px; }
+  .specFrame .br{ bottom:4px; right:4px; }
+
+  /* mock app render inside spec frame */
+  .mockApp{ position:absolute; inset:28px; display:grid; grid-template-rows: 22px 1fr; border:1px solid var(--rule-2); background:var(--bone); }
+  .mockApp .mBar{ background:var(--ink); color:var(--bone); font-family:var(--mono); font-size:9px; padding:5px 8px; letter-spacing:.14em; display:flex; justify-content:space-between;}
+  .mockApp .mBody{ display:grid; grid-template-columns:120px 1fr; }
+  .mockApp .mSide{ border-right:1px solid var(--rule); padding:8px; display:flex; flex-direction:column; gap:5px;}
+  .mockApp .mSide span{ display:block; height:7px; background:var(--rule);}
+  .mockApp .mSide span:nth-child(2){ width:78%; }
+  .mockApp .mSide span:nth-child(3){ width:62%; }
+  .mockApp .mSide span:nth-child(4){ width:86%; }
+  .mockApp .mSide span:nth-child(5){ width:54%; }
+  .mockApp .mMain{ padding:10px; display:flex; flex-direction:column; gap:6px;}
+  .mockApp .mH{ height:12px; width:42%; background:var(--ink);}
+  .mockApp .mP{ height:6px; background:var(--rule);}
+  .mockApp .mP.s80{ width:80%;} .mockApp .mP.s60{ width:60%;} .mockApp .mP.s90{ width:90%;}
+  .mockApp .mBtn{ height:18px; width:96px; background:var(--accent-blue); margin-top:4px;}
+  .mockApp.v2 .mBtn{ background:#2E5A94; } /* slight hue shift for specimen 2 */
+  .mockApp.v2 .mH{ background:#17140F; letter-spacing:0; }
+  .mockApp.v2 .mSide span{ background:#BAB6AD; }
+
+  /* diff overlay boxes */
+  .diffOverlay{ position:absolute; inset:28px; pointer-events:none; }
+  .roi{ position:absolute; border:1.5px solid var(--safety); background:rgba(240,90,35,.1); font-family:var(--mono); font-size:9px; color:var(--safety); letter-spacing:.08em; padding:1px 4px;}
+  .roi::after{content:"";position:absolute;right:-4px;top:-4px;width:6px;height:6px;background:var(--safety);}
+
+  /* findings block */
+  .findings{
+    border:1px solid var(--ink);
+    background:var(--bone);
+    margin-top:16px;
+    font-size:13px;
+  }
+  .findings h5{
+    margin:0;
+    padding:8px 14px;
+    background:var(--ink);
+    color:var(--bone);
+    font-family:var(--sans);
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    display:flex; justify-content:space-between;
+  }
+  .findings .fbody{
+    padding:14px 16px 10px 16px;
+    line-height:1.6;
+    column-count:2;
+    column-gap:32px;
+    column-rule:1px solid var(--rule);
+    font-size:12.5px;
+  }
+  .findings .fbody p{ margin:0 0 10px 0; break-inside:avoid; }
+  .findings .fbody p b{ font-family:var(--sans); font-weight:600; color:var(--ink); letter-spacing:.04em; text-transform:uppercase; font-size:10.5px; display:inline-block; margin-right:4px; }
+  .findings code{ font-family:var(--mono); font-size:11px; background:var(--bone-2); border:1px solid var(--rule); padding:1px 4px; }
+  .findings .signoff{
+    border-top:1px solid var(--rule);
+    padding:10px 14px;
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--ink-2);
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:16px;
+  }
+  .findings .signoff b{ color:var(--ink-3); font-weight:400; font-size:9.5px; letter-spacing:.18em; text-transform:uppercase; display:block;}
+  .findings .signoff .sig{ font-family:var(--serif); font-style:italic; font-size:18px; color:var(--ink); border-bottom:1px solid var(--ink); padding-bottom:2px; margin-top:2px; }
+
+  /* delta metric strip */
+  .deltas{
+    margin-top:18px;
+    display:grid; grid-template-columns:repeat(6, 1fr);
+    border-top:1px solid var(--ink);
+    border-bottom:1px solid var(--ink);
+  }
+  .deltas > div{
+    padding:10px 12px;
+    border-right:1px solid var(--rule);
+  }
+  .deltas > div:last-child{ border-right:none; }
+  .deltas dt{
+    font-family:var(--mono); font-size:9.5px; color:var(--ink-3);
+    letter-spacing:.18em; text-transform:uppercase; margin-bottom:3px;
+  }
+  .deltas dd{
+    margin:0;
+    font-family:var(--mono); font-size:18px; color:var(--ink);
+    font-variant-numeric:tabular-nums;
+    letter-spacing:-.01em;
+  }
+  .deltas dd .q{ font-size:11px; color:var(--ink-3); }
+  .deltas dd.fail{ color:var(--fail-red); }
+  .deltas dd.warn{ color:var(--safety); }
+  .deltas dd.pass{ color:var(--pass-green); }
+
+  /* footnotes */
+  .fnotes{
+    margin-top:18px;
+    font-family:var(--mono);
+    font-size:10px;
+    color:var(--ink-3);
+    line-height:1.55;
+    font-style:italic;
+    border-top:1px dotted var(--rule);
+    padding-top:10px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .fnotes sup{ color:var(--safety); font-style:normal; font-weight:600; margin-right:3px;}
+
+  /* method / assay panels */
+  .grid2{ display:grid; grid-template-columns: 2fr 1fr; gap:32px; }
+  .mono-panel{
+    border:1px solid var(--ink);
+    background:var(--bone);
+    padding:12px 14px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--ink);
+    line-height:1.55;
+  }
+  .mono-panel h6{
+    margin:-12px -14px 10px -14px;
+    padding:6px 14px;
+    background:var(--ink);
+    color:var(--bone);
+    font-family:var(--sans);
+    font-size:10px;
+    letter-spacing:.3em;
+    font-weight:600;
+    text-transform:uppercase;
+  }
+  .mono-panel ol{ margin:0; padding-left:18px; }
+  .mono-panel li{ margin-bottom:4px; }
+  .mono-panel .k{ color:var(--ink-3); }
+
+  /* coverage matrix */
+  .cov{
+    width:100%; border-collapse:collapse;
+    font-family:var(--mono); font-size:11px;
+  }
+  .cov th, .cov td{
+    border:1px solid var(--rule);
+    padding:4px 6px;
+    text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
+  .cov thead th{ background:var(--ink); color:var(--bone); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; font-family:var(--sans); font-weight:600;}
+  .cov tbody th{ background:var(--bone-2); text-align:left; font-weight:500; color:var(--ink); font-size:10px; letter-spacing:.1em; text-transform:uppercase; }
+  .cov td.ok{ color:var(--pass-green); }
+  .cov td.no{ color:var(--fail-red); }
+  .cov td.wa{ color:var(--safety); }
+  .cov td.na{ color:var(--ink-3); }
+  .cov td b{ font-weight:600; font-family:var(--sans); font-size:10px; letter-spacing:.12em;}
+
+  /* approval ledger */
+  .ledger{
+    width:100%; border-collapse:collapse;
+    font-variant-numeric:tabular-nums;
+  }
+  .ledger th, .ledger td{
+    border-bottom:1px solid var(--rule);
+    padding:7px 8px;
+    font-size:11.5px;
+    text-align:left;
+  }
+  .ledger thead th{
+    border-top:1px solid var(--ink);
+    border-bottom:1px solid var(--ink);
+    font-family:var(--sans);
+    font-size:9.5px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    font-weight:600;
+  }
+  .ledger td.mono{ font-family:var(--mono); font-size:11px; }
+  .ledger td.when{ font-family:var(--mono); font-size:10.5px; color:var(--ink-3); }
+  .ledger td.by{ font-family:var(--serif); font-style:italic; font-size:13px; }
+
+  /* autonomous fix card */
+  .fixCard{
+    border:1px solid var(--ink);
+    background:var(--bone);
+    margin-top:14px;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .fixCard > div{ padding:14px 16px; }
+  .fixCard > div:first-child{ border-right:1px solid var(--ink);}
+  .fixCard h6{
+    margin:0 0 6px 0;
+    font-family:var(--sans); font-size:10px; font-weight:600;
+    letter-spacing:.3em; text-transform:uppercase; color:var(--ink-2);
+  }
+  .fixCard .label{ font-family:var(--mono); font-size:10.5px; color:var(--ink-3); letter-spacing:.1em; text-transform:uppercase;}
+  .fixCard pre{
+    font-family:var(--mono); font-size:11px; background:var(--bone-2);
+    border:1px solid var(--rule); padding:8px 10px; margin:6px 0 0 0;
+    overflow-x:auto; line-height:1.5;
+  }
+  .diffLine{ display:block; }
+  .diffLine.add{ background:rgba(46,125,91,.12); color:var(--pass-green);}
+  .diffLine.del{ background:rgba(190,44,48,.10); color:var(--fail-red);}
+  .diffLine.ctx{ color:var(--ink-2); }
+
+  /* footer */
+  footer{
+    padding:28px 0 40px 0;
+    border-top:2px solid var(--ink);
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:32px;
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--ink-2);
+    line-height:1.6;
+  }
+  footer h6{
+    font-family:var(--sans);
+    font-size:9.5px;
+    font-weight:600;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    color:var(--ink);
+    margin:0 0 8px 0;
+  }
+  footer .cite{
+    font-family:var(--serif);
+    font-style:italic;
+    font-size:13px;
+    color:var(--ink);
+    line-height:1.5;
+  }
+  footer .cite b{ font-weight:600; font-style:normal; font-variant:small-caps; letter-spacing:.08em;}
+  footer hr{ border:none; border-top:1px dotted var(--rule); margin:8px 0; }
+
+  /* inline icon sizes */
+  .ico{ width:20px; height:20px; flex-shrink:0;}
+  .ico.lg{ width:26px; height:26px; }
+
+  /* utility */
+  .mt0{ margin-top:0!important; }
+  .muted{ color:var(--ink-3); }
+  .u{ font-family:var(--mono); font-size:9.5px; color:var(--ink-3); letter-spacing:.08em; text-transform:uppercase; }
+  .hang{ text-indent:-1.2em; padding-left:1.2em; }
+
+  /* dark mode toggle (optional, purely aesthetic trigger via media) */
+  @media (prefers-color-scheme: dark){
+    :root{
+      /* kept disabled — pharmacopeia is printed; we respect that */
+    }
+  }
+
+  @media (max-width: 900px){
+    .cover{ grid-template-columns: 1fr; }
+    .grid2{ grid-template-columns:1fr;}
+    .labHead{ grid-template-columns:1fr; }
+    .specimen{ border-right:none; border-bottom:1px solid var(--ink);}
+    .findings .fbody{ column-count:1; }
+    .deltas{ grid-template-columns: repeat(2,1fr); }
+    .fixCard{ grid-template-columns:1fr; }
+    .fixCard > div:first-child{ border-right:none; border-bottom:1px solid var(--ink);}
+    footer{ grid-template-columns:1fr; }
+    .title{ font-size:54px; }
+  }
+</style>
+</head>
+<body>
+<div class="paper">
+
+  <!-- RUNNING HEADER -->
+  <div class="runhead" aria-hidden="true">
+    <div>VT-AI / MONOGRAPH — VISUAL REGRESSION ASSAY</div>
+    <div class="c">VISIONTEST.AI · PHARMACOPOEIA OF UI STABILITY</div>
+    <div class="r">ISSUE 1 · REV. 1 · FOLIO 0001 / 0042</div>
+  </div>
+
+  <!-- ======================================= -->
+  <!-- §0 MONOGRAPH COVER                       -->
+  <!-- ======================================= -->
+  <header class="cover">
+    <div>
+      <div class="seal" aria-label="agency seal">
+        <svg class="sealArc" viewBox="0 0 120 120">
+          <defs>
+            <path id="arcTop" d="M 14 60 A 46 46 0 0 1 106 60"/>
+            <path id="arcBot" d="M 14 60 A 46 46 0 0 0 106 60"/>
+          </defs>
+          <text font-family="IBM Plex Mono" font-size="8" letter-spacing="3" fill="#0E0D0B">
+            <textPath href="#arcTop" startOffset="8">VISIONTEST · AI · MONOGRAPH</textPath>
+          </text>
+          <text font-family="IBM Plex Mono" font-size="7.5" letter-spacing="3" fill="#3A3834">
+            <textPath href="#arcBot" startOffset="6">EST · MMXXVI · COMMIT 9C3F1A7</textPath>
+          </text>
+          <circle cx="60" cy="60" r="2" fill="#F05A23"/>
+          <line x1="32" y1="60" x2="40" y2="60" stroke="#0E0D0B" stroke-width="1"/>
+          <line x1="80" y1="60" x2="88" y2="60" stroke="#0E0D0B" stroke-width="1"/>
+        </svg>
+        <div class="sealMark">Vt</div>
+      </div>
+      <p class="pretitle"><span class="dot"></span> VISIONTEST.AI <span>·</span> MONOGRAPH OF VISUAL REGRESSION ASSAY <span>·</span> CLASS II / NON-DESTRUCTIVE</p>
+      <h1 class="title">Visual Regression <em>Pharmacopoeia</em><br/>for Interactive Surfaces</h1>
+      <p class="subtitle">A reference method for the determination of pixel-congruence, perceptual drift, and semantic equivalence across multi-platform user interfaces.</p>
+
+      <p class="abstract">
+        This monograph prescribes the standard procedure by which the <span class="kw">VisionTest.ai</span> assay apparatus shall capture, compare, and adjudicate rendered specimens of an application under test across the supported matrix of <span class="kw">web · iOS · android</span> runtimes. The assay combines a pixel-level congruence test (Δ<sub>px</sub>), a structural similarity index (SSIM), a learned perceptual metric (LPIPS) and a semantic embedding distance (DINOv2) to yield a composite <span class="kw">Visual Equivalence Quotient</span> (VEQ). Specimens exceeding the tolerance band defined in §4.2 are routed to the adjudication queue (§5). Flaky specimens — those whose intra-run variance exceeds σ² = 0.0025 — shall be placed under quarantine pending root-cause analysis per §6. Autonomous remediation (§7) is permitted only where the candidate patch passes all three convergence criteria enumerated therein.
+      </p>
+
+      <div class="coverMeta">
+        <span><b>Issue</b> 01</span>
+        <span><b>Revision</b> 01</span>
+        <span><b>Effective</b> 2026-04-23</span>
+        <span><b>Supersedes</b> none</span>
+        <span><b>DOI</b> vt.ai/mono/0001</span>
+      </div>
+    </div>
+
+    <aside class="monoSide" aria-label="monograph metadata">
+      <h5>Monograph Header</h5>
+      <dl>
+        <dt>Title</dt><dd>Visual Regression Assay, Reference Method A</dd>
+        <dt>Code</dt><dd>VT-RGX-0001.A</dd>
+        <dt>Revision</dt><dd>1.0 (initial publication)</dd>
+        <dt>Effective</dt><dd>2026-04-23T00:00:00Z</dd>
+        <dt>Authority</dt><dd>VisionTest.ai Technical Committee</dd>
+        <dt>Custodian</dt><dd>J. Stuart, Principal Engineer</dd>
+        <dt>Method</dt><dd>SSIM · LPIPS · DINOv2 (composite VEQ)</dd>
+        <dt>Apparatus</dt><dd>Playwright 1.47 · WebKit 17.4 · Chromium 124 · Gecko 125</dd>
+        <dt>Reference</dt><dd>baseline/9c3f1a7</dd>
+        <dt>Jurisdiction</dt><dd>internal · unrestricted</dd>
+        <dt>Storage</dt><dd>MinIO s3://vt-artifacts/2026/</dd>
+        <dt>Retention</dt><dd>90 d · PII redacted</dd>
+        <dt>Classification</dt><dd>Non-destructive · Class II</dd>
+        <dt>Checksum</dt><dd>sha256 3F2A·C19E·D407·8B16</dd>
+      </dl>
+    </aside>
+  </header>
+
+  <!-- ======================================= -->
+  <!-- §1 OVERVIEW + ASSAY CONDITIONS           -->
+  <!-- ======================================= -->
+  <section id="s1">
+    <div class="sectHead">
+      <div class="sectNum"><b>§1.0</b> · Overview</div>
+      <div class="sectTitle">Assay <em>Conditions &amp; Apparatus</em></div>
+      <div class="sectAside">Prepared 2026-04-22 · 17:42:11Z</div>
+    </div>
+
+    <div class="warnBar" role="note">
+      <!-- ISO warning triangle -->
+      <svg class="ico lg" viewBox="0 0 32 32" fill="none" stroke="#F05A23" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M16 3 L30 28 L2 28 Z"/>
+        <line x1="16" y1="12" x2="16" y2="20"/>
+        <circle cx="16" cy="24" r="0.8" fill="#F05A23"/>
+      </svg>
+      <div>
+        <p class="wt">Caution · Read Before Use</p>
+        <p>This method is non-destructive but may consume significant compute. Do not run against production surfaces without an approved <span class="mono">X-VT-ASSAY-MODE: observe</span> header. Specimens obtained under unstable network (RTT &gt; 180 ms) are inadmissible (§6.3).</p>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="subhead">§1.1 · Method Summary <span>per VT-RGX-0001.A</span></div>
+        <p style="margin:0 0 12px 0; max-width:64ch;">
+          A suite of <b>reference specimens</b> is captured from the application under test on a warm, stable runner. For each candidate build, a matched specimen set is produced under the identical matrix (browser × device × viewport × locale × theme). The specimen pair is submitted to the composite VEQ pipeline. A specimen is declared <span class="st pass" style="letter-spacing:.14em">in&nbsp;equivalence</span> when all four metrics fall within the tolerance band. Any exceedance is escalated per §4.2 and adjudicated per §5.
+        </p>
+
+        <div class="subhead">§1.2 · Coverage Matrix <span>browser × viewport</span></div>
+        <table class="cov">
+          <thead>
+            <tr>
+              <th>Browser / Engine</th>
+              <th>360×640<br/><span class="u" style="font-size:8.5px">mobile·s</span></th>
+              <th>768×1024<br/><span class="u" style="font-size:8.5px">tablet</span></th>
+              <th>1280×800<br/><span class="u" style="font-size:8.5px">laptop</span></th>
+              <th>1920×1080<br/><span class="u" style="font-size:8.5px">desk·fhd</span></th>
+              <th>2560×1440<br/><span class="u" style="font-size:8.5px">desk·qhd</span></th>
+              <th>∑ specimens</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th>Chromium 124.0.6367</th><td class="ok">●&nbsp;<b>PASS</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td class="wa">▲&nbsp;<b>WARN</b></td><td>482</td></tr>
+            <tr><th>WebKit 17.4 (iOS 17)</th><td class="ok">●&nbsp;<b>PASS</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td class="wa">▲&nbsp;<b>WARN</b></td><td class="na">—</td><td>318</td></tr>
+            <tr><th>Gecko 125.0.1</th><td class="ok">●&nbsp;<b>PASS</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td class="no">✕&nbsp;<b>FAIL</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td>410</td></tr>
+            <tr><th>Android WebView 124</th><td class="ok">●&nbsp;<b>PASS</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td class="na">—</td><td class="na">—</td><td class="na">—</td><td>204</td></tr>
+            <tr><th>iOS Native (UIKit 17)</th><td class="ok">●&nbsp;<b>PASS</b></td><td class="ok">●&nbsp;<b>PASS</b></td><td class="na">—</td><td class="na">—</td><td class="na">—</td><td>188</td></tr>
+            <tr><th>Android Native (API 34)</th><td class="ok">●&nbsp;<b>PASS</b></td><td class="wa">▲&nbsp;<b>WARN</b></td><td class="na">—</td><td class="na">—</td><td class="na">—</td><td>176</td></tr>
+          </tbody>
+        </table>
+
+        <p class="fnotes" style="display:block;margin-top:10px;">
+          <sup>†</sup>Specimens marked <b>warn</b> exceed Δ<sub>px</sub> but remain within SSIM and LPIPS tolerances; routed to adjudication queue. <sup>‡</sup>Specimens marked <b>fail</b> exceed three or more composite metrics; a quarantine record is opened automatically.
+        </p>
+      </div>
+
+      <aside>
+        <div class="mono-panel">
+          <h6>Reagents &amp; Parameters</h6>
+          <ol>
+            <li><span class="k">tol.px</span>    = 0.500 <span class="k">%</span></li>
+            <li><span class="k">tol.ssim</span>  = 0.9850 <span class="k">[0..1]</span></li>
+            <li><span class="k">tol.lpips</span> = 0.0350 <span class="k">[0..1]</span></li>
+            <li><span class="k">tol.dino</span>  = 0.1200 <span class="k">cos·dist</span></li>
+            <li><span class="k">seed</span>      = 0xA3F19C</li>
+            <li><span class="k">anti.alias</span>= shift-invariant</li>
+            <li><span class="k">color.space</span>= sRGB · IEC 61966-2-1</li>
+            <li><span class="k">downscale</span> = lanczos-3</li>
+            <li><span class="k">font.render</span>= freetype 2.13, hinting:slight</li>
+            <li><span class="k">stability.n</span>= 3 consecutive stable frames</li>
+          </ol>
+          <hr style="border:none;border-top:1px dotted var(--rule); margin:10px 0;"/>
+          <h6 style="margin:0 -14px 8px -14px;">Runner Pedigree</h6>
+          <ol>
+            <li><span class="k">cpu</span>  Intel i9-13900H · 14c / 20t</li>
+            <li><span class="k">ram</span>  96 GiB DDR5-5200</li>
+            <li><span class="k">net</span>  thor.10GbE · RTT 1.24 ms</li>
+            <li><span class="k">image</span>  vt-worker:2.0.0-rc.7</li>
+            <li><span class="k">sha</span>    9c3f1a7d4e0b26ff</li>
+            <li><span class="k">fired</span>  2026-04-23 T 09:12:07 Z</li>
+          </ol>
+        </div>
+
+        <div class="mono-panel" style="margin-top:12px;">
+          <h6>Composite VEQ Formula</h6>
+<pre style="font-family:var(--mono); font-size:11.5px; margin:0; line-height:1.55;">
+VEQ = 0.25·(1−Δpx)
+    + 0.30·SSIM
+    + 0.25·(1−LPIPS)
+    + 0.20·(1−d_dino)
+
+accept  iff  VEQ ≥ 0.9825
+observe iff  0.9500 ≤ VEQ &lt; 0.9825
+reject  iff  VEQ &lt; 0.9500</pre>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ======================================= -->
+  <!-- §2 ASSAY TABLE — RECENT RUNS             -->
+  <!-- ======================================= -->
+  <section id="s2">
+    <div class="sectHead">
+      <div class="sectNum"><b>§2.1</b> · Recent Runs</div>
+      <div class="sectTitle">Assay <em>Specimens &amp; Disposition</em></div>
+      <div class="sectAside">Window 2026-04-22 00:00 → 2026-04-23 09:12 Z</div>
+    </div>
+
+    <table class="tbl" aria-label="recent assay runs">
+      <thead>
+        <tr>
+          <th style="width:28px;">#</th>
+          <th style="width:92px;">Run ID<span class="u">sha7</span></th>
+          <th>Specimen · Route<span class="u">story / path</span></th>
+          <th>Matrix<span class="u">browser · viewport · platform</span></th>
+          <th class="mono" style="text-align:right;width:108px;">Mean t<span class="u">ms</span></th>
+          <th class="mono" style="text-align:right;width:108px;">Δpx<span class="u">% ± σ</span></th>
+          <th class="mono" style="text-align:right;width:100px;">SSIM<span class="u">[0..1]</span></th>
+          <th class="mono" style="text-align:right;width:100px;">LPIPS<span class="u">↓ better</span></th>
+          <th class="mono" style="text-align:right;width:100px;">Pass rate<span class="u">% ± σ</span></th>
+          <th style="width:88px;">Last modified<span class="u">UTC</span></th>
+          <th style="width:96px;">Status<span class="u">§4.2</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="idx">001</td>
+          <td class="mono">9c3f1a7</td>
+          <td>checkout/payment-form<br/><span class="u">web · /checkout</span></td>
+          <td class="mono">chromium · 1280×800 · darwin</td>
+          <td class="num">4 820<span class="u">ms</span></td>
+          <td class="num">0.118 <span class="sd">± 0.021</span></td>
+          <td class="num">0.9974</td>
+          <td class="num">0.0091</td>
+          <td class="num">99.82 <span class="sd">± 0.12</span></td>
+          <td class="mono">09:08:41Z</td>
+          <td><span class="st pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="idx">002</td>
+          <td class="mono">9c3f1a7</td>
+          <td>checkout/payment-form<br/><span class="u">web · /checkout</span></td>
+          <td class="mono">webkit · 1280×800 · darwin</td>
+          <td class="num">5 142<span class="u">ms</span></td>
+          <td class="num">0.142 <span class="sd">± 0.034</span></td>
+          <td class="num">0.9962</td>
+          <td class="num">0.0108</td>
+          <td class="num">99.76 <span class="sd">± 0.18</span></td>
+          <td class="mono">09:09:07Z</td>
+          <td><span class="st pass">Pass</span></td>
+        </tr>
+        <tr class="flag">
+          <td class="idx">003</td>
+          <td class="mono">9c3f1a7</td>
+          <td><span class="dagger">†</span>dashboard/overview-cards<br/><span class="u">web · /dashboard</span></td>
+          <td class="mono">chromium · 1920×1080 · linux</td>
+          <td class="num">3 217<span class="u">ms</span></td>
+          <td class="num">0.612 <span class="sd">± 0.048</span></td>
+          <td class="num">0.9841</td>
+          <td class="num">0.0362</td>
+          <td class="num">94.10 <span class="sd">± 1.14</span></td>
+          <td class="mono">09:09:44Z</td>
+          <td><span class="st warn">Attention</span></td>
+        </tr>
+        <tr>
+          <td class="idx">004</td>
+          <td class="mono">9c3f1a7</td>
+          <td>auth/login-form<br/><span class="u">web · /login</span></td>
+          <td class="mono">gecko · 1280×800 · linux</td>
+          <td class="num">2 904<span class="u">ms</span></td>
+          <td class="num">0.081 <span class="sd">± 0.011</span></td>
+          <td class="num">0.9988</td>
+          <td class="num">0.0044</td>
+          <td class="num">100.00 <span class="sd">± 0.00</span></td>
+          <td class="mono">09:10:02Z</td>
+          <td><span class="st pass">Pass</span></td>
+        </tr>
+        <tr class="fail">
+          <td class="idx">005</td>
+          <td class="mono">9c3f1a7</td>
+          <td><span class="dagger" style="color:var(--fail-red)">‡</span>settings/billing-card<br/><span class="u">web · /settings/billing</span></td>
+          <td class="mono">webkit · 1920×1080 · darwin</td>
+          <td class="num">6 918<span class="u">ms</span></td>
+          <td class="num">1.840 <span class="sd">± 0.184</span></td>
+          <td class="num">0.9612</td>
+          <td class="num">0.0871</td>
+          <td class="num">62.40 <span class="sd">± 3.18</span></td>
+          <td class="mono">09:10:41Z</td>
+          <td><span class="st fail">Fail</span></td>
+        </tr>
+        <tr>
+          <td class="idx">006</td>
+          <td class="mono">9c3f1a7</td>
+          <td>onboarding/step-2-identity<br/><span class="u">ios · native</span></td>
+          <td class="mono">uikit · iPhone 15 · iOS 17.4</td>
+          <td class="num">7 204<span class="u">ms</span></td>
+          <td class="num">0.204 <span class="sd">± 0.039</span></td>
+          <td class="num">0.9951</td>
+          <td class="num">0.0142</td>
+          <td class="num">99.20 <span class="sd">± 0.42</span></td>
+          <td class="mono">09:10:58Z</td>
+          <td><span class="st pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="idx">007</td>
+          <td class="mono">9c3f1a7</td>
+          <td>onboarding/step-2-identity<br/><span class="u">android · native</span></td>
+          <td class="mono">api-34 · Pixel 8 · android</td>
+          <td class="num">7 812<span class="u">ms</span></td>
+          <td class="num">0.318 <span class="sd">± 0.061</span></td>
+          <td class="num">0.9917</td>
+          <td class="num">0.0218</td>
+          <td class="num">98.44 <span class="sd">± 0.71</span></td>
+          <td class="mono">09:11:19Z</td>
+          <td><span class="st pass">Pass</span></td>
+        </tr>
+        <tr class="flag">
+          <td class="idx">008</td>
+          <td class="mono">9c3f1a7</td>
+          <td><span class="dagger">†</span>storybook/Button--primary<br/><span class="u">story · 1.2.4</span></td>
+          <td class="mono">chromium · 360×640 · linux</td>
+          <td class="num">812<span class="u">ms</span></td>
+          <td class="num">0.501 <span class="sd">± 0.092</span></td>
+          <td class="num">0.9878</td>
+          <td class="num">0.0294</td>
+          <td class="num">91.80 <span class="sd">± 2.04</span></td>
+          <td class="mono">09:11:41Z</td>
+          <td><span class="st warn">Attention</span></td>
+        </tr>
+        <tr>
+          <td class="idx">009</td>
+          <td class="mono">9c3f1a7</td>
+          <td>exploratory/scan-/app<br/><span class="u">crawl · depth 3</span></td>
+          <td class="mono">chromium · 1280×800 · linux</td>
+          <td class="num">48 104<span class="u">ms</span></td>
+          <td class="num">0.097 <span class="sd">± 0.018</span></td>
+          <td class="num">0.9981</td>
+          <td class="num">0.0073</td>
+          <td class="num">99.94 <span class="sd">± 0.08</span></td>
+          <td class="mono">09:12:02Z</td>
+          <td><span class="st pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="idx">010</td>
+          <td class="mono">9c3f1a7</td>
+          <td>reports/export-pdf-preview<br/><span class="u">web · /reports/pdf</span></td>
+          <td class="mono">chromium · 1280×800 · linux</td>
+          <td class="num">11 480<span class="u">ms</span></td>
+          <td class="num">0.142 <span class="sd">± 0.028</span></td>
+          <td class="num">0.9969</td>
+          <td class="num">0.0098</td>
+          <td class="num">99.51 <span class="sd">± 0.24</span></td>
+          <td class="mono">09:12:07Z</td>
+          <td><span class="st pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td class="idx">011</td>
+          <td class="mono">9c3f1a7</td>
+          <td>onboarding/locale-fr-FR<br/><span class="u">web · /onboarding</span></td>
+          <td class="mono">chromium · 1280×800 · linux</td>
+          <td class="num">3 418<span class="u">ms</span></td>
+          <td class="num">0.088 <span class="sd">± 0.014</span></td>
+          <td class="num">0.9979</td>
+          <td class="num">0.0061</td>
+          <td class="num">99.88 <span class="sd">± 0.10</span></td>
+          <td class="mono">09:12:09Z</td>
+          <td><span class="st pass">Pass</span></td>
+        </tr>
+        <tr class="flag">
+          <td class="idx">012</td>
+          <td class="mono">9c3f1a7</td>
+          <td><span class="dagger">†</span>marketing/hero-spline<br/><span class="u">web · /</span></td>
+          <td class="mono">webkit · 1440×900 · darwin</td>
+          <td class="num">9 004<span class="u">ms</span></td>
+          <td class="num">0.724 <span class="sd">± 0.113</span></td>
+          <td class="num">0.9834</td>
+          <td class="num">0.0401</td>
+          <td class="num">88.20 <span class="sd">± 2.88</span></td>
+          <td class="mono">09:12:10Z</td>
+          <td><span class="st quar">Quarantine</span></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="11">
+            <sup style="color:var(--safety)">†</sup> Specimen routed to adjudication (§5). &nbsp;&nbsp;
+            <sup style="color:var(--fail-red)">‡</sup> Composite VEQ &lt; 0.9500; see findings §3. &nbsp;&nbsp;
+            Generated by <span class="mono" style="font-style:normal">vt-worker 2.0.0-rc.7</span> · tz=UTC · tabular figures · n = 12 / 1 214 specimens total.
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="deltas" aria-label="batch summary deltas">
+      <div><dt>Specimens</dt><dd>1&nbsp;214&nbsp;<span class="q">ct</span></dd></div>
+      <div><dt>Pass</dt><dd class="pass">1&nbsp;178&nbsp;<span class="q">/ 97.03 %</span></dd></div>
+      <div><dt>Attention</dt><dd class="warn">24&nbsp;<span class="q">/ 1.98 %</span></dd></div>
+      <div><dt>Fail</dt><dd class="fail">12&nbsp;<span class="q">/ 0.99 %</span></dd></div>
+      <div><dt>Mean latency</dt><dd>4.82&nbsp;<span class="q">s ± 0.38</span></dd></div>
+      <div><dt>VEQ (batch)</dt><dd class="pass">0.9901&nbsp;<span class="q">± 0.0024</span></dd></div>
+    </div>
+
+    <p class="fnotes" style="grid-template-columns:1fr;">
+      <span><sup>1</sup>&nbsp;Pass rate is computed over the full historical window (n = 1&nbsp;214). Standard deviation σ is the population estimator with Bessel correction. Times reported are mean of three consecutive warm runs; cold-start runs are excluded per §1.1.</span>
+    </p>
+  </section>
+
+  <!-- ======================================= -->
+  <!-- §3 DIFF REVIEW / LAB REPORT              -->
+  <!-- ======================================= -->
+  <section id="s3">
+    <div class="sectHead">
+      <div class="sectNum"><b>§3.0</b> · Diff Review</div>
+      <div class="sectTitle">Specimen <em>Comparison &amp; Findings</em></div>
+      <div class="sectAside">Case VT-2026-04-23-007 · Examiner J. Stuart</div>
+    </div>
+
+    <div class="subhead">§3.1 · Identification <span>case file VT-2026-04-23-007</span></div>
+
+    <div class="labHead">
+      <article class="specimen">
+        <h4>Specimen <b>№ 1</b> — Reference / Baseline</h4>
+        <div class="spTitle">Settings <em style="font-style:italic;">· Billing Card</em></div>
+        <dl>
+          <dt>Build</dt><dd>main @ 8f2c0d1</dd>
+          <dt>Captured</dt><dd>2026-04-17 · 14:02:11 Z</dd>
+          <dt>Route</dt><dd>/settings/billing</dd>
+          <dt>Engine</dt><dd>WebKit 17.4 · darwin · 1920×1080</dd>
+          <dt>Hash (png)</dt><dd>sha256 3F2A·C19E·D407</dd>
+          <dt>Approved by</dt><dd>a.moreau · 2026-04-17 14:44 Z</dd>
+        </dl>
+        <div class="specFrame" role="img" aria-label="baseline screenshot">
+          <span class="corner tl">REF · 1920×1080</span>
+          <span class="corner tr">sRGB · 8-bit</span>
+          <span class="corner bl">t = 6.881 s</span>
+          <span class="corner br">ƒ 1.0 · dpr 2</span>
+          <div class="mockApp">
+            <div class="mBar"><span>VT · SETTINGS / BILLING</span><span>v2.0.0-rc.6</span></div>
+            <div class="mBody">
+              <div class="mSide"><span></span><span></span><span></span><span></span><span></span></div>
+              <div class="mMain">
+                <div class="mH"></div>
+                <div class="mP s80"></div>
+                <div class="mP s60"></div>
+                <div class="mP s90"></div>
+                <div class="mP s60"></div>
+                <div class="mBtn"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <h4>Specimen <b>№ 2</b> — Candidate / Under Test</h4>
+        <div class="spTitle">Settings <em style="font-style:italic;">· Billing Card</em></div>
+        <dl>
+          <dt>Build</dt><dd>feat/9c3f1a7</dd>
+          <dt>Captured</dt><dd>2026-04-23 · 09:10:41 Z</dd>
+          <dt>Route</dt><dd>/settings/billing</dd>
+          <dt>Engine</dt><dd>WebKit 17.4 · darwin · 1920×1080</dd>
+          <dt>Hash (png)</dt><dd>sha256 81A7·F20C·BB64</dd>
+          <dt>Author</dt><dd>k.okafor · PR #2148</dd>
+        </dl>
+        <div class="specFrame" role="img" aria-label="candidate screenshot with diff overlay">
+          <span class="corner tl">TST · 1920×1080</span>
+          <span class="corner tr">sRGB · 8-bit</span>
+          <span class="corner bl">t = 6.918 s</span>
+          <span class="corner br">Δ = 1.840 %</span>
+          <div class="mockApp v2">
+            <div class="mBar"><span>VT · SETTINGS / BILLING</span><span>v2.0.0-rc.7</span></div>
+            <div class="mBody">
+              <div class="mSide"><span></span><span></span><span></span><span></span><span></span></div>
+              <div class="mMain">
+                <div class="mH"></div>
+                <div class="mP s80"></div>
+                <div class="mP s60"></div>
+                <div class="mP s90"></div>
+                <div class="mP s60"></div>
+                <div class="mBtn"></div>
+              </div>
+            </div>
+          </div>
+          <div class="diffOverlay">
+            <div class="roi" style="top:6%; left:34%; width:46%; height:10%;">ROI·1 · Δ 1.04 %</div>
+            <div class="roi" style="top:70%; left:34%; width:22%; height:14%;">ROI·2 · Δ 0.74 %</div>
+            <div class="roi" style="top:22%; left:6%; width:22%; height:52%;">ROI·3 · Δ 0.28 %</div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="deltas" aria-label="composite metrics">
+      <div><dt>Δ pixel</dt><dd class="fail">1.840 <span class="q">% ± 0.184</span></dd></div>
+      <div><dt>SSIM</dt><dd class="fail">0.9612 <span class="q">↓ vs 0.9988</span></dd></div>
+      <div><dt>LPIPS</dt><dd class="fail">0.0871 <span class="q">↑ vs 0.0044</span></dd></div>
+      <div><dt>DINOv2 cos</dt><dd class="warn">0.1142 <span class="q">≈ tol</span></dd></div>
+      <div><dt>VEQ</dt><dd class="fail">0.9184 <span class="q">&lt; 0.9500</span></dd></div>
+      <div><dt>Disposition</dt><dd class="fail" style="font-size:12.5px; letter-spacing:.16em;">REJECTED · §4.2.c</dd></div>
+    </div>
+
+    <div class="findings" aria-label="findings">
+      <h5><span>§3.2 · Findings</span><span style="font-weight:400;letter-spacing:.18em;">per examiner · 2026-04-23 09:22 Z</span></h5>
+      <div class="fbody">
+        <p><b>Observation A ·</b> A sustained chromatic shift is recorded within Region of Interest ROI·1 (upper banner, coordinates <code>[x=420..1500, y=72..180]</code>). The hue channel (H) reports a mean deviation of <code>+3.218°</code> with a σ of <code>0.084°</code>, consistent with a palette token migration from <code>--accent-500</code> (<code>#27436B</code>) to <code>--accent-600</code> (<code>#2E5A94</code>). The shift is reproducible across <code>n = 9</code> consecutive captures.</p>
+
+        <p><b>Observation B ·</b> ROI·2 (primary action button, coordinates <code>[x=420..612, y=684..804]</code>) exhibits both a hue drift of <code>+2.04°</code> and a ~<code>6 px</code> vertical displacement of the descender baseline. SSIM over this region falls to <code>0.941</code> (reference <code>0.998</code>), placing this region below the lower acceptance bound.</p>
+
+        <p><b>Observation C ·</b> ROI·3 (left sidebar, coordinates <code>[x=72..344, y=132..984]</code>) shows a uniform luminance shift of <code>−2.8 %</code>. The effect is consistent with a token change from <code>--rule-100</code> to <code>--rule-200</code>; however the magnitude remains inside SSIM tolerance.</p>
+
+        <p><b>Interpretation ·</b> The candidate specimen shows evidence of an intentional design-token revision (accent hue, rule weight). No layout-structural regressions were detected — the DINOv2 embedding distance (<code>d = 0.1142</code>) is within semantic tolerance. The failure is <em>tolerance-band pixel</em> rather than <em>structural</em>.</p>
+
+        <p><b>Assessment ·</b> The examiner recommends that a baseline refresh be performed on the affected components (<code>BillingCard</code>, <code>Sidebar.Nav</code>, <code>Button.Primary</code>) pending design-review sign-off. Until such refresh is lodged, the candidate specimen remains in <em>rejected</em> status and MUST NOT be promoted to the stable channel (§4.2.c).</p>
+
+        <p><b>Recommendation ·</b> Submit CR <code>VT-CR-0148</code> to the design authority referencing <code>design-token-migration/v2.0.0</code>. Upon approval, trigger <code>POST /api/v1/baselines/refresh?scope=billing</code>. The autonomous-fix subsystem (§7) has proposed a candidate patch (see §7.1) that would not close this finding because the observed drift is design-intentional, not defective.</p>
+      </div>
+      <div class="signoff">
+        <div><b>Examined by</b><span class="sig">J. Stuart</span>2026-04-23 · 09:22 Z</div>
+        <div><b>Counter-signed</b><span class="sig">A. Moreau</span>2026-04-23 · 09:31 Z</div>
+        <div><b>Record hash</b><span style="font-family:var(--mono); font-size:11px;">sha256 8E11·77A0·3FDC·4B92</span>2026-04-23 · 09:31 Z</div>
+      </div>
+    </div>
+
+    <p class="fnotes">
+      <span><sup>2</sup>&nbsp;All coordinate references are in device-independent pixels (DIP) measured from the top-left origin at DPR = 2.</span>
+      <span><sup>3</sup>&nbsp;Color channel analysis performed in HSL per CSS Color Module 4; hue deviations are reported modulo 360°.</span>
+    </p>
+  </section>
+
+  <!-- ======================================= -->
+  <!-- §4 APPROVAL LEDGER + §5 FLAKY + §6 FIX   -->
+  <!-- ======================================= -->
+  <section id="s4">
+    <div class="sectHead">
+      <div class="sectNum"><b>§4.0</b> · Adjudication Ledger</div>
+      <div class="sectTitle">Approval <em>Record &amp; Chain of Custody</em></div>
+      <div class="sectAside">Immutable · append-only · sha-chain</div>
+    </div>
+
+    <table class="ledger">
+      <thead>
+        <tr>
+          <th style="width:140px;">Timestamp (UTC)</th>
+          <th style="width:90px;">Entry ID</th>
+          <th>Specimen</th>
+          <th style="width:120px;">Action</th>
+          <th style="width:140px;">Examiner</th>
+          <th style="width:190px;">Hash · prev → next</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="when">2026-04-23 09:31:04</td>
+          <td class="mono">E-01142</td>
+          <td><span class="mono">settings/billing-card</span> · ROI·1..3</td>
+          <td><span class="st fail" style="letter-spacing:.14em">Reject · Refresh</span></td>
+          <td class="by">J. Stuart + A. Moreau</td>
+          <td class="mono">3F2A··D407 → 81A7··BB64</td>
+        </tr>
+        <tr>
+          <td class="when">2026-04-23 09:14:22</td>
+          <td class="mono">E-01141</td>
+          <td><span class="mono">dashboard/overview-cards</span></td>
+          <td><span class="st warn" style="letter-spacing:.14em">Hold · Queue</span></td>
+          <td class="by">a.moreau</td>
+          <td class="mono">14CE··91BA → 22D0··4F07</td>
+        </tr>
+        <tr>
+          <td class="when">2026-04-23 09:13:58</td>
+          <td class="mono">E-01140</td>
+          <td><span class="mono">storybook/Button--primary</span></td>
+          <td><span class="st pass" style="letter-spacing:.14em">Accept · Baseline</span></td>
+          <td class="by">m.orlov</td>
+          <td class="mono">09B1··0024 → 7C3E··AE89</td>
+        </tr>
+        <tr>
+          <td class="when">2026-04-23 08:52:11</td>
+          <td class="mono">E-01139</td>
+          <td><span class="mono">marketing/hero-spline</span></td>
+          <td><span class="st quar" style="letter-spacing:.14em">Quarantine</span></td>
+          <td class="by">system · flake-detector</td>
+          <td class="mono">AA10··E91F → BB22··0018</td>
+        </tr>
+        <tr>
+          <td class="when">2026-04-22 18:41:03</td>
+          <td class="mono">E-01138</td>
+          <td><span class="mono">auth/login-form</span></td>
+          <td><span class="st pass" style="letter-spacing:.14em">Accept · Baseline</span></td>
+          <td class="by">j.stuart</td>
+          <td class="mono">5502··11CC → 7781··90A3</td>
+        </tr>
+        <tr>
+          <td class="when">2026-04-22 16:02:48</td>
+          <td class="mono">E-01137</td>
+          <td><span class="mono">onboarding/step-2-identity</span> (ios)</td>
+          <td><span class="st pass" style="letter-spacing:.14em">Accept · Baseline</span></td>
+          <td class="by">k.okafor</td>
+          <td class="mono">301A··FF42 → 49C8··DA17</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="grid2" style="margin-top:28px;">
+      <div>
+        <div class="sectHead" style="grid-template-columns:120px 1fr auto;">
+          <div class="sectNum"><b>§5.0</b> · Flaky</div>
+          <div class="sectTitle" style="font-size:26px;">Quarantine <em style="font-size:16px;">· suspect specimens</em></div>
+          <div class="sectAside">σ² &gt; 0.0025</div>
+        </div>
+
+        <div class="warnBar" style="margin-top:0;">
+          <!-- caution octagon with hand -->
+          <svg class="ico lg" viewBox="0 0 32 32" fill="none" stroke="#F05A23" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+            <polygon points="11,2 21,2 30,11 30,21 21,30 11,30 2,21 2,11"/>
+            <path d="M12 11 V20 M12 14 C12 12, 14 12, 14 14 V20 M14 14 C14 12, 16 12, 16 14 V20 M16 14 C16 12, 18 12, 18 14 V20 M18 16 C18 14, 20 14, 20 16 V22 C20 24, 18 26, 16 26 C14 26, 12 24, 12 22"/>
+          </svg>
+          <div>
+            <p class="wt">Do Not Promote</p>
+            <p>The following specimens exhibit intra-run variance above the tolerance σ²<sub>max</sub> = 0.0025. They shall not be used as baselines nor counted toward pass-rate statistics until root-cause is lodged (§6.3).</p>
+          </div>
+        </div>
+
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Specimen</th>
+              <th class="mono" style="text-align:right;">σ² <span class="u">variance</span></th>
+              <th class="mono" style="text-align:right;">n <span class="u">runs</span></th>
+              <th class="mono" style="text-align:right;">last flake <span class="u">UTC</span></th>
+              <th style="width:96px;">Disposition</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="flag">
+              <td><span class="mono">marketing/hero-spline</span><br/><span class="u">webkit · 1440×900</span></td>
+              <td class="num">0.0048</td>
+              <td class="num">38</td>
+              <td class="mono">09:12:10Z</td>
+              <td><span class="st quar">Quarantine</span></td>
+            </tr>
+            <tr class="flag">
+              <td><span class="mono">dashboard/chart-area</span><br/><span class="u">chromium · 1920×1080</span></td>
+              <td class="num">0.0039</td>
+              <td class="num">26</td>
+              <td class="mono">08:48:02Z</td>
+              <td><span class="st quar">Quarantine</span></td>
+            </tr>
+            <tr>
+              <td><span class="mono">reports/loading-state</span><br/><span class="u">gecko · 1280×800</span></td>
+              <td class="num">0.0031</td>
+              <td class="num">19</td>
+              <td class="mono">07:12:44Z</td>
+              <td><span class="st warn">Watch</span></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="5"><sup style="color:var(--safety)">§5.1</sup> Variance sampled over the trailing 40 runs; Welford online estimator.</td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <aside>
+        <div class="sectHead" style="grid-template-columns:120px 1fr auto;">
+          <div class="sectNum"><b>§7.1</b> · Autonomy</div>
+          <div class="sectTitle" style="font-size:26px;">Patch <em style="font-size:16px;">· candidate</em></div>
+          <div class="sectAside">LLM · provider locked</div>
+        </div>
+
+        <div class="fixCard">
+          <div>
+            <h6>Patch Envelope</h6>
+            <dl style="font-family:var(--mono); font-size:11px; display:grid; grid-template-columns:120px 1fr; row-gap:4px; margin:0;">
+              <dt class="muted">Finding ref</dt><dd>VT-2026-04-23-007</dd>
+              <dt class="muted">Target file</dt><dd>apps/web/src/components/Billing/Card.tsx</dd>
+              <dt class="muted">Model</dt><dd>claude-opus-4-7 (1 M ctx)</dd>
+              <dt class="muted">Provider</dt><dd>anthropic · direct</dd>
+              <dt class="muted">Tokens in</dt><dd>3 812</dd>
+              <dt class="muted">Tokens out</dt><dd>418</dd>
+              <dt class="muted">Latency</dt><dd>4.118 s</dd>
+              <dt class="muted">Confidence</dt><dd>0.62 <span class="muted">/ 1.0</span></dd>
+              <dt class="muted">Disposition</dt><dd><span class="st warn" style="letter-spacing:.14em">Held · design review</span></dd>
+            </dl>
+          </div>
+          <div>
+            <h6>Candidate Diff · unified</h6>
+<pre style="margin:0;">
+<span class="diffLine ctx">--- a/Billing/Card.tsx   (baseline 8f2c0d1)</span>
+<span class="diffLine ctx">+++ b/Billing/Card.tsx   (candidate 9c3f1a7)</span>
+<span class="diffLine ctx">@@ -17,7 +17,7 @@  BillingCard</span>
+<span class="diffLine ctx">   const tone = useTheme();</span>
+<span class="diffLine del">-  const accent = tokens.accent[500];   // #27436B</span>
+<span class="diffLine add">+  const accent = tokens.accent[600];   // #2E5A94</span>
+<span class="diffLine ctx">   const rule   = tokens.rule[100];</span>
+<span class="diffLine ctx">@@ -42,7 +42,7 @@  return (</span>
+<span class="diffLine del">-    &lt;Button variant="solid" size="md" /&gt;</span>
+<span class="diffLine add">+    &lt;Button variant="solid" size="md" hue={accent} /&gt;</span>
+<span class="diffLine ctx">   );</span>
+</pre>
+            <p class="u" style="margin-top:8px;">Reviewer must confirm design-token delta is intentional before promotion · see §3.2.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <p class="fnotes" style="margin-top:22px;">
+      <span><sup>4</sup>&nbsp;The ledger (§4) is an append-only structure. Each entry is hashed into the next (sha-chain); tampering is detectable by a single full-scan verification.</span>
+      <span><sup>5</sup>&nbsp;Quarantine (§5) and autonomous patch candidates (§7) are <em>advisory</em>. The examiner-of-record retains adjudication authority per §2.1 of the operating procedure.</span>
+    </p>
+  </section>
+
+  <!-- ======================================= -->
+  <!-- §8 STORAGE / PROVENANCE                  -->
+  <!-- ======================================= -->
+  <section id="s8" style="padding-bottom:40px;">
+    <div class="sectHead">
+      <div class="sectNum"><b>§8.0</b> · Storage</div>
+      <div class="sectTitle">Provenance <em>&amp; chain of custody</em></div>
+      <div class="sectAside">Bucket · MinIO · s3v4</div>
+    </div>
+
+    <div class="grid2">
+      <div class="mono-panel">
+        <h6>Specimen Artifacts</h6>
+<pre style="font-family:var(--mono); font-size:11.5px; margin:0; line-height:1.55;">
+s3://vt-artifacts/2026/04/23/
+├── run-9c3f1a7/
+│   ├── meta.json                      408 B
+│   ├── 0001-checkout-payment.png      412 KiB
+│   ├── 0002-checkout-payment.webkit.png  418 KiB
+│   ├── 0003-dashboard-overview.png    284 KiB
+│   ├── 0005-settings-billing.png      396 KiB   <span style="color:var(--safety);">† ATTN</span>
+│   ├── 0005-settings-billing.diff.png 188 KiB
+│   └── 0005-settings-billing.heat.png 204 KiB
+└── baselines/
+    ├── main-8f2c0d1/
+    │   └── ...                 (frozen · 90 d)
+    └── CHECKSUMS.sha256
+</pre>
+      </div>
+      <div class="mono-panel">
+        <h6>Retention Schedule</h6>
+        <ol>
+          <li><span class="k">run</span>          90 days · hot · MinIO</li>
+          <li><span class="k">baseline</span>     indefinite · cold · Ceph rgw</li>
+          <li><span class="k">diff</span>         30 days · hot</li>
+          <li><span class="k">ledger</span>       indefinite · append-only</li>
+          <li><span class="k">heatmap</span>      30 days · hot</li>
+          <li><span class="k">logs</span>         14 days · compressed</li>
+        </ol>
+        <hr style="border:none;border-top:1px dotted var(--rule); margin:10px 0;"/>
+        <h6 style="margin:0 -14px 8px -14px;">Integrity Check</h6>
+<pre style="font-family:var(--mono); font-size:11.5px; margin:0; line-height:1.55;">
+$ vt-audit --bucket vt-artifacts --since 2026-04-22
+  scanned :  18 412 objects
+  missing :       0
+  mutated :       0
+  chain   :       ok · sha-chain depth 1 142
+  elapsed :  3.812 s
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================= -->
+  <!-- FOOTER / CITATION                        -->
+  <!-- ======================================= -->
+  <footer>
+    <div>
+      <h6>Colophon</h6>
+      <p>
+        Set in IBM Plex Sans, IBM Plex Mono, and Cormorant. Tabular figures throughout. Rendered for printing on A4 or U.S. Letter stock; on-screen at 1× DPR. Monograph structure adapted from <em>USP-NF</em> and <em>ICH Q8</em> conventions.
+      </p>
+      <hr/>
+      <p>
+        This document is normative for the VisionTest.ai v2.0.0 release channel only. Subsequent revisions supersede in full.
+      </p>
+    </div>
+    <div>
+      <h6>Citation</h6>
+      <p class="cite">
+        <b>VisionTest.ai Technical Committee.</b> <em>Monograph of Visual Regression Assay.</em> Issue 1, Revision 1. Effective 2026-04-23. VT-RGX-0001.A. <span style="font-family:var(--mono); font-style:normal; font-size:11px;">doi:vt.ai/mono/0001 · sha256 3F2A·C19E·D407·8B16</span>.
+      </p>
+      <hr/>
+      <p style="font-family:var(--mono); font-size:10.5px;">
+        Suggested form — <span style="font-style:normal;">VT-AI Tech. Cmte. (2026). Vis. Reg. Assay, Mono. I.1. <em>VisionTest.ai</em>. Retrieved 2026-04-23.</span>
+      </p>
+    </div>
+    <div>
+      <h6>Control</h6>
+      <dl style="display:grid; grid-template-columns: 120px 1fr; row-gap:3px; margin:0;">
+        <dt>Document</dt><dd>VT-RGX-0001.A</dd>
+        <dt>Issue</dt><dd>01</dd>
+        <dt>Revision</dt><dd>01</dd>
+        <dt>Effective</dt><dd>2026-04-23</dd>
+        <dt>Expiry</dt><dd>2026-10-23 (re-review)</dd>
+        <dt>Owner</dt><dd>Technical Committee</dd>
+        <dt>Custodian</dt><dd>J. Stuart</dd>
+        <dt>Confidentiality</dt><dd>Internal / Unrestricted</dd>
+        <dt>Print hash</dt><dd>sha256 3F2A·C19E</dd>
+        <dt>Page</dt><dd>0001 of 0042</dd>
+      </dl>
+      <hr/>
+      <p style="display:flex; gap:10px; align-items:center; font-family:var(--mono); font-size:10.5px;">
+        <!-- info circle -->
+        <svg class="ico" viewBox="0 0 32 32" fill="none" stroke="#27436B" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+          <circle cx="16" cy="16" r="13"/>
+          <line x1="16" y1="14" x2="16" y2="23"/>
+          <circle cx="16" cy="10" r="0.8" fill="#27436B"/>
+        </svg>
+        <span>End of monograph. Continues in Annex A — Exploratory Scan Procedure.</span>
+      </p>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
