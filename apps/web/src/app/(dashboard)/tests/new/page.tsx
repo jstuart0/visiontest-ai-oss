@@ -222,6 +222,11 @@ export default function NewTestPage() {
   const [story, setStory] = useState('');
   const [goal, setGoal] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
+  // Default-on because visual regression is the point — story tests
+  // without screenshots can't be baselined and can't compare against
+  // anything. User can toggle off here if they don't want them.
+  const [screenshotEveryStep, setScreenshotEveryStep] = useState(true);
+  const [videoRecording, setVideoRecording] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState('');
   const [importSource, setImportSource] = useState<
@@ -354,6 +359,8 @@ export default function NewTestPage() {
         goal: goal || undefined,
         baseUrl: baseUrl || undefined,
         featureId: presetFeatureId || undefined,
+        screenshotEveryStep,
+        videoRecording,
       });
     },
     onSuccess: (res: any) => {
@@ -952,6 +959,51 @@ User is redirected to /dashboard
                         Prepended to relative paths in the story ("/orders" →
                         "{baseUrl || 'https://...'}/orders").
                       </p>
+                    </div>
+
+                    {/* Capture toggles — visible so the user knows what
+                        the next run will produce. Defaults to
+                        screenshot-per-step ON because the Set-as-
+                        baseline flow needs frames; user can switch off. */}
+                    <div className="space-y-2 pt-2 border-t border-border">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                        Capture
+                      </div>
+                      <label className="flex items-start gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={screenshotEveryStep}
+                          onChange={(e) =>
+                            setScreenshotEveryStep(e.target.checked)
+                          }
+                          className="mt-1"
+                        />
+                        <span>
+                          <span className="text-foreground">
+                            Screenshot every step
+                          </span>
+                          <span className="block text-xs text-muted-foreground">
+                            Needed for the film-strip timeline and
+                            Set-as-baseline. Leave on unless you have a
+                            reason not to.
+                          </span>
+                        </span>
+                      </label>
+                      <label className="flex items-start gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={videoRecording}
+                          onChange={(e) => setVideoRecording(e.target.checked)}
+                          className="mt-1"
+                        />
+                        <span>
+                          <span className="text-foreground">Record video</span>
+                          <span className="block text-xs text-muted-foreground">
+                            Full browser session recording. Heavier, but
+                            useful for debugging flaky failures.
+                          </span>
+                        </span>
+                      </label>
                     </div>
                   </div>
 

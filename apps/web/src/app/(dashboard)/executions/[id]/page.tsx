@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import {
@@ -468,6 +469,43 @@ export default function ExecutionDetailPage({
           checks={execution.goalChecks}
           goal={execution.test?.goal}
         />
+      )}
+
+      {/* Teaching card — fills the silent gap where a PASSED run has no
+          screenshots. Without this the "Set as baseline" button is
+          simply absent; users had no signal about why or how to fix.
+          Only shown for non-scan runs where step execution actually
+          happened (not EXPLORE mode which has its own tree view). */}
+      {!isLive &&
+        execution.status === 'PASSED' &&
+        (execution as any).mode !== 'EXPLORE' &&
+        screenshots.length === 0 && (
+        <Card className="bg-card border-border">
+          <CardContent className="py-5 flex items-start gap-3">
+            <ImageIcon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-foreground text-sm font-medium">
+                No screenshots captured in this run
+              </div>
+              <p className="text-muted-foreground text-xs mt-1 max-w-xl">
+                Set-as-baseline and the film-strip timeline need at
+                least one frame. Enable{' '}
+                <span className="font-medium text-foreground">
+                  Screenshot every step
+                </span>{' '}
+                in this test&apos;s settings and run it again — new
+                story tests have it on by default.
+              </p>
+            </div>
+            {execution.test?.id && (
+              <Link href={`/tests/${execution.test.id}`}>
+                <Button variant="outline" size="sm">
+                  Open test settings
+                </Button>
+              </Link>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Film-strip timeline (Phase 3) — horizontal frames */}

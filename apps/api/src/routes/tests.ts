@@ -856,6 +856,12 @@ const storySchema = z.object({
   goal: z.string().max(5000).optional(),
   baseUrl: z.string().url().optional(),
   tags: z.array(z.string()).optional(),
+  // UX-friendly defaults — story tests are almost always about visual
+  // regression, so we capture a frame per step unless the caller
+  // explicitly opts out. Wires the "Set as baseline" flow so the
+  // button is visible right after the first passing run.
+  screenshotEveryStep: z.boolean().optional(),
+  videoRecording: z.boolean().optional(),
 });
 
 /**
@@ -931,6 +937,14 @@ router.post('/story', authenticate, mutationLimiter, async (req: Request, res: R
         description: body.description,
         steps: JSON.stringify(steps),
         tags: body.tags || [],
+        // Story tests default to step-by-step screenshots because visual
+        // regression is the product's primary use-case — without this,
+        // a fresh "Set as baseline" flow silently has nothing to work
+        // with. Callers can opt out explicitly.
+        config: {
+          screenshotEveryStep: body.screenshotEveryStep ?? true,
+          videoRecording: body.videoRecording ?? false,
+        } as Prisma.InputJsonValue,
         status: TestStatus.ACTIVE,
         platform: 'WEB',
         goal: body.goal || null,
