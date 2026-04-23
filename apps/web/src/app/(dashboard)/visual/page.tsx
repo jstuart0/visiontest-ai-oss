@@ -213,25 +213,65 @@ export default function VisualPage() {
     filteredComparisons.filter((c) => c.status === 'PENDING').length || 0;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Visual Regression</h1>
-          <p className="text-muted-foreground mt-1">
-            Review and approve visual changes
-          </p>
-        </div>
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      {/* Review room — the binary-decision surface. The pending count
+          is the signal the reviewer acts on, so it's sculpted as a
+          huge typographic moment rather than a tiny badge. */}
+      <header className="pb-8 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-6">§ Review room · Visual regression</div>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 items-end">
+          <div>
+            <h1
+              className="vt-display"
+              style={{ fontSize: 'clamp(40px, 6vw, 72px)', lineHeight: 0.97 }}
+            >
+              What <em>changed</em>,<br />and what should stay.
+            </h1>
+            <p
+              className="mt-4 vt-italic"
+              style={{
+                fontVariationSettings: '"opsz" 24',
+                fontSize: '17px',
+                color: 'var(--ink-1)',
+                maxWidth: '56ch',
+              }}
+            >
+              Every differing frame waits here for a verdict. Press{' '}
+              <kbd className="vt-mono px-1.5 py-0.5 text-[11px]" style={{ background: 'var(--bg-2)', color: 'var(--ink-0)' }}>A</kbd>{' '}
+              to approve,{' '}
+              <kbd className="vt-mono px-1.5 py-0.5 text-[11px]" style={{ background: 'var(--bg-2)', color: 'var(--ink-0)' }}>R</kbd>{' '}
+              to reject inside an individual review.
+            </p>
+          </div>
 
-        {pendingCount > 0 && (
-          <Badge
-            variant="secondary"
-            className="bg-yellow-500/10 text-yellow-400 text-sm"
+          {/* Pending-count sculpture — single big number, tiny label */}
+          <div
+            className="text-right"
+            style={{ opacity: pendingCount === 0 ? 0.5 : 1 }}
           >
-            {pendingCount} pending review
-          </Badge>
-        )}
-      </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontVariationSettings: '"opsz" 144',
+                fontWeight: 300,
+                fontSize: 'clamp(64px, 8vw, 120px)',
+                lineHeight: 0.88,
+                letterSpacing: '-0.04em',
+                color: pendingCount > 0 ? 'var(--accent)' : 'var(--ink-2)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {pendingCount}
+            </div>
+            <div
+              className="mt-2 vt-kicker"
+              style={{ color: pendingCount > 0 ? 'var(--accent)' : 'var(--ink-2)' }}
+            >
+              {pendingCount === 0 ? 'all clear' : 'awaiting verdict'}
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Bulk Actions */}
       <div className="flex gap-2">

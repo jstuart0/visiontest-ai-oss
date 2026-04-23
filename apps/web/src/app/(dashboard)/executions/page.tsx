@@ -80,115 +80,222 @@ export default function ExecutionsPage() {
     );
   }
 
+  // ── Ledger metaphor: a chronological record of every run. Dense
+  //    rows, dates as Fraunces italic, times as mono with leader dots,
+  //    status as a colored glyph, duration as a right-aligned metric.
+  //    No "ChevronRight" — the whole row IS the link.
+  const grouped = groupByDay(executions);
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Executions</h1>
-          <p className="text-muted-foreground">
-            Test execution history and live monitoring
-          </p>
-        </div>
-      </div>
-
-      {/* Status Filter */}
-      <div className="flex gap-2 flex-wrap">
-        {['all', 'RUNNING', 'PASSED', 'FAILED', 'PENDING', 'CANCELLED'].map((status) => (
-          <Button
-            key={status}
-            variant={statusFilter === status ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter(status)}
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-5">§ Ledger · All runs</div>
+        <div className="flex items-end justify-between gap-8 flex-wrap">
+          <h1
+            className="vt-display"
+            style={{ fontSize: 'clamp(40px, 6vw, 72px)', lineHeight: 0.97 }}
           >
-            {status === 'all' ? 'All' : statusConfig[status as keyof typeof statusConfig]?.label || status}
-          </Button>
-        ))}
-      </div>
-
-      {/* Result count */}
-      {!isLoading && executions.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          Showing {executions.length} execution{executions.length !== 1 ? 's' : ''}
-          {statusFilter !== 'all' && ` (filtered by ${statusConfig[statusFilter as keyof typeof statusConfig]?.label || statusFilter})`}
-        </p>
-      )}
+            Every run, <em>in order.</em>
+          </h1>
+          <div className="flex gap-2 flex-wrap">
+            {['all', 'RUNNING', 'PASSED', 'FAILED', 'CANCELLED'].map((status) => {
+              const active = statusFilter === status;
+              return (
+                <button
+                  type="button"
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className="vt-mono text-[10.5px] tracking-[0.16em] uppercase px-3 h-8 border transition-colors"
+                  style={{
+                    borderColor: active ? 'var(--accent)' : 'var(--rule)',
+                    color: active ? 'var(--accent)' : 'var(--ink-2)',
+                    background: active ? 'var(--accent-soft)' : 'transparent',
+                  }}
+                >
+                  {status === 'all'
+                    ? 'All'
+                    : statusConfig[status as keyof typeof statusConfig]?.label || status}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </header>
 
       {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-12 bg-muted rounded" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <div className="vt-italic" style={{ color: 'var(--ink-2)' }}>Compiling the ledger…</div>
       ) : executions.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Play className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">No executions yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Run a test to see execution history here
-            </p>
-          </CardContent>
-        </Card>
+        <div
+          className="py-24 text-center border-y"
+          style={{ borderColor: 'var(--rule)' }}
+        >
+          <div className="vt-kicker mb-4" style={{ color: 'var(--brass)' }}>— no entries —</div>
+          <p
+            className="vt-italic mb-8"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontVariationSettings: '"opsz" 72',
+              fontStyle: 'italic',
+              fontSize: '34px',
+              lineHeight: 1.15,
+              color: 'var(--ink-1)',
+            }}
+          >
+            Run a test and<br />the first entry appears here.
+          </p>
+          <button
+            onClick={() => router.push('/tests')}
+            className="vt-btn vt-btn--primary"
+          >
+            Pick a test
+          </button>
+        </div>
       ) : (
-        <div className="space-y-2">
-          {executions.map((execution) => {
-            const config = statusConfig[execution.status];
-            const StatusIcon = config.icon;
-            const isLive = ['PENDING', 'QUEUED', 'RUNNING'].includes(execution.status);
+        <div className="space-y-16">
+          {Array.from(grouped.entries()).map(([day, rows]) => (
+            <section key={day}>
+              {/* Day heading — big italic date; rule underline */}
+              <div className="flex items-baseline gap-4 mb-4 pb-2 border-b" style={{ borderColor: 'var(--rule)' }}>
+                <span
+                  className="vt-italic"
+                  style={{
+                    fontVariationSettings: '"opsz" 72',
+                    fontWeight: 340,
+                    fontSize: '30px',
+                    letterSpacing: '-0.01em',
+                    color: 'var(--ink-0)',
+                  }}
+                >
+                  {day}
+                </span>
+                <span
+                  className="vt-kicker ml-auto"
+                  style={{ color: 'var(--ink-2)' }}
+                >
+                  {rows.length} {rows.length === 1 ? 'entry' : 'entries'}
+                </span>
+              </div>
 
-            return (
-              <Card
-                key={execution.id}
-                className={`cursor-pointer transition-colors hover:bg-muted/50 ${
-                  isLive ? 'border-blue-500/50' : ''
-                }`}
-                onClick={() => router.push(`/executions/${execution.id}`)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-full ${config.color}`}>
-                        <StatusIcon className="h-4 w-4 text-white" />
-                      </div>
-                      <div>
+              {/* Table-like rows */}
+              <ul className="m-0 p-0 list-none">
+                {rows.map((execution, i) => {
+                  const config = statusConfig[execution.status];
+                  const isLive = ['PENDING', 'QUEUED', 'RUNNING'].includes(execution.status);
+                  const statusColor =
+                    execution.status === 'PASSED'
+                      ? 'var(--pass)'
+                      : execution.status === 'FAILED'
+                      ? 'var(--fail)'
+                      : isLive
+                      ? 'var(--accent)'
+                      : 'var(--ink-2)';
+                  return (
+                    <li
+                      key={execution.id}
+                      className="group border-b"
+                      style={{
+                        borderColor: 'var(--rule-soft)',
+                        animation: `vt-reveal var(--dur-reveal) ${i * 30}ms var(--ease-out) both`,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/executions/${execution.id}`)}
+                        className="w-full text-left grid items-baseline py-4 gap-6 transition-colors"
+                        style={{
+                          gridTemplateColumns: '72px 1fr auto auto',
+                        }}
+                      >
+                        {/* time + status glyph column */}
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {execution.test?.name || execution.suite?.name || 'Execution'}
+                          <span
+                            aria-hidden
+                            className="inline-block w-1.5 h-1.5 rounded-full"
+                            style={{
+                              background: statusColor,
+                              boxShadow: isLive ? `0 0 10px 0 ${statusColor}` : 'none',
+                            }}
+                          />
+                          <span
+                            className="vt-mono text-[12px] tabular-nums"
+                            style={{ color: 'var(--ink-2)' }}
+                          >
+                            {formatClock(execution.startedAt || execution.createdAt)}
                           </span>
-                          <Badge variant="outline" className="text-xs">
-                            {config.label}
-                          </Badge>
-                          {isLive && (
-                            <Badge className="bg-blue-500 text-white text-xs animate-pulse">
-                              LIVE
-                            </Badge>
-                          )}
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                          <span>Started: {formatTime(execution.startedAt || execution.createdAt)}</span>
-                          <span>Duration: {formatDuration(execution.duration)}</span>
-                          <span className="capitalize">{execution.triggeredBy?.toLowerCase()}</span>
-                          {execution.platform && execution.platform !== 'WEB' && (
-                            <Badge variant="outline" className="text-xs">{execution.platform}</Badge>
-                          )}
-                          {execution.triggerRef?.startsWith('workflow:') && (
-                            <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-400">Workflow</Badge>
-                          )}
+
+                        {/* title */}
+                        <div className="min-w-0">
+                          <div
+                            className="text-[16px] truncate transition-colors group-hover:text-[color:var(--accent)]"
+                            style={{ color: 'var(--ink-0)' }}
+                          >
+                            {execution.test?.name || execution.suite?.name || 'Execution'}
+                          </div>
+                          <div
+                            className="vt-mono text-[11px] tracking-[0.06em] mt-0.5 truncate"
+                            style={{ color: 'var(--ink-2)' }}
+                          >
+                            {execution.triggeredBy?.toLowerCase()}
+                            {execution.platform && execution.platform !== 'WEB' && ` · ${execution.platform.toLowerCase()}`}
+                            {execution.triggerRef?.startsWith('workflow:') && ' · workflow'}
+                            {' · '}
+                            <span style={{ color: statusColor }}>{config.label.toLowerCase()}</span>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+
+                        {/* duration — right-aligned metric */}
+                        <span
+                          className="vt-mono text-[13px] tabular-nums"
+                          style={{ color: 'var(--ink-1)' }}
+                        >
+                          {formatDuration(execution.duration)}
+                        </span>
+
+                        {/* live indicator */}
+                        {isLive && (
+                          <span
+                            className="vt-chip vt-chip--accent vt-breathe"
+                            style={{ letterSpacing: '0.24em', padding: '2px 8px' }}
+                          >
+                            live
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
         </div>
       )}
     </div>
   );
+}
+
+// Group executions by calendar day for the ledger presentation.
+function groupByDay(items: Execution[]): Map<string, Execution[]> {
+  const map = new Map<string, Execution[]>();
+  for (const e of items) {
+    const d = new Date(e.startedAt || e.createdAt);
+    const key = d.toLocaleDateString(undefined, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(e);
+  }
+  return map;
+}
+
+function formatClock(iso: string | null): string {
+  if (!iso) return '——:——';
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 }

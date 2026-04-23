@@ -102,107 +102,72 @@ export default function FlakyPage() {
         )
       : 0;
 
+  // Quarantine ward — the clinical surface where we diagnose unreliable
+  // tests. Typography is restrained; the single number that matters
+  // (tests still showing inconsistent behaviour) is rendered at display
+  // size. Other figures read as chart meta, not as co-equal hero stats.
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Flaky Test Detection</h1>
-        <p className="text-muted-foreground mt-1">
-          Monitor and manage unreliable tests
-        </p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Flaky Tests Detected
-            </CardTitle>
-            <AlertTriangle className="w-4 h-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{tests.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Showing inconsistent behavior
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-6" style={{ color: 'var(--warn)' }}>
+          § Quarantine ward · Flakiness
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-10 items-end">
+          <div>
+            <h1
+              className="vt-display"
+              style={{ fontSize: 'clamp(40px, 6vw, 72px)', lineHeight: 0.98 }}
+            >
+              Tests that <em>flicker</em>.
+            </h1>
+            <p
+              className="mt-4 vt-italic"
+              style={{
+                fontVariationSettings: '"opsz" 24',
+                fontSize: '17px',
+                color: 'var(--ink-1)',
+                maxWidth: '58ch',
+              }}
+            >
+              Inconsistent pass/fail patterns — the ones that aren&apos;t
+              quite broken and aren&apos;t quite working either. Review the
+              run history, quarantine the worst, fix at your own pace.
             </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Quarantined
-            </CardTitle>
-            <Shield className="w-4 h-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {quarantinedCount}
+          </div>
+          <div className="text-right">
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontVariationSettings: '"opsz" 144',
+                fontWeight: 300,
+                fontSize: 'clamp(64px, 8vw, 112px)',
+                lineHeight: 0.88,
+                letterSpacing: '-0.04em',
+                color: tests.length > 0 ? 'var(--warn)' : 'var(--ink-2)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {tests.length}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Isolated from main pipeline
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Average Flaky Score
-            </CardTitle>
-            <TrendingUp className="w-4 h-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{avgFlakyScore}%</div>
-            <Progress
-              value={avgFlakyScore}
-              className="mt-2 h-1.5"
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* How it works */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <RefreshCw className="w-5 h-5 text-blue-500" />
-            How Flaky Detection Works
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                1. Automatic Detection
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Tests are automatically analyzed for inconsistent pass/fail patterns
-                across multiple runs.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                2. Flaky Score Calculation
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Each test receives a flaky score based on the frequency and pattern
-                of inconsistent results.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                3. Quarantine Option
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Flaky tests can be quarantined to prevent pipeline failures while
-                you investigate.
-              </p>
+            <div
+              className="mt-2 vt-kicker"
+              style={{ color: tests.length > 0 ? 'var(--warn)' : 'var(--ink-2)' }}
+            >
+              {tests.length === 1 ? 'flickering test' : 'flickering tests'}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </header>
+
+      {/* Secondary ledger: quarantined, avg score — small, as chart-meta */}
+      <div
+        className="grid grid-cols-2 md:grid-cols-3 gap-0 mb-10 pb-6 border-b"
+        style={{ borderColor: 'var(--rule)' }}
+      >
+        <MetaCell label="Quarantined" value={quarantinedCount.toString()} hint="Isolated from main pipeline" />
+        <MetaCell label="Avg flakiness" value={`${avgFlakyScore}%`} hint="Across all flickering tests" tone={avgFlakyScore > 60 ? 'warn' : 'default'} />
+        <MetaCell label="Detection" value="automatic" hint="Every run feeds the score" />
+      </div>
 
       {/* Flaky Tests Table */}
       <Card className="bg-card border-border">
@@ -350,6 +315,42 @@ export default function FlakyPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function MetaCell({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone?: 'warn';
+}) {
+  const color = tone === 'warn' ? 'var(--warn)' : 'var(--ink-0)';
+  return (
+    <div className="px-8 first:pl-0 border-l first:border-l-0" style={{ borderColor: 'var(--rule)' }}>
+      <div className="vt-kicker" style={{ color: 'var(--ink-2)' }}>{label}</div>
+      <div
+        className="mt-2"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontVariationSettings: '"opsz" 72',
+          fontWeight: 360,
+          fontSize: '32px',
+          letterSpacing: '-0.02em',
+          color,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {value}
+      </div>
+      <div className="vt-mono text-[11px] tracking-[0.06em] mt-1" style={{ color: 'var(--ink-2)' }}>
+        {hint}
+      </div>
     </div>
   );
 }

@@ -134,39 +134,82 @@ export default function FixesInboxPage() {
     !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Case files — each open candidate is a folder of evidence on a desk.
+  // Header treats the count as the focal "open case" number; stats move
+  // to a monospace meta-strip beneath, like a summary cover sheet.
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Fixes</h1>
-          <p className="text-muted-foreground">
-            Bug candidates, investigations, and automated fixes
-          </p>
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-6" style={{ color: 'var(--fail)' }}>
+          § Casefiles · Open investigations
         </div>
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-10 items-end">
+          <div>
+            <h1
+              className="vt-display"
+              style={{ fontSize: 'clamp(40px, 6vw, 72px)', lineHeight: 0.97 }}
+            >
+              Every failure is a <em>case.</em>
+            </h1>
+            <p
+              className="mt-4 vt-italic"
+              style={{
+                fontVariationSettings: '"opsz" 24',
+                fontSize: '17px',
+                color: 'var(--ink-1)',
+                maxWidth: '60ch',
+              }}
+            >
+              A classifier reads each failure, opens a candidate file, and
+              hands it to an investigator. You review, approve, or dismiss
+              — the machine does the typing.
+            </p>
+          </div>
+          <div className="text-right">
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontVariationSettings: '"opsz" 144',
+                fontWeight: 300,
+                fontSize: 'clamp(64px, 8vw, 112px)',
+                lineHeight: 0.88,
+                letterSpacing: '-0.04em',
+                color: (stats?.openCandidates || 0) > 0 ? 'var(--fail)' : 'var(--ink-2)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {stats?.openCandidates ?? 0}
+            </div>
+            <div
+              className="mt-2 vt-kicker"
+              style={{ color: (stats?.openCandidates || 0) > 0 ? 'var(--fail)' : 'var(--ink-2)' }}
+            >
+              open case{(stats?.openCandidates ?? 0) === 1 ? '' : 's'}
+            </div>
+          </div>
+        </div>
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-lg border bg-card p-4">
-            <div className="text-sm text-muted-foreground">Open Candidates</div>
-            <div className="text-2xl font-bold">{stats.openCandidates}</div>
+        {/* Cover sheet — secondary stats as mono meta, not as peers */}
+        {stats && (
+          <div
+            className="mt-8 grid grid-cols-3 gap-10 vt-mono text-[11.5px] tracking-[0.1em]"
+            style={{ color: 'var(--ink-2)' }}
+          >
+            <div>
+              <span style={{ color: 'var(--ink-1)' }}>ready — </span>
+              <span style={{ color: 'var(--pass)', fontWeight: 500 }}>{stats.highConfidenceReady}</span>
+            </div>
+            <div>
+              <span style={{ color: 'var(--ink-1)' }}>auto-fix rate — </span>
+              <span style={{ color: 'var(--ink-0)', fontWeight: 500 }}>{stats.autoFixSuccessRate}%</span>
+            </div>
+            <div>
+              <span style={{ color: 'var(--ink-1)' }}>closed (7d) — </span>
+              <span style={{ color: 'var(--ink-0)', fontWeight: 500 }}>{stats.recentFixes}</span>
+            </div>
           </div>
-          <div className="rounded-lg border bg-card p-4">
-            <div className="text-sm text-muted-foreground">High-Confidence Ready</div>
-            <div className="text-2xl font-bold text-green-600">{stats.highConfidenceReady}</div>
-          </div>
-          <div className="rounded-lg border bg-card p-4">
-            <div className="text-sm text-muted-foreground">Auto-Fix Success Rate</div>
-            <div className="text-2xl font-bold">{stats.autoFixSuccessRate}%</div>
-          </div>
-          <div className="rounded-lg border bg-card p-4">
-            <div className="text-sm text-muted-foreground">Recent Fixes (7d)</div>
-            <div className="text-2xl font-bold">{stats.recentFixes}</div>
-          </div>
-        </div>
-      )}
+        )}
+      </header>
 
       {/* Filters */}
       <div className="flex items-center gap-3">

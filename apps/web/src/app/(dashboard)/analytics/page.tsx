@@ -125,109 +125,100 @@ export default function AnalyticsPage() {
     flakyTests: 0,
   };
 
+  // Instrument panel — one headline number (Pass rate) typeset as huge,
+  // the rest as mono readouts like laboratory dials. The period selector
+  // sits quietly under the headline, not as a top-right tool button.
+  const trend = passRateTrend;
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-          <p className="text-muted-foreground mt-1">Test performance metrics and trends</p>
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-8 border-b mb-12" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-6">§ Instruments · {period}-day window</div>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-10 items-end">
+          <div>
+            <h1
+              className="vt-display"
+              style={{ fontSize: 'clamp(40px, 6vw, 72px)', lineHeight: 0.97 }}
+            >
+              Readings — <em>{isLoading ? '…' : summary.passRate}%</em> passing.
+            </h1>
+            <p
+              className="mt-4 vt-italic"
+              style={{
+                fontVariationSettings: '"opsz" 24',
+                fontSize: '17px',
+                color: 'var(--ink-1)',
+                maxWidth: '58ch',
+              }}
+            >
+              Pass rate, trend, flicker, diff, runtime — the numbers that
+              tell you if the machine is quieter than yesterday.
+            </p>
+            <div className="mt-4 flex gap-2">
+              {(['7', '14', '30', '90'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPeriod(p)}
+                  className="vt-mono text-[10.5px] tracking-[0.14em] uppercase px-3 h-8 border transition-colors"
+                  style={{
+                    borderColor: period === p ? 'var(--accent)' : 'var(--rule)',
+                    color: period === p ? 'var(--accent)' : 'var(--ink-2)',
+                    background: period === p ? 'var(--accent-soft)' : 'transparent',
+                  }}
+                >
+                  {p}d
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Single huge hero number — the pass-rate dial */}
+          <div className="text-right">
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontVariationSettings: '"opsz" 144',
+                fontWeight: 300,
+                fontSize: 'clamp(96px, 12vw, 176px)',
+                lineHeight: 0.85,
+                letterSpacing: '-0.045em',
+                color: 'var(--ink-0)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {isLoading ? '——' : summary.passRate}
+              <span style={{ color: 'var(--ink-2)', fontSize: '50%' }}>%</span>
+            </div>
+            {!isLoading && trend !== 0 && (
+              <div
+                className="vt-mono text-[12px] tracking-[0.08em] mt-2 flex items-center justify-end gap-2"
+                style={{ color: trend > 0 ? 'var(--pass)' : 'var(--fail)' }}
+              >
+                {trend > 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%{' '}
+                <span style={{ color: 'var(--ink-2)' }}>vs. prior window</span>
+              </div>
+            )}
+          </div>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-36 bg-card border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            <SelectItem value="7">Last 7 days</SelectItem>
-            <SelectItem value="14">Last 14 days</SelectItem>
-            <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="90">Last 90 days</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      </header>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-card border-border">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Runs</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {isLoading ? '...' : summary.totalRuns}
-                </p>
-              </div>
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Activity className="h-5 w-5 text-blue-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pass Rate</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-2xl font-bold text-foreground">
-                    {isLoading ? '...' : `${summary.passRate}%`}
-                  </p>
-                  {!isLoading && passRateTrend !== 0 && (
-                    <span
-                      className={cn(
-                        'flex items-center text-xs gap-0.5',
-                        passRateTrend > 0 ? 'text-green-400' : 'text-red-400'
-                      )}
-                    >
-                      {passRateTrend > 0 ? (
-                        <TrendingUp className="h-3 w-3" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3" />
-                      )}
-                      {Math.abs(passRateTrend).toFixed(1)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <Percent className="h-5 w-5 text-green-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Flaky Tests</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {isLoading ? '...' : summary.flakyTests}
-                </p>
-              </div>
-              <div className="p-2 rounded-lg bg-yellow-500/10">
-                <AlertTriangle className="h-5 w-5 text-yellow-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Diff %</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {isLoading ? '...' : `${summary.avgDiff}%`}
-                </p>
-              </div>
-              <div className="p-2 rounded-lg bg-red-500/10">
-                <XCircle className="h-5 w-5 text-red-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Secondary instrument readouts — mono dials, not equal-weight cards */}
+      <div
+        className="grid grid-cols-2 md:grid-cols-4 mb-14 border-b pb-8"
+        style={{ borderColor: 'var(--rule)' }}
+      >
+        <Dial label="Total runs" value={isLoading ? '…' : summary.totalRuns.toString()} />
+        <Dial
+          label="Flaky tests"
+          value={isLoading ? '…' : summary.flakyTests.toString()}
+          tone={summary.flakyTests > 0 ? 'warn' : undefined}
+        />
+        <Dial
+          label="Avg diff"
+          value={isLoading ? '…' : `${summary.avgDiff}%`}
+          tone={summary.avgDiff > 5 ? 'fail' : undefined}
+        />
+        <Dial label="Window" value={`${period}d`} />
       </div>
 
       {/* Trend Chart */}
@@ -407,6 +398,32 @@ export default function AnalyticsPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function Dial({ label, value, tone }: { label: string; value: string; tone?: 'warn' | 'fail' }) {
+  const color = tone === 'warn' ? 'var(--warn)' : tone === 'fail' ? 'var(--fail)' : 'var(--ink-0)';
+  return (
+    <div className="px-8 first:pl-0 border-l first:border-l-0" style={{ borderColor: 'var(--rule)' }}>
+      <div className="vt-kicker" style={{ color: 'var(--ink-2)' }}>
+        {label}
+      </div>
+      <div
+        className="mt-2"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontVariationSettings: '"opsz" 72',
+          fontWeight: 340,
+          fontSize: 'clamp(28px, 3vw, 44px)',
+          letterSpacing: '-0.025em',
+          lineHeight: 1,
+          color,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
