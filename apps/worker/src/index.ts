@@ -3,7 +3,7 @@
 
 import { Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
-import { prisma, ExecutionStatus, FlakyStatus, type Prisma, syncStorybook, updateImpactMappings } from '@visiontest/database';
+import { prisma, ExecutionStatus, FlakyStatus, Prisma, syncStorybook, updateImpactMappings } from '@visiontest/database';
 import { TestRunner } from './services/testRunner';
 import { MobileTestRunner } from './services/mobileTestRunner';
 import { ScreenshotService } from './services/screenshot';
@@ -372,7 +372,31 @@ async function processTestExecution(job: Job) {
 
     const finalStatus: ExecutionStatus = failed > 0 ? 'FAILED' : 'PASSED';
 
-    // Update execution with results
+    // Goal evaluation outcome — populated for story tests (Phase 1a). When
+    // multiple tests ran under one execution (suite mode), we record the
+    // aggregate: `goalAchieved=true` iff every test that declared a goal
+    // achieved it; `null` iff no test declared a goal. The per-test detail
+    // lives in `result.steps` (an array of TestResult), each of which now
+    // carries `goal`.
+    const goalResults = results.filter((r) => r.goal !== undefined);
+    const goalAchieved =
+      goalResults.length === 0
+        ? null
+        : goalResults.every((r) => r.goal?.achieved === true);
+    const goalReasoning =
+      goalResults.length === 0
+        ? null
+        : goalResults
+            .map(
+              (r, i) =>
+                `[${r.name || `test ${i + 1}`}] ${r.goal?.reasoning || ''}`,
+            )
+            .join('\n');
+    const goalChecks: Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue =
+      goalResults.length === 0
+        ? Prisma.DbNull
+        : (goalResults.flatMap((r) => r.goal?.checks || []) as unknown as Prisma.InputJsonValue);
+
     await prisma.execution.update({
       where: { id: executionId },
       data: {
@@ -386,6 +410,9 @@ async function processTestExecution(job: Job) {
           total: results.length,
           steps: results,
         } as unknown as Prisma.InputJsonValue,
+        goalAchieved,
+        goalReasoning,
+        goalChecks,
       },
     });
 
@@ -849,7 +876,73 @@ async function processJob(job: Job) {
   if (job.name === 'storybook-sync') {
     return processStorybookSync(job);
   }
+  if (job.name === 'scan') {
+    return processScan(job);
+  }
   return processTestExecution(job);
+}
+
+/**
+ * Exploratory scan job (Phase 2). Distinct from test-execution because it
+ * doesn't iterate a stored step array — it crawls. Results land in the
+ * ExploreNode table; we write an aggregate summary onto the Execution
+ * row at the end.
+ */
+async function processScan(job: Job) {
+  const { executionId, startUrl, maxPages, maxClicksPerPage, loginSteps, safety } = job.data;
+  logger.info(`Processing scan: ${executionId}`, { startUrl });
+
+  await prisma.execution.update({
+    where: { id: executionId },
+    data: { status: 'RUNNING', startedAt: new Date(), mode: 'EXPLORE' },
+  });
+  await publishStatusChange(executionId, 'RUNNING');
+
+  const { ScanRunner } = await import('./services/scanRunner');
+  const runner = new ScanRunner();
+
+  try {
+    const summary = await runner.run({
+      executionId,
+      startUrl,
+      maxPages,
+      maxClicksPerPage,
+      loginSteps,
+      safety,
+    });
+
+    const finalStatus: ExecutionStatus =
+      summary.fail > 0 ? 'FAILED' : summary.warn > 0 ? 'PASSED' : 'PASSED';
+
+    await prisma.execution.update({
+      where: { id: executionId },
+      data: {
+        status: finalStatus,
+        completedAt: new Date(),
+        duration: undefined,
+        exploreSummary: summary as unknown as Prisma.InputJsonValue,
+      },
+    });
+    await publishStatusChange(executionId, finalStatus);
+    logger.info(`Scan completed: ${executionId}`, { ...summary });
+    return { status: finalStatus, summary };
+  } catch (error) {
+    logger.error('Scan failed', error);
+    await prisma.execution.update({
+      where: { id: executionId },
+      data: {
+        status: 'FAILED',
+        completedAt: new Date(),
+        errorMessage: error instanceof Error ? error.message : String(error),
+      },
+    });
+    await publishStatusChange(
+      executionId,
+      'FAILED',
+      error instanceof Error ? error.message : String(error),
+    );
+    throw error;
+  }
 }
 
 const worker = new Worker(

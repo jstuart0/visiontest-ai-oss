@@ -117,6 +117,25 @@ export interface TestStep {
   options?: Record<string, unknown>;
 }
 
+/**
+ * Coerce Test.goalChecks (Prisma JSON) into a plain array. Stored shape is
+ * `[{kind, selector?, value?, urlOp?, source}, ...]` — see
+ * apps/api/src/services/goalCompiler.service.ts.
+ */
+function parseGoalChecks(raw: unknown): unknown[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export interface TestResult {
   testId?: string;
   name: string;
@@ -124,6 +143,24 @@ export interface TestResult {
   duration: number;
   steps: StepResult[];
   error?: string;
+  /**
+   * Layer-1 goal evaluation result. Present iff the test had a compiled
+   * goal (Test.goalChecks non-empty). See services/goalEvaluator.ts.
+   */
+  goal?: {
+    achieved: boolean;
+    reasoning: string;
+    checks: Array<{
+      kind: string;
+      selector?: string;
+      value?: string;
+      urlOp?: string;
+      source: string;
+      passed: boolean;
+      error?: string;
+      actual?: string;
+    }>;
+  };
 }
 
 export interface StepResult {
@@ -454,12 +491,48 @@ export class TestRunner {
         }
       }
 
+      // Layer-1 goal evaluation — runs on the final page before context closes.
+      // When Test.goalChecks is populated and non-empty, every check is
+      // deterministic DOM inspection with no LLM call.
+      const compiledGoalChecks = parseGoalChecks(test.goalChecks);
+      let goalEval: TestResult['goal'];
+      if (compiledGoalChecks.length > 0 && page) {
+        try {
+          const { evaluateGoal } = await import('./goalEvaluator');
+          const res = await evaluateGoal(page, compiledGoalChecks as any, {
+            timeoutMs: Math.min(config.config?.timeout ?? 30000, 10000),
+          });
+          goalEval = {
+            achieved: res.goalAchieved,
+            reasoning: res.reasoning,
+            checks: res.checks as any,
+          };
+          logger.info(`Goal evaluation: ${res.goalAchieved ? 'achieved' : 'NOT achieved'} (${res.checks.length} checks)`);
+        } catch (err) {
+          logger.warn('Goal evaluation threw; marking unachieved', err);
+          goalEval = {
+            achieved: false,
+            reasoning: `Goal evaluation errored: ${err instanceof Error ? err.message : String(err)}`,
+            checks: [],
+          };
+        }
+      }
+
+      // Test.status = passed iff all steps passed AND goal achieved (or no goal).
+      const allStepsPassed = true; // we reached this point, so all steps passed
+      const goalOK = !goalEval || goalEval.achieved;
+
       return {
         testId: test.id,
         name: test.name,
-        status: 'passed',
+        status: allStepsPassed && goalOK ? 'passed' : 'failed',
         duration: Date.now() - startTime,
         steps,
+        goal: goalEval,
+        error:
+          goalEval && !goalEval.achieved
+            ? `Goal not achieved: ${goalEval.reasoning}`
+            : undefined,
       };
     } catch (error) {
       return {
@@ -626,11 +699,25 @@ export class TestRunner {
     switch (step.type) {
       case 'navigate':
         await page.goto(step.url!, { timeout });
+        // Give JS-rendered apps time to hydrate before the next step
+        // tries to interact with controls that need client JS wired up.
+        // networkidle is best-effort — timeout short so SSR-heavy sites
+        // don't pay the cost.
+        await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
         break;
 
-      case 'click':
+      case 'click': {
+        // If the click triggers a same-page navigation (form submit,
+        // Next.js Link, etc.), we want the URL to update before the
+        // next step / goal eval reads it. Don't fail the step if the
+        // page doesn't navigate — most clicks don't.
+        const navPromise = page
+          .waitForURL(() => true, { timeout: 3000, waitUntil: 'domcontentloaded' })
+          .catch(() => null);
         await page.click(step.selector!, { timeout });
+        await Promise.race([navPromise, page.waitForTimeout(750)]);
         break;
+      }
 
       case 'type':
         await page.fill(step.selector!, step.value || '', { timeout });

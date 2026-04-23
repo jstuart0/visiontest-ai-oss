@@ -173,6 +173,13 @@ export const mockPage = {
   hover: vi.fn().mockResolvedValue(undefined),
   screenshot: vi.fn().mockResolvedValue(Buffer.from('mock-screenshot')),
   waitForSelector: vi.fn().mockResolvedValue(undefined),
+  // Added for navigate hydration wait + click navigation race (worker
+  // services/testRunner.ts). Mocks resolve immediately — behaviour-
+  // wise they're optional waits, so no-op matches real semantics for
+  // unit tests.
+  waitForLoadState: vi.fn().mockResolvedValue(undefined),
+  waitForURL: vi.fn().mockResolvedValue(undefined),
+  waitForTimeout: vi.fn().mockResolvedValue(undefined),
   locator: vi.fn().mockReturnValue({
     scrollIntoViewIfNeeded: vi.fn().mockResolvedValue(undefined),
     waitFor: vi.fn().mockResolvedValue(undefined),
