@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VisionTest.ai — Cinema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Manrope:wght@200..800&family=JetBrains+Mono:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #07080A;                 /* pure cinema black */
+    --ink-2: #0F1214;
+    --ink-3: #171B1F;
+    --rule: rgba(241,232,211,0.1);
+    --paper: #F1E8D3;               /* old title-card bone */
+    --paper-soft: #C5B99B;
+    --paper-mute: #706650;
+    --teal: #2AC4C4;                /* cool highlight */
+    --teal-soft: rgba(42,196,196,0.14);
+    --cyan: #73E4E4;
+    --amber: #F0B74B;               /* old celluloid highlight */
+    --pass: #7EEAA0;
+    --fail: #FF6B77;
+    --accent: var(--teal);
+  }
+  [data-theme="light"] {
+    --ink: #F7F0E0;
+    --ink-2: #EEE5CF;
+    --ink-3: #E4D9BE;
+    --rule: rgba(8,9,11,0.14);
+    --paper: #0E0F12;
+    --paper-soft: #3E4045;
+    --paper-mute: #757065;
+    --teal: #0A5A66;
+    --teal-soft: rgba(10,90,102,0.10);
+    --cyan: #1A7E8C;
+    --amber: #8D5A14;
+    --pass: #2B6C42;
+    --fail: #AE2B3A;
+    --accent: var(--teal);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--ink); }
+  body {
+    color: var(--paper);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 14px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  /* cinema letterbox bars */
+  body::before, body::after {
+    content: ""; position: fixed; left: 0; right: 0; height: 44px; z-index: 3;
+    background: linear-gradient(180deg, #000, rgba(0,0,0,0.0));
+    pointer-events: none;
+  }
+  body::before { top: 0; }
+  body::after { bottom: 0; background: linear-gradient(0deg, #000, rgba(0,0,0,0.0)); }
+  .page { max-width: 1320px; margin: 0 auto; padding: 72px 56px 110px; position: relative; z-index: 1; }
+
+  /* ── top slate ────────────────────────────────────────── */
+  .slate {
+    display: grid; grid-template-columns: auto 1fr auto auto; gap: 32px; align-items: center;
+    padding: 10px 16px; border: 1px solid var(--rule); background: var(--ink-2);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: .24em; text-transform: uppercase; color: var(--paper-mute);
+    margin-bottom: 64px;
+  }
+  .slate .clap {
+    display: flex; align-items: center; gap: 8px; color: var(--paper);
+  }
+  .slate .clap::before {
+    content: ""; display: inline-block; width: 10px; height: 10px; background: var(--teal); border-radius: 50%;
+    animation: rec 1.4s ease-in-out infinite; box-shadow: 0 0 12px 0 var(--teal);
+  }
+  @keyframes rec { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
+  .slate .center { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .18em; color: var(--paper-soft); text-align: center; }
+  .slate .scene { color: var(--paper); font-weight: 600; }
+  .slate .take { color: var(--amber); }
+  .nav-cinema { display: flex; gap: 22px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; }
+  .nav-cinema a { color: var(--paper-soft); text-decoration: none; padding: 4px 2px; border-bottom: 1px solid transparent; }
+  .nav-cinema a:hover, .nav-cinema a.active { border-bottom-color: var(--teal); color: var(--paper); }
+  .toggle {
+    background: transparent; border: 1px solid var(--rule); color: var(--paper-soft);
+    padding: 4px 8px; font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: .2em; text-transform: uppercase; cursor: pointer;
+  }
+  .toggle:hover { color: var(--teal); border-color: var(--teal); }
+
+  /* ── title card ────────────────────────────────────────── */
+  .titlecard {
+    text-align: center; padding: 60px 20px 100px; position: relative;
+  }
+  .presents {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: .5em; text-transform: uppercase; color: var(--paper-mute);
+    margin-bottom: 36px;
+  }
+  .presents::after { content: ""; display: block; width: 40px; height: 1px; background: var(--paper-mute); margin: 18px auto 0; }
+  h1 {
+    font-family: 'Italiana', serif;
+    font-weight: 400; font-size: clamp(72px, 11vw, 156px); line-height: 0.94;
+    letter-spacing: 0.01em; margin: 0; color: var(--paper);
+  }
+  h1 .roman { font-variant: small-caps; letter-spacing: 0.08em; }
+  h1 .italic {
+    font-family: 'Bodoni Moda', serif;
+    font-variation-settings: "opsz" 96;
+    font-style: italic; font-weight: 400; color: var(--teal);
+    display: block; font-size: 0.86em; margin-top: -0.05em; letter-spacing: 0.005em;
+  }
+  .sub-title {
+    font-family: 'Bodoni Moda', serif;
+    font-variation-settings: "opsz" 24;
+    font-style: italic; font-size: 22px; margin-top: 36px; color: var(--paper-soft);
+    letter-spacing: 0.01em;
+  }
+  .sub-title::before, .sub-title::after { content: "—"; margin: 0 10px; color: var(--paper-mute); }
+  .cta-row {
+    max-width: 640px; margin: 56px auto 0; display: flex; gap: 0; align-items: stretch;
+    border: 1px solid var(--paper-soft); background: transparent;
+  }
+  .cta-row input {
+    flex: 1; background: transparent; border: none; padding: 16px 22px;
+    font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--paper);
+    letter-spacing: 0.02em;
+  }
+  .cta-row input::placeholder { color: var(--paper-mute); }
+  .cta-row input:focus { outline: none; background: rgba(42,196,196,0.06); }
+  .cta-row button {
+    padding: 0 36px; background: var(--teal); color: var(--ink); border: none;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    letter-spacing: .22em; text-transform: uppercase; cursor: pointer; font-weight: 700;
+  }
+  .cta-row button:hover { background: var(--cyan); }
+  .coming-soon {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: .4em; text-transform: uppercase; color: var(--amber);
+    margin-top: 40px; opacity: 0.85;
+  }
+
+  /* decorative film-strip line */
+  .reel-divider {
+    margin: 40px auto; width: 100%; height: 24px;
+    background: repeating-linear-gradient(90deg,
+      var(--ink-2) 0 24px, transparent 24px 48px);
+    position: relative;
+  }
+  .reel-divider::before, .reel-divider::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 8px;
+    background: repeating-linear-gradient(90deg, var(--ink-2) 0 18px, transparent 18px 28px);
+  }
+  .reel-divider::before { top: -4px; }
+  .reel-divider::after { bottom: -4px; }
+
+  /* ── scene panel ────────────────────────────────────── */
+  .scene-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 40px 0 20px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; gap: 40px; flex-wrap: wrap;
+  }
+  .scene-head-left .kicker {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: .4em; text-transform: uppercase; color: var(--amber);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .scene-head-left .kicker::before, .scene-head-left .kicker::after { content: ""; flex: 0 0 28px; height: 1px; background: var(--amber); }
+  .scene-head-left .kicker::after { flex: 1; }
+  h2 {
+    font-family: 'Italiana', serif; font-weight: 400;
+    font-size: 64px; line-height: 1.0; margin: 0; color: var(--paper); letter-spacing: 0;
+  }
+  h2 .italic {
+    font-family: 'Bodoni Moda', serif;
+    font-variation-settings: "opsz" 96;
+    font-style: italic; color: var(--teal);
+  }
+  .scene-meta {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--paper-soft); letter-spacing: .12em; line-height: 1.7; text-align: right;
+  }
+  .scene-meta b { color: var(--paper); }
+  .scene-meta .verdict {
+    display: inline-flex; align-items: center; gap: 8px; color: var(--pass);
+    font-family: 'JetBrains Mono', monospace; letter-spacing: .24em; font-size: 12px; font-weight: 700;
+    margin-top: 8px;
+  }
+  .scene-meta .verdict::before {
+    content: ""; width: 8px; height: 8px; background: var(--pass); border-radius: 50%;
+    box-shadow: 0 0 12px 0 var(--pass);
+  }
+
+  /* shot list */
+  .shots {
+    display: grid; grid-template-columns: repeat(12, 1fr); gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  .shot {
+    grid-column: span 12; display: grid; grid-template-columns: 130px 64px 1fr 120px;
+    gap: 24px; align-items: center; padding: 20px 28px;
+    background: var(--ink); position: relative; cursor: default;
+    transition: background .2s ease;
+  }
+  .shot:hover { background: var(--ink-2); }
+  .shot-idx {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: .22em; color: var(--paper-mute); text-transform: uppercase;
+  }
+  .shot-idx b { color: var(--amber); }
+  .shot-icon {
+    width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--pass);
+    color: var(--pass); display: flex; align-items: center; justify-content: center;
+    font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 12px;
+  }
+  .shot-txt {
+    font-family: 'Bodoni Moda', serif; font-variation-settings: "opsz" 16;
+    font-size: 17px; line-height: 1.3; color: var(--paper);
+  }
+  .shot-txt em { font-style: italic; color: var(--teal); font-weight: 500; }
+  .shot-txt code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    background: var(--ink-2); color: var(--paper-soft);
+    padding: 2px 6px; border: 1px solid var(--rule); letter-spacing: 0;
+  }
+  .shot-dur {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--paper-soft); letter-spacing: .14em; text-align: right;
+  }
+  .shot-dur b { color: var(--paper); }
+
+  /* final slate */
+  .final-slate {
+    margin-top: 44px; padding: 32px 40px; border: 1px solid var(--teal);
+    background: var(--teal-soft); position: relative;
+  }
+  .final-slate::before, .final-slate::after {
+    content: ""; position: absolute; width: 16px; height: 16px; border: 1px solid var(--teal);
+  }
+  .final-slate::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .final-slate::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+  .final-slate .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--teal); margin-bottom: 10px; }
+  .final-slate p {
+    font-family: 'Bodoni Moda', serif; font-variation-settings: "opsz" 48;
+    font-style: italic; font-size: 26px; line-height: 1.3; margin: 0;
+    color: var(--paper);
+  }
+  .final-slate p b { color: var(--teal); font-style: normal; font-weight: 600; }
+
+  /* ── end credits ─────────────────────────────────────── */
+  .credits {
+    margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 32px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--paper-mute);
+  }
+  .credits b { color: var(--paper-soft); }
+  .credits em { font-family: 'Bodoni Moda', serif; font-style: italic; color: var(--amber); font-size: 14px; letter-spacing: 0; text-transform: none; }
+
+  @media (max-width: 760px) { h1 { font-size: 64px; } h2 { font-size: 42px; } .shot { grid-template-columns: 100px 36px 1fr 90px; padding: 16px 14px; gap: 14px; } }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="slate">
+      <div class="clap">REC</div>
+      <div class="center"><span class="scene">Scene 042</span> · <span class="take">Take 03</span> · Chromium · main · 14:22:03Z</div>
+      <nav class="nav-cinema"><a class="active">Tests</a><a>Takes</a><a>Scan</a><a>Archive</a></nav>
+      <button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';this.textContent=r.dataset.theme==='dark'?'◐ dark':'◑ light'">◐ dark</button>
+    </header>
+
+    <section class="titlecard">
+      <div class="presents">VisionTest.ai &nbsp;·&nbsp; presents</div>
+      <h1>
+        <span class="roman">Every change,</span>
+        <span class="italic">captured.</span>
+      </h1>
+      <div class="sub-title">a quiet tool for watching interfaces</div>
+      <div class="cta-row">
+        <input placeholder="https://your-site.com" value="https://acme.example.com" />
+        <button>Roll →</button>
+      </div>
+      <div class="coming-soon">feature · 60 seconds · no account required</div>
+    </section>
+
+    <div class="reel-divider"></div>
+
+    <section>
+      <header class="scene-header">
+        <div class="scene-head-left">
+          <div class="kicker">Scene · Login · take 3</div>
+          <h2>Login, <span class="italic">happy path</span></h2>
+        </div>
+        <div class="scene-meta">
+          <div><b>ACME.example.com</b></div>
+          <div>7 shots · 4.23s · chromium</div>
+          <div class="verdict">Print take</div>
+        </div>
+      </header>
+
+      <div class="shots">
+        <div class="shot">
+          <span class="shot-idx">SHOT <b>01</b> · WS</span>
+          <span class="shot-icon">✓</span>
+          <span class="shot-txt">Navigate to the login screen — <code>/login</code>.</span>
+          <span class="shot-dur"><b>842</b> ms</span>
+        </div>
+        <div class="shot">
+          <span class="shot-idx">SHOT <b>02</b> · MS</span>
+          <span class="shot-icon">✓</span>
+          <span class="shot-txt">Types <em>admin@acme.co</em> into the email field.</span>
+          <span class="shot-dur"><b>120</b> ms</span>
+        </div>
+        <div class="shot">
+          <span class="shot-idx">SHOT <b>03</b> · MS</span>
+          <span class="shot-icon">✓</span>
+          <span class="shot-txt">Types password into <code>input[type=password]</code>.</span>
+          <span class="shot-dur"><b>98</b> ms</span>
+        </div>
+        <div class="shot">
+          <span class="shot-idx">SHOT <b>04</b> · CU</span>
+          <span class="shot-icon">✓</span>
+          <span class="shot-txt">Presses <em>Sign In</em>, a single beat of silence.</span>
+          <span class="shot-dur"><b>210</b> ms</span>
+        </div>
+        <div class="shot">
+          <span class="shot-idx">SHOT <b>05</b> · WS</span>
+          <span class="shot-icon">✓</span>
+          <span class="shot-txt">Waits for the dashboard — the dashboard arrives.</span>
+          <span class="shot-dur"><b>1.1</b> s</span>
+        </div>
+        <div class="shot">
+          <span class="shot-idx">SHOT <b>06</b> · MS</span>
+          <span class="shot-icon">✓</span>
+          <span class="shot-txt">Verifies <em>"Welcome, admin"</em> in frame.</span>
+          <span class="shot-dur"><b>340</b> ms</span>
+        </div>
+        <div class="shot">
+          <span class="shot-idx">SHOT <b>07</b> · GOAL</span>
+          <span class="shot-icon">✓</span>
+          <span class="shot-txt">Goal evaluation against the final DOM.</span>
+          <span class="shot-dur"><b>22</b> ms</span>
+        </div>
+      </div>
+
+      <div class="final-slate">
+        <div class="label">Goal achieved</div>
+        <p>URL ends <b>/dashboard</b>, welcome banner visible, no error toasts through the flow.<br/>Baseline updated — the take is printed.</p>
+      </div>
+    </section>
+
+    <footer class="credits">
+      <span>VisionTest.ai · OSS · <b>Directed by</b> the maintainers</span>
+      <span><em>Proof 05</em> · Cinema · Italiana · Bodoni Moda · Manrope · JetBrains Mono — teal on ink, letterboxed</span>
+    </footer>
+  </div>
+</body>
+</html>

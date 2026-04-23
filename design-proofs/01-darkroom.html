@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VisionTest.ai — Darkroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --base: #0B0907;
+    --panel: #141110;
+    --panel-2: #1E1A17;
+    --rule: rgba(212,182,110,0.16);
+    --ink: #ECE4D0;
+    --ink-soft: #B5AA90;
+    --ink-mute: #726751;
+    --safelight: #FF4B1F;
+    --safelight-soft: rgba(255,75,31,0.14);
+    --brass: #D4B66E;
+    --phosphor: #9CDF85;
+    --blood: #F45A6B;
+    --radius: 2px;
+  }
+  [data-theme="light"] {
+    --base: #F4EDDD;
+    --panel: #ECE2C9;
+    --panel-2: #E3D7B9;
+    --rule: rgba(60,40,24,0.18);
+    --ink: #191310;
+    --ink-soft: #4E463A;
+    --ink-mute: #877A60;
+    --safelight: #DA3E15;
+    --safelight-soft: rgba(218,62,21,0.10);
+    --brass: #8E6F27;
+    --phosphor: #3E7640;
+    --blood: #B83246;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--base);
+    color: var(--ink);
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    font-feature-settings: "ss01";
+    min-height: 100vh;
+    position: relative;
+  }
+  /* film grain — shimmers subtly */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    opacity: .18;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .6 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+    animation: grain 1.2s steps(6) infinite;
+  }
+  [data-theme="light"] body::before { opacity: .12; mix-blend-mode: multiply; }
+  @keyframes grain {
+    0%,100% { transform: translate(0,0); }
+    20% { transform: translate(-2%, 3%); }
+    40% { transform: translate(1%, -2%); }
+    60% { transform: translate(-1%, 1%); }
+    80% { transform: translate(2%, -3%); }
+  }
+  .page { max-width: 1180px; margin: 0 auto; padding: 48px 44px 80px; position: relative; z-index: 1; }
+
+  /* ── chrome ─────────────────────────────────────────── */
+  .chrome {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 20px; margin-bottom: 48px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .mark {
+    display: flex; align-items: baseline; gap: 12px;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+  }
+  .mark::before {
+    content: "";
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--safelight);
+    box-shadow: 0 0 18px 2px var(--safelight), 0 0 2px 0 var(--safelight);
+    animation: breathe 2.5s ease-in-out infinite;
+    align-self: center;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 1; box-shadow: 0 0 18px 2px var(--safelight); }
+    50% { opacity: .62; box-shadow: 0 0 10px 0px var(--safelight); }
+  }
+  .nav {
+    display: flex; gap: 28px; font-size: 12px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  .nav a { color: inherit; text-decoration: none; padding-bottom: 3px; border-bottom: 1px solid transparent; }
+  .nav a:hover { color: var(--ink); border-color: var(--safelight); }
+  .toggle {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: none; border: 1px solid var(--rule); color: var(--ink-soft);
+    padding: 6px 10px; font: inherit; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    cursor: pointer; font-family: 'Fragment Mono', monospace;
+  }
+  .toggle:hover { border-color: var(--safelight); color: var(--ink); }
+
+  /* ── hero ─────────────────────────────────────────── */
+  .hero { display: grid; grid-template-columns: 7fr 5fr; gap: 64px; align-items: end; margin-bottom: 96px; }
+  .eyebrow {
+    font-family: 'Fragment Mono', monospace;
+    font-size: 11px; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--safelight); margin-bottom: 28px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .eyebrow::before { content: ""; display: block; width: 40px; height: 1px; background: var(--safelight); }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 144;
+    font-weight: 350;
+    font-size: clamp(64px, 9vw, 124px);
+    line-height: 0.94; letter-spacing: -0.035em;
+    margin: 0 0 28px; color: var(--ink);
+  }
+  h1 em {
+    font-style: italic;
+    font-variation-settings: "opsz" 144, "SOFT" 100;
+    color: var(--safelight);
+    font-weight: 300;
+  }
+  .lead { font-size: 19px; line-height: 1.5; color: var(--ink-soft); max-width: 34ch; margin: 0 0 36px; }
+
+  .cta-row { display: flex; gap: 12px; align-items: center; }
+  .url-input {
+    flex: 1; background: transparent;
+    border: none; border-bottom: 1px solid var(--ink-mute);
+    padding: 14px 0; font: inherit; font-size: 18px; color: var(--ink);
+    font-family: 'Fragment Mono', monospace;
+  }
+  .url-input::placeholder { color: var(--ink-mute); font-style: italic; }
+  .url-input:focus { outline: none; border-color: var(--safelight); }
+  .btn {
+    appearance: none; background: var(--safelight); color: var(--base);
+    border: none; padding: 16px 28px; font: inherit; font-size: 13px;
+    letter-spacing: .18em; text-transform: uppercase; cursor: pointer;
+    font-weight: 600; transition: transform .1s ease;
+    box-shadow: 0 0 40px -8px var(--safelight);
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 0 50px -4px var(--safelight); }
+
+  .hero-right { position: relative; padding-top: 20px; }
+  /* sprocket frame — literal film strip chrome */
+  .filmstrip {
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    position: relative; padding: 32px 14px 14px; margin-top: 12px;
+  }
+  .filmstrip::before, .filmstrip::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 18px;
+    background: repeating-linear-gradient(90deg, var(--panel-2) 0 22px, transparent 22px 32px);
+    mask-image: repeating-linear-gradient(90deg, #000 0 16px, transparent 16px 32px);
+  }
+  .filmstrip::before { top: 0; }
+  .filmstrip::after { bottom: 0; top: auto; }
+  .frame { aspect-ratio: 16/10; background: var(--panel-2); position: relative; overflow: hidden; }
+  .frame::before {
+    content: "STEP 4 / 7"; position: absolute; top: 10px; left: 12px; z-index: 2;
+    font-family: 'Fragment Mono', monospace; font-size: 10px; letter-spacing: .2em; color: var(--brass);
+  }
+  .frame::after {
+    content: ""; position: absolute; inset: 0; background:
+      radial-gradient(circle at 30% 40%, rgba(255,75,31,0.2), transparent 50%),
+      linear-gradient(115deg, rgba(212,182,110,0.05) 0%, rgba(156,223,133,0.1) 100%);
+  }
+  .frame-meta {
+    padding: 12px 4px 2px; display: flex; justify-content: space-between;
+    font-family: 'Fragment Mono', monospace; font-size: 10px;
+    color: var(--ink-soft); letter-spacing: .1em;
+  }
+
+  /* ── results card ─────────────────────────────────────────── */
+  .section-label {
+    font-family: 'Fragment Mono', monospace; font-size: 11px; letter-spacing: .3em;
+    text-transform: uppercase; color: var(--brass); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .section-label::after {
+    content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--rule), transparent);
+  }
+  .run-card {
+    background: var(--panel); border: 1px solid var(--rule);
+    padding: 40px 44px; position: relative;
+  }
+  .run-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 32px; gap: 36px; flex-wrap: wrap; }
+  .run-title {
+    font-family: 'Fraunces', serif; font-variation-settings: "opsz" 72; font-weight: 400;
+    font-size: 38px; line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 8px;
+  }
+  .run-title em { font-style: italic; color: var(--safelight); font-weight: 350; }
+  .run-meta { font-family: 'Fragment Mono', monospace; font-size: 12px; color: var(--ink-soft); letter-spacing: .06em; }
+  .status-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border: 1px solid var(--phosphor);
+    color: var(--phosphor); font-family: 'Fragment Mono', monospace; font-size: 11px;
+    letter-spacing: .2em; text-transform: uppercase; background: rgba(156,223,133,0.05);
+  }
+  .status-chip::before { content: ""; width: 8px; height: 8px; background: var(--phosphor); border-radius: 50%; box-shadow: 0 0 8px 0 var(--phosphor); }
+
+  .steps { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 12px; counter-reset: step; }
+  .step { display: grid; grid-template-columns: 64px 1fr auto; gap: 24px; align-items: baseline; padding: 18px 0; border-top: 1px dashed var(--rule); }
+  .step:first-child { border-top: none; }
+  .step-num {
+    font-family: 'Fraunces', serif; font-variation-settings: "opsz" 72;
+    font-style: italic; color: var(--brass); font-size: 26px; line-height: 1;
+    font-weight: 400;
+  }
+  .step-num::before { counter-increment: step; content: counter(step, decimal-leading-zero); }
+  .step-text { font-family: 'Instrument Sans', sans-serif; font-size: 16px; }
+  .step-text code { font-family: 'Fragment Mono', monospace; font-size: 13px; color: var(--ink-soft); }
+  .step-dur { font-family: 'Fragment Mono', monospace; font-size: 11px; color: var(--ink-mute); letter-spacing: .08em; }
+
+  .goal {
+    margin-top: 32px; padding: 24px; border-left: 3px solid var(--phosphor);
+    background: rgba(156,223,133,0.03);
+  }
+  .goal-label { font-family: 'Fragment Mono', monospace; font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--phosphor); margin-bottom: 8px; }
+  .goal-text { font-family: 'Fraunces', serif; font-variation-settings: "opsz" 36; font-style: italic; font-size: 22px; line-height: 1.3; margin: 0; }
+
+  /* ── footnote caption ─────────────────────────────────────────── */
+  .caption {
+    margin-top: 80px; display: flex; justify-content: space-between; gap: 64px; flex-wrap: wrap;
+    padding-top: 28px; border-top: 1px solid var(--rule);
+    font-family: 'Fragment Mono', monospace; font-size: 11px; letter-spacing: .1em;
+    color: var(--ink-mute);
+  }
+  .caption em { font-family: 'Fraunces', serif; font-style: italic; color: var(--brass); font-size: 14px; letter-spacing: 0; }
+
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; gap: 48px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="chrome">
+      <div class="mark">VisionTest.<em>ai</em></div>
+      <nav class="nav">
+        <a href="#">Tests</a><a href="#">Runs</a><a href="#">Scan</a><a href="#">Baselines</a>
+      </nav>
+      <button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';this.firstChild.textContent=r.dataset.theme==='dark'?'◐ Dark':'◑ Light'">◐ Dark</button>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Chapter I · The Darkroom</div>
+        <h1>Watch for <em>what</em><br/>changes, frame<br/>by frame.</h1>
+        <p class="lead">Write a user story in plain English. We run it, photograph every step, and tell you — in daylight — exactly what moved.</p>
+        <div class="cta-row">
+          <input class="url-input" placeholder="https://your-site.com" value="https://acme.example.com" />
+          <button class="btn">Develop →</button>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="section-label">Frame sample</div>
+        <div class="filmstrip">
+          <div class="frame"></div>
+          <div class="frame-meta"><span>04:2024 — Login › Sign in</span><span>2.3% Δ</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">Run · 2026-04-22 14:22 · acme.example.com</div>
+      <article class="run-card">
+        <header class="run-header">
+          <div>
+            <h2 class="run-title">Login <em>happy path</em></h2>
+            <div class="run-meta">7 steps · 4.2s · chromium · main</div>
+          </div>
+          <div class="status-chip">Developed</div>
+        </header>
+
+        <div class="steps">
+          <div class="step"><span class="step-num"></span><div class="step-text">Navigate to <code>/login</code></div><span class="step-dur">842 MS</span></div>
+          <div class="step"><span class="step-num"></span><div class="step-text">Type <em style="font-family:Fraunces;font-style:italic;color:var(--brass)">admin@acme.co</em> in the email field</div><span class="step-dur">120 MS</span></div>
+          <div class="step"><span class="step-num"></span><div class="step-text">Type password into <code>input[type=password]</code></div><span class="step-dur">98 MS</span></div>
+          <div class="step"><span class="step-num"></span><div class="step-text">Click “Sign In”</div><span class="step-dur">210 MS</span></div>
+          <div class="step"><span class="step-num"></span><div class="step-text">Wait for the dashboard</div><span class="step-dur">1.1 S</span></div>
+          <div class="step"><span class="step-num"></span><div class="step-text">Verify <em style="font-family:Fraunces;font-style:italic;color:var(--brass)">“Welcome, admin”</em> is visible</div><span class="step-dur">340 MS</span></div>
+          <div class="step"><span class="step-num"></span><div class="step-text">Goal evaluation — URL ends <code>/dashboard</code></div><span class="step-dur">22 MS</span></div>
+        </div>
+
+        <div class="goal">
+          <div class="goal-label">Goal achieved</div>
+          <p class="goal-text">“The URL ends with /dashboard, Welcome is visible, and no error toasts appeared during the flow.”</p>
+        </div>
+      </article>
+    </section>
+
+    <footer class="caption">
+      <span>VisionTest.ai — darkroom for your UI · OSS</span>
+      <span><em>Proof 01</em> — warm amber, phosphor green, Kodak red on patinated black. Fraunces · Instrument Sans · Fragment Mono.</span>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VisionTest.ai — Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Manrope:wght@300..800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #F6F2E8;
+    --paper-2: #FBF7EC;
+    --ink: #13100A;
+    --ink-soft: #4B4636;
+    --ink-mute: #887E66;
+    --rule: #C9C0A4;
+    --rule-soft: #DDD4B8;
+    --accent: #C1272D;            /* cadmium red — single dramatic accent */
+    --accent-ink: #7A1016;
+    --pass: #2F6B3D;
+    --fail: #A01B2F;
+    --sig: #B88926;               /* warm gold for italic display flourish */
+  }
+  [data-theme="dark"] {
+    --paper: #131110;
+    --paper-2: #1C1917;
+    --ink: #F1EBD8;
+    --ink-soft: #B5AA8A;
+    --ink-mute: #74694F;
+    --rule: #3B3527;
+    --rule-soft: #261F14;
+    --accent: #FF4A52;
+    --accent-ink: #FFBAC0;
+    --pass: #83D188;
+    --fail: #F56974;
+    --sig: #E5B04A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    font-feature-settings: "ss01", "calt", "cv08";
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  /* subtle aged-paper texture */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .5;
+    background-image: radial-gradient(circle at 22% 18%, rgba(184,137,38,0.06), transparent 40%),
+                      radial-gradient(circle at 78% 82%, rgba(193,39,45,0.04), transparent 40%);
+  }
+  .page { max-width: 1160px; margin: 0 auto; padding: 44px 56px 96px; position: relative; z-index: 2; }
+
+  /* ── masthead ───────────────────────────────────────── */
+  .masthead { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; padding-bottom: 20px; border-bottom: 2px solid var(--ink); margin-bottom: 42px; }
+  .masthead .date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-soft); }
+  .masthead .brand {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 144;
+    font-weight: 350; font-size: 44px; letter-spacing: -0.04em; line-height: 1;
+  }
+  .masthead .brand em { font-style: italic; color: var(--accent); font-weight: 350; }
+  .masthead .right { display: flex; justify-content: flex-end; gap: 22px; align-items: center; }
+  .nav { display: flex; gap: 18px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); }
+  .nav a { color: inherit; text-decoration: none; }
+  .nav a:hover { color: var(--accent); }
+  .toggle {
+    appearance: none; background: transparent; border: 1px solid var(--ink);
+    color: var(--ink); padding: 6px 10px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase; cursor: pointer;
+  }
+  .toggle:hover { background: var(--ink); color: var(--paper); }
+
+  /* ── hero article ───────────────────────────────────── */
+  .issue-line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    letter-spacing: .28em; text-transform: uppercase; color: var(--ink-soft);
+    margin-bottom: 40px;
+  }
+  .issue-line .page-num { color: var(--ink-mute); }
+  .issue-line .sec { color: var(--accent); }
+
+  .hero { display: grid; grid-template-columns: 9fr 3fr; gap: 56px; align-items: start; }
+  .hero-head h1 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 144;
+    font-weight: 280;
+    font-size: clamp(58px, 8vw, 112px);
+    line-height: 0.97; letter-spacing: -0.035em;
+    margin: 0 0 24px; color: var(--ink);
+  }
+  .hero-head h1 em { font-style: italic; color: var(--accent); font-weight: 250; }
+  .byline {
+    display: flex; gap: 14px; align-items: center;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft);
+    padding-bottom: 20px; border-bottom: 1px solid var(--rule); margin-bottom: 28px;
+  }
+  .byline .by { color: var(--ink-mute); }
+  .byline .author em { font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; color: var(--sig); letter-spacing: 0; text-transform: none; }
+
+  .body-copy {
+    column-count: 2; column-gap: 40px; column-rule: 1px solid var(--rule-soft);
+    font-family: 'Newsreader', 'Fraunces', serif;
+    font-variation-settings: "opsz" 16;
+    font-size: 17px; line-height: 1.58; color: var(--ink);
+  }
+  .body-copy p { margin: 0 0 1.2em; text-align: justify; hyphens: auto; }
+  .body-copy p:first-child::first-letter {
+    font-family: 'Fraunces', serif; font-variation-settings: "opsz" 144;
+    font-style: italic; font-weight: 300; font-size: 5.2em;
+    float: left; line-height: 0.85; padding: 6px 10px 0 0; color: var(--accent);
+  }
+
+  /* column with pull-quote + CTA */
+  .sidenote { position: sticky; top: 24px; }
+  .pullquote {
+    border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+    padding: 22px 0; margin-bottom: 28px;
+  }
+  .pullquote q {
+    font-family: 'Fraunces', serif; font-variation-settings: "opsz" 72;
+    font-style: italic; font-weight: 320; font-size: 22px; line-height: 1.28;
+    color: var(--ink); quotes: "“" "”";
+  }
+  .pullquote .cite { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-mute); margin-top: 12px; display: block; }
+
+  .cta-box {
+    background: var(--ink); color: var(--paper);
+    padding: 22px;
+  }
+  .cta-box .prompt { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
+  .cta-box input {
+    width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--paper);
+    color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 14px;
+    padding: 12px 0 8px; margin: 8px 0 14px;
+  }
+  .cta-box input::placeholder { color: rgba(255,255,255,.45); }
+  .cta-box button {
+    width: 100%; background: var(--accent); color: white; border: none;
+    padding: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    letter-spacing: .24em; text-transform: uppercase; cursor: pointer; font-weight: 500;
+  }
+  .cta-box button:hover { background: var(--accent-ink); }
+
+  /* ── report card ────────────────────────────────────── */
+  .section-break {
+    display: flex; align-items: center; gap: 20px; margin: 80px 0 28px;
+  }
+  .section-break .rule { flex: 1; height: 1px; background: var(--ink); }
+  .section-break .label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .3em; text-transform: uppercase; }
+  .section-break .ornament { font-family: 'Fraunces', serif; font-style: italic; color: var(--sig); font-size: 18px; }
+
+  .report { display: grid; grid-template-columns: 1fr 360px; gap: 56px; align-items: start; }
+
+  .report-body h2 {
+    font-family: 'Fraunces', serif; font-variation-settings: "opsz" 144;
+    font-weight: 320; font-size: 48px; line-height: 1.05; letter-spacing: -0.02em;
+    margin: 0 0 14px;
+  }
+  .report-body h2 em { font-style: italic; color: var(--accent); }
+  .report-dek { font-family: 'Newsreader', serif; font-variation-settings: "opsz" 16; font-size: 18px; color: var(--ink-soft); font-style: italic; margin: 0 0 28px; max-width: 48ch; }
+
+  .findings { margin: 32px 0; padding: 0; list-style: none; counter-reset: finding; }
+  .findings li {
+    display: grid; grid-template-columns: 48px 1fr auto; gap: 20px; align-items: baseline;
+    padding: 18px 0; border-bottom: 1px solid var(--rule-soft);
+  }
+  .findings li::before {
+    counter-increment: finding; content: counter(finding, lower-roman);
+    font-family: 'Fraunces', serif; font-style: italic; color: var(--sig);
+    font-size: 22px; text-transform: lowercase; letter-spacing: 0.02em;
+  }
+  .findings .txt { font-family: 'Newsreader', serif; font-size: 17px; line-height: 1.4; }
+  .findings .txt em { font-style: italic; color: var(--accent); }
+  .findings .txt code { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink-soft); background: var(--paper-2); padding: 1px 6px; border: 1px solid var(--rule-soft); }
+  .findings .dur { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .12em; color: var(--ink-mute); }
+
+  .verdict {
+    margin-top: 28px; padding: 22px 26px;
+    border-left: 4px solid var(--pass); background: var(--paper-2);
+  }
+  .verdict .label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--pass); }
+  .verdict p {
+    font-family: 'Fraunces', serif; font-variation-settings: "opsz" 36;
+    font-style: italic; font-weight: 320; font-size: 22px; line-height: 1.3;
+    margin: 6px 0 0;
+  }
+
+  /* report sidebar — figure */
+  .figure { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 14px 0; }
+  .figure-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-mute); display: flex; justify-content: space-between; }
+  .figure-image {
+    aspect-ratio: 4/3; background: linear-gradient(135deg, var(--paper-2), var(--paper));
+    border: 1px solid var(--rule); margin: 10px 0; position: relative;
+    background-image:
+      repeating-linear-gradient(45deg, transparent 0 6px, rgba(19,16,10,0.03) 6px 7px);
+  }
+  .figure-caption {
+    font-family: 'Newsreader', serif; font-variation-settings: "opsz" 16;
+    font-size: 14px; font-style: italic; line-height: 1.4; color: var(--ink-soft);
+  }
+  .figure-caption b { font-family: 'IBM Plex Mono', monospace; font-style: normal; font-weight: 500; color: var(--ink); letter-spacing: .05em; }
+
+  /* ── colophon ───────────────────────────────────────── */
+  .colophon {
+    margin-top: 100px; padding-top: 24px; border-top: 1px solid var(--rule);
+    display: flex; gap: 40px; flex-wrap: wrap; justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-mute); letter-spacing: .1em;
+  }
+  .colophon em { font-family: 'Fraunces', serif; font-style: italic; color: var(--sig); font-size: 13px; letter-spacing: 0; }
+
+  @media (max-width: 900px) { .hero, .report { grid-template-columns: 1fr; gap: 40px; } .body-copy { column-count: 1; } }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <span class="date">Vol. 2 · No. 042<br/>April 2026</span>
+      <h1 class="brand">VisionTest<em>.ai</em></h1>
+      <div class="right">
+        <nav class="nav"><a>Tests</a><a>Runs</a><a>Scan</a><a>Archive</a></nav>
+        <button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light';this.textContent=r.dataset.theme==='light'?'☀ Light':'☾ Dark'">☀ Light</button>
+      </div>
+    </header>
+
+    <div class="issue-line">
+      <span class="sec">§ Feature · Page A1</span>
+      <span class="page-num">Continued overleaf —</span>
+    </div>
+
+    <section class="hero">
+      <div class="hero-head">
+        <h1>The slow art of <em>watching</em> your interface.</h1>
+        <div class="byline"><span class="by">by</span><span class="author"><em>the VisionTest editors</em></span><span>·</span><span>8 min read</span></div>
+        <div class="body-copy">
+          <p>Most testing tools ask you to write code. This one asks you to write <em>sentences</em>. You describe a journey in plain English — log in, open the settings page, verify the banner is gone — and the machine takes it from there, frame by frame, step by step. It notices what you would have noticed, if only you had the time.</p>
+          <p>The premise is simple. The execution is not. Every step carries a confidence badge: <em>exact</em>, <em>heuristic</em>, <em>unknown</em>. Every run carries a goal. The goal is a contract, not a wish; unverifiable goals cannot be saved. The system refuses to lie to you.</p>
+          <p>What follows is a single run of a login scenario, annotated. The test passed. The baseline was updated. A human will read this before morning.</p>
+        </div>
+      </div>
+
+      <aside class="sidenote">
+        <div class="pullquote">
+          <q>A testing tool that reads like prose, that runs like a darkroom, and that tells the truth about what changed.</q>
+          <span class="cite">— Readme of record</span>
+        </div>
+        <div class="cta-box">
+          <div class="prompt">Try it in 60 seconds</div>
+          <input placeholder="https://your-site.com" value="https://acme.example.com" />
+          <button>Begin →</button>
+        </div>
+      </aside>
+    </section>
+
+    <div class="section-break">
+      <span class="label">§ Run of record</span>
+      <span class="ornament">◈</span>
+      <span class="rule"></span>
+    </div>
+
+    <section class="report">
+      <div class="report-body">
+        <h2>Login, <em>happy path</em></h2>
+        <p class="report-dek">An ordinary Wednesday-morning test. Seven steps; four point two seconds; one passing goal. Filed from Chromium, branch <code>main</code>.</p>
+
+        <ol class="findings">
+          <li><span class="txt">Navigation to <code>/login</code>, uneventful.</span><span class="dur">842 MS</span></li>
+          <li><span class="txt">Typed <em>admin@acme.co</em> into the email field; caret returned to idle.</span><span class="dur">120 MS</span></li>
+          <li><span class="txt">Typed the password into <code>input[type=password]</code>.</span><span class="dur">98 MS</span></li>
+          <li><span class="txt">Pressed <em>Sign In</em>; a single HTTP request, one green toast.</span><span class="dur">210 MS</span></li>
+          <li><span class="txt">Awaited the dashboard; the dashboard arrived.</span><span class="dur">1.1 S</span></li>
+          <li><span class="txt">Verified that <em>Welcome, admin</em> was visible in the upper-left quadrant.</span><span class="dur">340 MS</span></li>
+          <li><span class="txt">Goal evaluation completed against the final DOM.</span><span class="dur">22 MS</span></li>
+        </ol>
+
+        <div class="verdict">
+          <div class="label">Verdict · Goal achieved</div>
+          <p>The URL ends <code style="font-family:inherit">/dashboard</code>, the welcome banner is visible, and no error toasts appeared during the flow. The baseline has been updated.</p>
+        </div>
+      </div>
+
+      <aside>
+        <div class="figure">
+          <div class="figure-meta"><span>Fig. 1</span><span>step 04 of 07</span></div>
+          <div class="figure-image"></div>
+          <p class="figure-caption"><b>Captured frame —</b> a sparse dashboard renders fully, no shimmer, no blur. The <em>Welcome, admin</em> string lands in the expected grid cell.</p>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="colophon">
+      <span>VisionTest.ai — OSS · MIT</span>
+      <span><em>Proof 02</em> · Editorial · Fraunces · Newsreader · Manrope · IBM Plex Mono · cadmium red on bone.</span>
+    </footer>
+  </div>
+</body>
+</html>

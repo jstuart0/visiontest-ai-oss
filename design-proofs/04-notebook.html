@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VisionTest.ai — Lab Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Inter+Tight:ital,wght@0,300..800;1,300..800&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page: #F3EFE1;       /* aged paper */
+    --page-2: #E7E1CB;     /* slightly darker manila */
+    --grid: #C4BA94;       /* graph-paper line */
+    --ink: #1B2316;        /* dark olive-black pen */
+    --ink-soft: #3D4434;
+    --ink-mute: #7A7B64;
+    --accent: #B23B1E;     /* red pen correction */
+    --green: #2E5F2B;      /* green pen — pass */
+    --caution: #F0C419;    /* caution tape */
+    --rule: #8A8566;
+  }
+  [data-theme="dark"] {
+    --page: #1C1E16;       /* midnight green-paper */
+    --page-2: #262921;
+    --grid: #2F3529;
+    --ink: #E9E4CC;
+    --ink-soft: #BCB69D;
+    --ink-mute: #827D68;
+    --accent: #F4674A;
+    --green: #93D48A;
+    --caution: #F0C419;
+    --rule: #3A3F2F;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: 'Inter Tight', system-ui, sans-serif;
+    font-size: 14.5px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    /* graph paper */
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: -1px -1px;
+  }
+  .page { max-width: 1180px; margin: 0 auto; padding: 56px 56px 100px; position: relative; }
+  /* red margin rule — notebook binding side */
+  .page::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 88px; width: 1px;
+    background: var(--accent); opacity: .4;
+  }
+  /* 3-hole punch marks */
+  .page::after {
+    content: ""; position: absolute; left: 20px; top: 200px; width: 20px; height: 520px;
+    background-image:
+      radial-gradient(circle, var(--page-2) 9px, transparent 10px);
+    background-size: 20px 180px; background-repeat: repeat-y;
+    opacity: .8;
+  }
+
+  /* ── notebook header ─────────────────────────────────── */
+  .header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 22px; border-bottom: 2px solid var(--ink); margin-bottom: 40px; margin-left: 48px; }
+  .title-block .lab {
+    font-family: 'Courier Prime', monospace; font-size: 11px;
+    letter-spacing: .2em; text-transform: uppercase; color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .brand {
+    font-family: 'Caveat', cursive;
+    font-weight: 500; font-size: 52px; line-height: 1;
+    color: var(--ink); letter-spacing: -0.02em;
+  }
+  .brand .dot { color: var(--accent); }
+  .meta-stamp {
+    font-family: 'Courier Prime', monospace; font-size: 11px;
+    padding: 8px 12px; border: 2px solid var(--ink); background: var(--page);
+    color: var(--ink); line-height: 1.4; letter-spacing: .02em;
+    transform: rotate(-1.5deg);
+  }
+  .meta-stamp b { color: var(--accent); }
+  .nav-notebook { display: flex; gap: 0; font-family: 'Courier Prime', monospace; }
+  .nav-notebook a {
+    color: var(--ink); text-decoration: none; padding: 8px 14px;
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    border-bottom: 3px solid transparent;
+  }
+  .nav-notebook a:hover, .nav-notebook a.active {
+    border-bottom-color: var(--accent); color: var(--accent);
+  }
+  .toggle {
+    appearance: none; font-family: 'Courier Prime', monospace;
+    background: transparent; border: 2px dashed var(--ink); padding: 6px 10px;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    cursor: pointer; color: var(--ink);
+  }
+  .toggle:hover { background: var(--caution); }
+
+  /* ── hero — notebook entry ──────────────────────────── */
+  .hero-entry { padding-left: 48px; max-width: 980px; }
+  .entry-header {
+    display: flex; gap: 24px; align-items: baseline; margin-bottom: 24px;
+    font-family: 'Courier Prime', monospace; font-size: 12px;
+    letter-spacing: .1em; color: var(--ink-mute);
+  }
+  .entry-header b { color: var(--ink); }
+  h1 {
+    font-family: 'Caveat', cursive;
+    font-weight: 500; font-size: clamp(64px, 9vw, 104px);
+    line-height: 1; letter-spacing: -0.01em; margin: 0 0 20px;
+    color: var(--ink);
+  }
+  h1 .corrected { position: relative; display: inline-block; }
+  h1 .corrected::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 55%; height: 4px;
+    background: var(--accent); opacity: 0.75; transform: rotate(-1deg);
+  }
+  h1 em {
+    font-family: 'Source Serif 4', serif; font-style: italic;
+    font-variation-settings: "opsz" 60; font-weight: 400;
+    color: var(--ink); font-size: 0.7em; letter-spacing: -0.02em;
+  }
+  .arrow {
+    display: inline-block; font-family: 'Caveat', cursive;
+    color: var(--accent); font-weight: 500;
+    transform: translateY(-8px) rotate(-4deg);
+    font-size: 0.8em;
+  }
+
+  .lede {
+    display: grid; grid-template-columns: 2fr 1fr; gap: 40px;
+    padding-top: 24px;
+  }
+  .lede p {
+    font-family: 'Source Serif 4', serif;
+    font-variation-settings: "opsz" 16;
+    font-size: 17px; line-height: 1.55; max-width: 50ch;
+    color: var(--ink);
+  }
+  .lede p::first-line { letter-spacing: 0.01em; }
+
+  .scribble {
+    font-family: 'Caveat', cursive; font-size: 22px;
+    color: var(--accent); line-height: 1.2;
+    transform: rotate(-2deg);
+    padding: 8px 14px; border-left: 3px solid var(--accent);
+  }
+  .scribble small { font-family: 'Courier Prime', monospace; font-size: 10px; color: var(--ink-mute); letter-spacing: .1em; display: block; margin-top: 6px; font-style: normal; }
+
+  .cta-row {
+    margin-top: 32px; display: flex; gap: 12px; align-items: stretch;
+    background: var(--page-2); padding: 6px; border: 1px solid var(--ink);
+    box-shadow: 4px 4px 0 0 var(--ink);
+  }
+  .cta-row input {
+    flex: 1; background: transparent; border: none; padding: 12px 16px;
+    font-family: 'Courier Prime', monospace; font-size: 14px; color: var(--ink);
+  }
+  .cta-row input::placeholder { color: var(--ink-mute); }
+  .cta-row input:focus { outline: none; }
+  .cta-row button {
+    padding: 12px 22px; background: var(--ink); color: var(--page);
+    border: none; font-family: 'Caveat', cursive; font-size: 22px; font-weight: 500;
+    cursor: pointer; letter-spacing: 0.02em;
+  }
+  .cta-row button:hover { background: var(--accent); }
+
+  /* ── observation section ─────────────────────────────── */
+  .section-head {
+    margin: 72px 0 24px 48px;
+    display: flex; align-items: baseline; gap: 14px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--ink-mute);
+  }
+  .section-head .num {
+    font-family: 'Caveat', cursive; font-size: 42px; color: var(--accent);
+    transform: rotate(-2deg); line-height: 1;
+  }
+  .section-head .label {
+    font-family: 'Courier Prime', monospace; font-size: 12px;
+    letter-spacing: .24em; text-transform: uppercase; color: var(--ink); font-weight: 700;
+  }
+  .section-head .sub {
+    font-family: 'Source Serif 4', serif; font-style: italic;
+    font-variation-settings: "opsz" 24;
+    color: var(--ink-mute); font-size: 15px; margin-left: auto;
+  }
+
+  .observation { margin-left: 48px; display: grid; grid-template-columns: 1fr 340px; gap: 48px; }
+  .observation-body { }
+
+  .entry-title {
+    font-family: 'Source Serif 4', serif; font-variation-settings: "opsz" 48;
+    font-weight: 500; font-size: 36px; line-height: 1.1; letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+  .entry-title em { font-style: italic; color: var(--accent); font-variation-settings: "opsz" 48; font-weight: 400; }
+  .entry-sub {
+    font-family: 'Courier Prime', monospace; font-size: 12px;
+    color: var(--ink-mute); letter-spacing: .08em; margin-bottom: 24px;
+  }
+  .entry-sub b { color: var(--ink); }
+
+  .log-list { list-style: none; padding: 0; margin: 0; }
+  .log-item {
+    display: grid; grid-template-columns: 100px 20px 1fr auto; gap: 16px; align-items: baseline;
+    padding: 14px 0; border-bottom: 1px dashed var(--ink-mute);
+  }
+  .log-item .ts {
+    font-family: 'Courier Prime', monospace; font-size: 12px;
+    color: var(--ink-mute); letter-spacing: .04em;
+  }
+  .log-item .bullet { color: var(--green); font-family: 'Caveat', cursive; font-size: 22px; line-height: 1; }
+  .log-item .txt { font-family: 'Source Serif 4', serif; font-variation-settings: "opsz" 16; font-size: 16px; line-height: 1.4; }
+  .log-item .txt em { font-style: italic; color: var(--accent); font-weight: 500; }
+  .log-item .txt code { font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--ink); background: var(--page-2); padding: 0 5px; }
+  .log-item .dur { font-family: 'Courier Prime', monospace; font-size: 11px; color: var(--ink-mute); letter-spacing: .06em; }
+
+  .conclusion {
+    margin-top: 32px; padding: 20px 22px; position: relative;
+    background: repeating-linear-gradient(135deg, var(--caution) 0 10px, var(--ink) 10px 20px) top / 100% 6px no-repeat,
+                var(--page);
+    padding-top: 28px; border: 2px solid var(--ink);
+  }
+  .conclusion .label { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink); font-weight: 700; }
+  .conclusion p { font-family: 'Source Serif 4', serif; font-variation-settings: "opsz" 24; font-style: italic; font-size: 19px; line-height: 1.4; margin: 8px 0 0; color: var(--ink); }
+
+  /* fig. panel */
+  .figure {
+    position: sticky; top: 32px;
+    background: var(--page); border: 2px solid var(--ink);
+    padding: 0; transform: rotate(0.4deg);
+    box-shadow: 6px 6px 0 0 var(--caution);
+  }
+  .figure-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 10px 14px; border-bottom: 2px solid var(--ink);
+    font-family: 'Courier Prime', monospace; font-size: 11px;
+    letter-spacing: .14em; text-transform: uppercase;
+  }
+  .figure-head b { color: var(--accent); }
+  .figure-image {
+    aspect-ratio: 4/3; background:
+      repeating-linear-gradient(90deg, var(--page) 0 12px, var(--page-2) 12px 13px),
+      repeating-linear-gradient(0deg, var(--page) 0 12px, var(--page-2) 12px 13px);
+    background-blend-mode: multiply;
+  }
+  .figure-caption {
+    padding: 14px; font-family: 'Source Serif 4', serif;
+    font-variation-settings: "opsz" 14; font-style: italic; font-size: 14px;
+    color: var(--ink-soft); line-height: 1.4;
+  }
+  .figure-caption b { font-family: 'Caveat', cursive; color: var(--accent); font-weight: 500; font-size: 17px; font-style: normal; letter-spacing: -0.01em; }
+
+  /* footer colophon */
+  .colophon {
+    margin: 80px 0 0 48px; padding-top: 20px; border-top: 1px solid var(--ink-mute);
+    display: flex; justify-content: space-between; gap: 40px; flex-wrap: wrap;
+    font-family: 'Courier Prime', monospace; font-size: 11px;
+    color: var(--ink-mute); letter-spacing: .08em;
+  }
+  .colophon b { color: var(--ink); }
+  .colophon em { font-family: 'Caveat', cursive; color: var(--accent); font-size: 15px; letter-spacing: 0; font-style: normal; }
+
+  @media (max-width: 900px) {
+    .observation, .lede { grid-template-columns: 1fr; gap: 32px; }
+    .page::after { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="title-block">
+        <div class="lab">Lab Notebook · Vol 04 · Entry 2026-04-22</div>
+        <div class="brand">VisionTest<span class="dot">.</span>ai</div>
+      </div>
+      <div style="display:flex;gap:20px;align-items:flex-end">
+        <nav class="nav-notebook"><a class="active">Entries</a><a>Specimens</a><a>Scan</a><a>Baselines</a></nav>
+        <button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light';this.textContent=r.dataset.theme==='light'?'☀ lamp on':'☾ lamp off'">☀ lamp on</button>
+      </div>
+      <div class="meta-stamp">
+        SPEC. <b>VT-2026-042</b><br/>
+        FILED 14:22Z<br/>
+        STATUS <b>PASS</b>
+      </div>
+    </header>
+
+    <section class="hero-entry">
+      <div class="entry-header">
+        <span><b>Entry §1.</b></span>
+        <span>the thesis</span>
+      </div>
+      <h1><span class="corrected">We couldn't</span> <span class="arrow">↪</span> You can <em>watch</em><br/>your UI, <em>sentence</em><br/>by sentence.</h1>
+      <div class="lede">
+        <p>Most testing tools assume you'd rather write code than write words. This one reverses the assumption. You describe a journey — log in, open the settings, verify the banner is gone — and the tool turns it into an experiment, complete with a hypothesis (the goal) and a log of what the browser did, in order, to the millisecond.</p>
+        <div class="scribble">
+          ↳ “every step is evidence,<br/>every goal is a hypothesis.”
+          <small>— margin note, left side</small>
+        </div>
+      </div>
+      <div class="cta-row">
+        <input placeholder="paste a URL — we'll start a run" value="https://acme.example.com" />
+        <button>begin experiment ↗</button>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <span class="num">§2.</span>
+      <span class="label">Observation · Login / happy path</span>
+      <span class="sub">one run, seven steps, no anomalies</span>
+    </div>
+
+    <section class="observation">
+      <div class="observation-body">
+        <h2 class="entry-title">Login, <em>happy path</em></h2>
+        <p class="entry-sub">target <b>acme.example.com</b> · browser <b>chromium</b> · branch <b>main</b> · duration <b>4.23s</b></p>
+
+        <ol class="log-list">
+          <li class="log-item"><span class="ts">t+0.000s</span><span class="bullet">✓</span><span class="txt">Navigate to <code>/login</code>.</span><span class="dur">842 ms</span></li>
+          <li class="log-item"><span class="ts">t+0.842s</span><span class="bullet">✓</span><span class="txt">Typed <em>admin@acme.co</em> into the email field.</span><span class="dur">120 ms</span></li>
+          <li class="log-item"><span class="ts">t+0.962s</span><span class="bullet">✓</span><span class="txt">Typed password into <code>input[type=password]</code>.</span><span class="dur">98 ms</span></li>
+          <li class="log-item"><span class="ts">t+1.060s</span><span class="bullet">✓</span><span class="txt">Clicked <em>Sign In</em>.</span><span class="dur">210 ms</span></li>
+          <li class="log-item"><span class="ts">t+1.270s</span><span class="bullet">✓</span><span class="txt">Awaited the dashboard; the dashboard arrived.</span><span class="dur">1.1 s</span></li>
+          <li class="log-item"><span class="ts">t+2.370s</span><span class="bullet">✓</span><span class="txt">Verified <em>"Welcome, admin"</em> is visible.</span><span class="dur">340 ms</span></li>
+          <li class="log-item"><span class="ts">t+2.710s</span><span class="bullet">✓</span><span class="txt">Ran goal evaluation against the final DOM.</span><span class="dur">22 ms</span></li>
+        </ol>
+
+        <div class="conclusion">
+          <div class="label">Conclusion — hypothesis supported</div>
+          <p>The URL ends <code style="font-family:'Courier Prime',monospace;background:transparent">/dashboard</code>, the welcome banner is visible, and no error toasts appeared. Baseline updated; filed for reference.</p>
+        </div>
+      </div>
+
+      <aside>
+        <div class="figure">
+          <div class="figure-head"><span>Fig. 1 — Step 04</span><b>post-click</b></div>
+          <div class="figure-image"></div>
+          <div class="figure-caption"><b>Captured →</b> sparse dashboard renders fully; no shimmer, no blur. <em>Welcome, admin</em> settles into the expected grid cell.</div>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="colophon">
+      <span>VisionTest.ai · <b>OSS</b> · MIT — notebook edition</span>
+      <span><em>Proof 04</em> — Lab Notebook · Caveat · Source Serif 4 · Inter Tight · Courier Prime · olive & red pen on graph paper</span>
+    </footer>
+  </div>
+</body>
+</html>

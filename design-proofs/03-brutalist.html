@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VisionTest.ai — Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&family=Archivo:ital,wght@0,100..900;1,100..900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --concrete: #E9E7E1;
+    --concrete-2: #D7D3C8;
+    --ink: #0F0F0E;
+    --ink-soft: #2B2B28;
+    --ink-mute: #6C6B62;
+    --rule: #0F0F0E;
+    --hi-vis: #FFE23A;     /* construction yellow */
+    --orange: #FF6B35;     /* hi-vis orange */
+    --pass: #1F6E3B;
+    --fail: #C7201E;
+    --accent: #FFE23A;
+  }
+  [data-theme="dark"] {
+    --concrete: #141413;
+    --concrete-2: #1F1F1C;
+    --ink: #F2EFE3;
+    --ink-soft: #C8C5B7;
+    --ink-mute: #726E5E;
+    --rule: #F2EFE3;
+    --hi-vis: #FFE23A;
+    --orange: #FF8038;
+    --pass: #65DA80;
+    --fail: #FF5C54;
+    --accent: #FFE23A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--concrete);
+    color: var(--ink);
+    font-family: 'Archivo', system-ui, sans-serif;
+    font-size: 14px; line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    background-image:
+      linear-gradient(var(--concrete) 1px, transparent 1px),
+      linear-gradient(90deg, var(--concrete) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-color: var(--concrete-2);
+  }
+  [data-theme="dark"] body, .page { background-color: var(--concrete); }
+  .page { max-width: 1280px; margin: 0 auto; padding: 0 40px 80px; background: var(--concrete); position: relative; }
+
+  /* ── hazard-tape top border ───────────────────────────────── */
+  .hazard {
+    height: 8px; margin: 0 -40px;
+    background: repeating-linear-gradient(135deg, var(--hi-vis) 0 18px, var(--ink) 18px 36px);
+  }
+  /* ── header bar ────────────────────────────────────────── */
+  .header { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 28px; padding: 24px 0; border-bottom: 3px solid var(--rule); }
+  .brand {
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 800; font-size: 32px; line-height: 1;
+    letter-spacing: -0.04em; text-transform: uppercase;
+  }
+  .brand span { color: var(--orange); }
+  .tag {
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .14em;
+    padding: 6px 10px; background: var(--ink); color: var(--concrete);
+  }
+  .nav-brutal { display: flex; gap: 6px; font-family: 'Archivo', sans-serif; }
+  .nav-brutal a {
+    text-decoration: none; color: var(--ink);
+    padding: 8px 12px; border: 2px solid var(--ink); font-weight: 700;
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    background: var(--concrete);
+  }
+  .nav-brutal a:hover { background: var(--hi-vis); }
+  .nav-brutal a.active { background: var(--ink); color: var(--concrete); }
+  .toggle {
+    background: var(--ink); color: var(--concrete); border: none; cursor: pointer;
+    padding: 10px 14px; font-family: 'Space Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .14em; font-weight: 700;
+  }
+
+  /* ── HERO — monumental type block ─────────────────────── */
+  .hero { padding: 56px 0 44px; border-bottom: 3px solid var(--rule); position: relative; }
+  .serial {
+    font-family: 'Space Mono', monospace; font-size: 12px;
+    letter-spacing: .22em; text-transform: uppercase; color: var(--ink-mute);
+    margin-bottom: 20px; display: flex; justify-content: space-between;
+  }
+  .serial b { color: var(--ink); }
+  h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 900; font-size: clamp(72px, 12vw, 180px);
+    line-height: 0.82; letter-spacing: -0.055em; text-transform: uppercase;
+    margin: 0; color: var(--ink);
+    font-stretch: condensed;
+  }
+  h1 span { color: var(--orange); }
+  .h1-overlay {
+    position: absolute; top: 60px; right: 0; transform: rotate(4deg);
+    font-family: 'Archivo', sans-serif; font-weight: 900;
+    background: var(--hi-vis); color: var(--ink);
+    padding: 10px 18px; font-size: 14px; letter-spacing: .1em;
+    text-transform: uppercase; border: 2px solid var(--ink);
+    box-shadow: 6px 6px 0 0 var(--ink);
+  }
+  .lede {
+    display: grid; grid-template-columns: 1fr 1.2fr; gap: 56px; margin-top: 44px;
+  }
+  .lede p {
+    font-size: 19px; line-height: 1.4; margin: 0;
+    max-width: 42ch; color: var(--ink);
+  }
+  .cta-row {
+    display: flex; align-items: stretch; border: 3px solid var(--ink);
+    background: var(--concrete); box-shadow: 10px 10px 0 0 var(--hi-vis);
+    height: 64px;
+  }
+  .cta-row input {
+    flex: 1; border: none; background: transparent; padding: 0 20px;
+    font-family: 'Space Mono', monospace; font-size: 15px; color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .cta-row input::placeholder { color: var(--ink-mute); }
+  .cta-row input:focus { outline: none; background: var(--hi-vis); }
+  .cta-row button {
+    background: var(--ink); color: var(--concrete); border: none;
+    border-left: 3px solid var(--ink); padding: 0 28px;
+    font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 14px;
+    letter-spacing: .14em; text-transform: uppercase; cursor: pointer;
+  }
+  .cta-row button:hover { background: var(--orange); color: var(--ink); }
+
+  /* ── METRICS STRIP ────────────────────────────────────── */
+  .metrics {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    margin-top: 48px; border: 3px solid var(--rule);
+  }
+  .metric { padding: 22px 22px 18px; border-right: 3px solid var(--rule); position: relative; }
+  .metric:last-child { border-right: none; }
+  .metric .num {
+    font-family: 'Unbounded', sans-serif; font-weight: 800;
+    font-size: 56px; line-height: 1; letter-spacing: -0.03em;
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .metric .num .unit { font-size: 20px; color: var(--ink-mute); margin-left: 4px; }
+  .metric .label {
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .16em; color: var(--ink-mute);
+    margin-top: 12px;
+  }
+  .metric.accent { background: var(--hi-vis); }
+  .metric.accent .num, .metric.accent .label { color: var(--ink); }
+
+  /* ── RUN REPORT ───────────────────────────────────────── */
+  .report { margin-top: 56px; display: grid; grid-template-columns: 280px 1fr; gap: 0; border: 3px solid var(--rule); background: var(--concrete); }
+  .report-left { padding: 28px; background: var(--ink); color: var(--concrete); border-right: 3px solid var(--rule); }
+  .report-left .kicker { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: var(--hi-vis); margin-bottom: 10px; }
+  .report-left h2 {
+    font-family: 'Unbounded', sans-serif; font-weight: 800;
+    font-size: 42px; line-height: 0.92; letter-spacing: -0.03em;
+    margin: 0 0 20px; text-transform: uppercase; color: var(--concrete);
+  }
+  .report-left .verdict-block {
+    margin-top: 28px; padding-top: 24px; border-top: 2px solid var(--hi-vis);
+  }
+  .report-left .verdict-label { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--hi-vis); letter-spacing: .2em; text-transform: uppercase; }
+  .report-left .verdict-val {
+    font-family: 'Unbounded', sans-serif; font-weight: 900;
+    font-size: 28px; line-height: 1; letter-spacing: -0.02em; margin-top: 6px;
+    text-transform: uppercase;
+  }
+  .report-left .meta { margin-top: 24px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--concrete); opacity: .8; letter-spacing: .05em; }
+  .report-left .meta b { color: var(--hi-vis); }
+
+  .report-right { padding: 0; }
+  .step-row {
+    display: grid; grid-template-columns: 60px 1fr auto; gap: 20px; align-items: center;
+    padding: 16px 28px; border-bottom: 2px solid var(--rule);
+  }
+  .step-row:last-child { border-bottom: none; }
+  .step-row .idx {
+    font-family: 'Unbounded', sans-serif; font-weight: 900;
+    font-size: 28px; line-height: 1; color: var(--orange);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.03em;
+  }
+  .step-row .txt { font-family: 'Archivo', sans-serif; font-weight: 500; font-size: 15px; }
+  .step-row .txt code {
+    font-family: 'Space Mono', monospace; font-size: 12px; background: var(--ink);
+    color: var(--concrete); padding: 1px 6px;
+  }
+  .step-row .dur {
+    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;
+    padding: 4px 8px; background: var(--concrete-2);
+    letter-spacing: .12em; color: var(--ink);
+  }
+  .step-row.ok { background: var(--concrete); }
+  .step-row.ok .idx { color: var(--pass); }
+
+  .goal {
+    margin: 0; padding: 22px 28px; background: var(--hi-vis);
+    border-top: 3px solid var(--rule); display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: baseline;
+  }
+  .goal .label {
+    font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: 14px;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink);
+  }
+  .goal p { font-family: 'Archivo', sans-serif; font-weight: 600; font-size: 17px; margin: 0; color: var(--ink); }
+
+  /* ── footer ───────────────────────────────────────────── */
+  .foot { margin-top: 56px; padding-top: 24px; border-top: 3px solid var(--rule); display: flex; justify-content: space-between; gap: 28px; flex-wrap: wrap; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-mute); }
+  .foot b { color: var(--ink); }
+
+  @media (max-width: 900px) {
+    .lede, .report { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .metrics .metric:nth-child(2) { border-right: none; }
+    .metrics .metric:nth-child(1), .metrics .metric:nth-child(2) { border-bottom: 3px solid var(--rule); }
+  }
+</style>
+</head>
+<body>
+  <div class="hazard"></div>
+  <div class="page">
+    <header class="header">
+      <h1 class="brand">VT<span>.</span>AI</h1>
+      <div class="tag">VISION · TEST · OSS · v2.0</div>
+      <nav class="nav-brutal"><a class="active">TESTS</a><a>RUNS</a><a>SCAN</a><a>BASELINES</a></nav>
+      <button class="toggle" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='light'?'dark':'light';this.textContent=r.dataset.theme==='light'?'[ LIGHT ]':'[ DARK ]'">[ LIGHT ]</button>
+    </header>
+
+    <section class="hero">
+      <div class="serial"><span>BLDG 04 · UI OBSERVATORY · STATION §A</span><span><b>LOG 2026-04-22</b> · 14:22:03Z</span></div>
+      <h1>OBSERVE<br/>EVERY<br/><span>CHANGE.</span></h1>
+      <div class="h1-overlay">New signal ↗</div>
+      <div class="lede">
+        <p>Point the instrument at a URL. It crawls, clicks, verifies, and logs every deviation against the baseline — line by line, frame by frame.</p>
+        <div class="cta-row">
+          <input placeholder="https://your-site.com" value="https://acme.example.com" />
+          <button>RUN →</button>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="num">267<span class="unit">/267</span></div><div class="label">Unit tests passing</div></div>
+        <div class="metric accent"><div class="num">4.2<span class="unit">S</span></div><div class="label">Avg run time</div></div>
+        <div class="metric"><div class="num">11</div><div class="label">Story templates</div></div>
+        <div class="metric"><div class="num">0<span class="unit">%</span></div><div class="label">AI-slop detected</div></div>
+      </div>
+    </section>
+
+    <section class="report">
+      <aside class="report-left">
+        <div class="kicker">RUN · 20260422 · 14:22Z</div>
+        <h2>Login / happy path</h2>
+        <p class="meta">TARGET — <b>acme.example.com</b><br/>BROWSER — chromium · main<br/>STEPS — 07 · DURATION — 4.23s</p>
+        <div class="verdict-block">
+          <div class="verdict-label">Verdict</div>
+          <div class="verdict-val">PASSED<br/>Goal ✓</div>
+        </div>
+      </aside>
+      <div class="report-right">
+        <div class="step-row ok"><span class="idx">01</span><span class="txt">Navigate → <code>/login</code></span><span class="dur">842 ms</span></div>
+        <div class="step-row ok"><span class="idx">02</span><span class="txt">Type admin@acme.co in the email field</span><span class="dur">120 ms</span></div>
+        <div class="step-row ok"><span class="idx">03</span><span class="txt">Type password into <code>input[type=password]</code></span><span class="dur">98 ms</span></div>
+        <div class="step-row ok"><span class="idx">04</span><span class="txt">Click “Sign In”</span><span class="dur">210 ms</span></div>
+        <div class="step-row ok"><span class="idx">05</span><span class="txt">Wait for the dashboard</span><span class="dur">1.1 s</span></div>
+        <div class="step-row ok"><span class="idx">06</span><span class="txt">Verify “Welcome, admin” is visible</span><span class="dur">340 ms</span></div>
+        <div class="step-row ok"><span class="idx">07</span><span class="txt">Goal — URL ends <code>/dashboard</code></span><span class="dur">22 ms</span></div>
+        <div class="goal"><span class="label">GOAL</span><p>URL ends <code style="background:transparent;color:var(--ink);font-family:inherit">/dashboard</code> — Welcome is visible — no error toasts.</p></div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>VT.AI · OPEN SOURCE · MIT · <b>GH ↗</b></span>
+      <span><b>PROOF 03</b> · BRUTALIST OBSERVATORY · Unbounded · Archivo · Space Mono · hazard-yellow + orange on concrete</span>
+    </footer>
+  </div>
+  <div class="hazard" style="margin-top:0"></div>
+</body>
+</html>
