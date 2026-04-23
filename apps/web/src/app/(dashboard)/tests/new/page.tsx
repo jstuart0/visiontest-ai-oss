@@ -1,39 +1,23 @@
 'use client';
 
+// New test — Blueprint / drawing brief.
+//
+// The page is a drafting brief: you describe the journey (left) and a
+// live preview of the compiled part renders on the right. All fields
+// read as named dimension callouts — mono-uppercase label, .vt-input
+// body.
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowLeft,
-  FlaskConical,
   Loader2,
   Wand2,
-  Code,
-  FileText,
   AlertCircle,
   CheckCircle2,
-  HelpCircle,
-  Radio,
-  BookOpen,
-  Target,
   Info,
-  Sparkles,
-  ListPlus,
-  MessageSquare,
 } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 import { useCurrentProject } from '@/hooks/useProject';
 import { api, featuresApi, type Platform } from '@/lib/api';
 import { DeviceSelector } from '@/components/devices/DeviceSelector';
@@ -42,7 +26,7 @@ import { StepEditor } from '@/components/step-editor';
 import { toast } from 'sonner';
 
 // -----------------------------------------------------------------------
-// Types that mirror the API response shape.
+// Types — mirror the API response shape. Unchanged.
 // -----------------------------------------------------------------------
 interface TestStep {
   type: string;
@@ -88,50 +72,19 @@ interface Template {
   usageCount: number;
 }
 
-// Slash-command picker entries. Each line below maps to a scaffold the
-// editor inserts at the cursor position when the user picks it.
+// Slash-command picker — same scaffolds as before.
 const SLASH_COMMANDS: Array<{
   key: string;
   label: string;
   template: string;
   description: string;
 }> = [
-  {
-    key: '/click',
-    label: '/click',
-    template: 'Click the "{target}"',
-    description: 'Click an element by text',
-  },
-  {
-    key: '/type',
-    label: '/type',
-    template: 'Type "{value}" in the {target}',
-    description: 'Type into an input',
-  },
-  {
-    key: '/wait',
-    label: '/wait',
-    template: 'Wait for the {target}',
-    description: 'Wait for a selector',
-  },
-  {
-    key: '/assert',
-    label: '/assert',
-    template: 'Verify "{target}" is visible',
-    description: 'Assert visible',
-  },
-  {
-    key: '/missing',
-    label: '/missing',
-    template: 'Verify "{target}" is NOT visible',
-    description: 'Assert hidden',
-  },
-  {
-    key: '/goal',
-    label: '/goal',
-    template: 'The URL contains {path}. "{target}" is visible.',
-    description: 'Goal template (goes in Goal field)',
-  },
+  { key: '/click', label: '/click', template: 'Click the "{target}"', description: 'Click an element by text' },
+  { key: '/type', label: '/type', template: 'Type "{value}" in the {target}', description: 'Type into an input' },
+  { key: '/wait', label: '/wait', template: 'Wait for the {target}', description: 'Wait for a selector' },
+  { key: '/assert', label: '/assert', template: 'Verify "{target}" is visible', description: 'Assert visible' },
+  { key: '/missing', label: '/missing', template: 'Verify "{target}" is NOT visible', description: 'Assert hidden' },
+  { key: '/goal', label: '/goal', template: 'The URL contains {path}. "{target}" is visible.', description: 'Goal template' },
   {
     key: '/login',
     label: '/login',
@@ -143,35 +96,20 @@ const SLASH_COMMANDS: Array<{
 
 type ConfidenceBadge = 'exact' | 'heuristic' | 'AI' | 'unknown';
 
-// Heuristic map from step type to a confidence badge. The real source-of-
-// truth is the warnings array on the parser response — anything marked
-// AI-interpreted gets the AI badge; runtime `ai` steps get 'unknown'; all
-// other step types are 'exact' because they came out of the regex parser.
-function confidenceFor(
-  step: TestStep,
-  index: number,
-  warnings: string[],
-): ConfidenceBadge {
-  if (step.type === 'ai') {
-    // Worker resolves at runtime — DOM heuristic match.
-    return 'unknown';
-  }
+function confidenceFor(step: TestStep, _i: number, warnings: string[]): ConfidenceBadge {
+  if (step.type === 'ai') return 'unknown';
   const w = warnings.find((w) =>
-    w.toLowerCase().includes(`ai-interpreted`) ||
-    w.toLowerCase().includes(`unrecognized`),
+    w.toLowerCase().includes('ai-interpreted') || w.toLowerCase().includes('unrecognized'),
   );
   if (w) return 'heuristic';
   return 'exact';
 }
 
-const CONFIDENCE_COLORS: Record<ConfidenceBadge, string> = {
-  exact:
-    'bg-emerald-900/40 text-emerald-300 border-emerald-700/50',
-  heuristic:
-    'bg-amber-900/40 text-amber-300 border-amber-700/50',
-  AI: 'bg-blue-900/40 text-blue-300 border-blue-700/50',
-  unknown:
-    'bg-neutral-800 text-neutral-400 border-neutral-700',
+const CONFIDENCE_STYLE: Record<ConfidenceBadge, { color: string; border: string; bg: string; label: string }> = {
+  exact: { color: 'var(--pass)', border: 'var(--pass)', bg: 'var(--pass-soft)', label: 'EXACT' },
+  heuristic: { color: 'var(--warn)', border: 'var(--warn)', bg: 'var(--warn-soft)', label: 'HEURISTIC' },
+  AI: { color: 'var(--accent)', border: 'var(--accent)', bg: 'var(--accent-soft)', label: 'AI' },
+  unknown: { color: 'var(--ink-2)', border: 'var(--rule)', bg: 'transparent', label: '?' },
 };
 
 const STORY_PLACEHOLDER = `Describe the journey, one action per sentence.
@@ -196,21 +134,160 @@ const YAML_EXAMPLE = `- navigate: https://example.com
     value: "admin@example.com"
 - screenshot: after-login`;
 
+// -----------------------------------------------------------------------
+// Atoms
+// -----------------------------------------------------------------------
+
+// A named dimension callout: mono uppercase label, then the input.
+function FieldCallout({
+  label,
+  hint,
+  required,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block space-y-2">
+      <span
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            display: 'inline-block',
+            width: '24px',
+            height: '1px',
+            background: 'currentColor',
+          }}
+        />
+        {label}
+        {required && <span style={{ color: 'var(--accent)' }}>·REQ</span>}
+      </span>
+      {children}
+      {hint && (
+        <span
+          className="block"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '12px',
+            color: 'var(--ink-2)',
+            lineHeight: 1.5,
+          }}
+        >
+          {hint}
+        </span>
+      )}
+    </label>
+  );
+}
+
+// A labeled sheet panel with a leader ("FIG. A · …") at the top.
+function Plate({
+  leader,
+  stamp,
+  children,
+}: {
+  leader: string;
+  stamp?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      style={{
+        border: '1px solid var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 45%, transparent)',
+      }}
+    >
+      <div
+        className="flex items-center justify-between px-4 py-2"
+        style={{
+          borderBottom: '1px solid var(--rule)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        <span>{leader}</span>
+        {stamp && <span style={{ color: 'var(--accent)' }}>{stamp}</span>}
+      </div>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+// Simple tab strip, ruled
+function TabStrip({
+  tabs,
+  value,
+  onChange,
+}: {
+  tabs: { value: string; label: string }[];
+  value: string;
+  onChange: (v: any) => void;
+}) {
+  return (
+    <div
+      className="inline-flex"
+      style={{ border: '1px solid var(--rule-strong)' }}
+    >
+      {tabs.map((t, i) => {
+        const active = t.value === value;
+        return (
+          <button
+            key={t.value}
+            type="button"
+            onClick={() => onChange(t.value)}
+            className="px-4 py-2 transition-colors"
+            style={{
+              borderRight: i < tabs.length - 1 ? '1px solid var(--rule)' : 'none',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: active ? 'var(--bg-0)' : 'var(--ink-1)',
+              background: active ? 'var(--accent)' : 'transparent',
+              fontVariantNumeric: 'tabular-nums',
+              cursor: 'pointer',
+            }}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------
+// Page
+// -----------------------------------------------------------------------
 export default function NewTestPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { project } = useCurrentProject();
 
-  // Deep-link params:
-  //   ?template=<slug>  → pre-fill from the picked template
-  //   ?featureId=<id>   → auto-link the new test to a Feature scenario group
   const templateSlug = searchParams.get('template');
   const presetFeatureId = searchParams.get('featureId');
 
-  const [activeTab, setActiveTab] = useState<'story' | 'record' | 'script'>(
-    'story',
-  );
+  const [activeTab, setActiveTab] = useState<'story' | 'record' | 'script'>('story');
 
   // Shared test metadata
   const [name, setName] = useState('');
@@ -222,9 +299,6 @@ export default function NewTestPage() {
   const [story, setStory] = useState('');
   const [goal, setGoal] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
-  // Default-on because visual regression is the point — story tests
-  // without screenshots can't be baselined and can't compare against
-  // anything. User can toggle off here if they don't want them.
   const [screenshotEveryStep, setScreenshotEveryStep] = useState(true);
   const [videoRecording, setVideoRecording] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -236,18 +310,10 @@ export default function NewTestPage() {
   const [parseWarnings, setParseWarnings] = useState<string[]>([]);
   const [goalResult, setGoalResult] = useState<GoalCompileResult | null>(null);
   const [showPatternHelp, setShowPatternHelp] = useState(false);
-  const [captureMode, setCaptureMode] = useState<'story' | 'incremental'>(
-    'story',
-  );
-  // Incremental mode: single input at the top, each Enter commits a step.
-  const [nextStep, setNextStep] = useState('');
-  // Slash-command picker: visible when the textarea's current line starts
-  // with "/" and we want to show candidate completions.
   const [slashOpen, setSlashOpen] = useState(false);
   const storyRef = useRef<HTMLTextAreaElement | null>(null);
-  const nextStepRef = useRef<HTMLInputElement | null>(null);
 
-  // Script tab state (YAML / JSON)
+  // Script tab state
   const [scriptMode, setScriptMode] = useState<'natural' | 'yaml'>('yaml');
   const [script, setScript] = useState('');
   const [scriptSteps, setScriptSteps] = useState<TestStep[]>([]);
@@ -257,38 +323,31 @@ export default function NewTestPage() {
   const [mobileSteps, setMobileSteps] = useState<TestStep[]>([]);
 
   // ---------------------------------------------------------------------
-  // Fetch goal pattern reference once on mount for the help drawer.
+  // Queries (unchanged).
   // ---------------------------------------------------------------------
   const { data: patternData } = useQuery<{ patterns: GoalPattern[] }>({
     queryKey: ['goal-patterns'],
     queryFn: async () => api.get('/tests/goal-patterns'),
   });
 
-  // Fetch built-in templates for the chips row above the textarea.
   const { data: templateData } = useQuery<{ templates: Template[] }>({
     queryKey: ['templates'],
     queryFn: async () => api.get('/templates'),
   });
 
-  // Fetch the Feature label when we're adding a scenario via
-  // ?featureId=<id>. Lets us show a breadcrumb-style badge so the user
-  // knows which Feature the new test will belong to.
   const { data: presetFeature } = useQuery({
     queryKey: ['feature', presetFeatureId],
     queryFn: () => featuresApi.get(presetFeatureId!),
     enabled: !!presetFeatureId,
   });
 
-  // Pre-fill from ?template=<slug> deep link (used by the /templates
-  // gallery's "Use template" button). Only fires once on first load,
-  // and only if the user hasn't started typing.
   const templateApplied = useRef(false);
   useEffect(() => {
     if (templateApplied.current) return;
     if (!templateSlug || !templateData?.templates) return;
     const t = templateData.templates.find((x) => x.slug === templateSlug);
     if (!t) return;
-    if (story.trim() || goal.trim() || name.trim()) return; // don't stomp
+    if (story.trim() || goal.trim() || name.trim()) return;
     setStory(t.storyText);
     if (t.goalText) setGoal(t.goalText);
     setName(t.title);
@@ -296,9 +355,7 @@ export default function NewTestPage() {
     toast.success(`Template "${t.title}" loaded — edit the tokens and run`);
   }, [templateSlug, templateData, story, goal, name]);
 
-  // ---------------------------------------------------------------------
-  // Debounced live preview for the Story tab.
-  // ---------------------------------------------------------------------
+  // Debounced story preview
   const storyDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (storyDebounce.current) clearTimeout(storyDebounce.current);
@@ -313,7 +370,7 @@ export default function NewTestPage() {
         setParsedSteps(result.steps);
         setParseWarnings(result.warnings || []);
       } catch {
-        // silent — user is mid-typing
+        /* silent */
       }
     }, 450);
     return () => {
@@ -321,7 +378,7 @@ export default function NewTestPage() {
     };
   }, [story, activeTab, project?.id]);
 
-  // Debounced goal compile — so the user sees canSave status live.
+  // Debounced goal compile
   const goalDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (goalDebounce.current) clearTimeout(goalDebounce.current);
@@ -337,7 +394,7 @@ export default function NewTestPage() {
         });
         setGoalResult(result);
       } catch {
-        // silent
+        /* silent */
       }
     }, 400);
     return () => {
@@ -346,12 +403,11 @@ export default function NewTestPage() {
   }, [goal, project?.id]);
 
   // ---------------------------------------------------------------------
-  // Submission — Story tab uses POST /tests/story, Script tab uses the
-  // existing POST /tests path (parser → step array).
+  // Mutations (unchanged).
   // ---------------------------------------------------------------------
   const storyMutation = useMutation({
-    mutationFn: async () => {
-      return api.post('/tests/story', {
+    mutationFn: async () =>
+      api.post('/tests/story', {
         projectId: project!.id,
         name,
         description: description || undefined,
@@ -361,11 +417,10 @@ export default function NewTestPage() {
         featureId: presetFeatureId || undefined,
         screenshotEveryStep,
         videoRecording,
-      });
-    },
+      }),
     onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ['tests', project?.id] });
-      toast.success('Story test created');
+      toast.success('Part drafted');
       router.push(`/tests/${res.test.id}`);
     },
     onError: (error: { message: string }) => {
@@ -388,7 +443,7 @@ export default function NewTestPage() {
     },
     onSuccess: (test: any) => {
       queryClient.invalidateQueries({ queryKey: ['tests', project?.id] });
-      toast.success('Test created');
+      toast.success('Part drafted');
       router.push(`/tests/${test.id}`);
     },
     onError: (error: { message: string }) => {
@@ -425,9 +480,7 @@ export default function NewTestPage() {
 
   const canSaveScript = useMemo(() => {
     if (!name.trim()) return false;
-    return isMobileNative
-      ? mobileSteps.length > 0
-      : scriptSteps.length > 0;
+    return isMobileNative ? mobileSteps.length > 0 : scriptSteps.length > 0;
   }, [name, scriptSteps, mobileSteps, isMobileNative]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -450,278 +503,204 @@ export default function NewTestPage() {
 
   if (!project) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <div className="text-muted-foreground mb-4">
-          Please select a project first
-        </div>
-        <Link href="/">
-          <Button variant="outline">Go to Dashboard</Button>
-        </Link>
-      </div>
+      <EditorialHero
+        width="wide"
+        sheet="— · NO PROJECT"
+        title={
+          <>
+            pick a <em>project</em> first.
+          </>
+        }
+        lead="A draft part must belong to a commission. Choose a project from the dashboard to begin a new part."
+        back={{ href: '/dashboard', label: 'BACK TO DASHBOARD' }}
+      />
     );
   }
 
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+
   return (
-    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      {/* ── Editorial hero — replaces the back-button + small-heading chrome ── */}
-      <header className="mb-10 pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            type="button"
-            onClick={() => router.push('/tests')}
-            className="vt-kicker inline-flex items-center gap-2 transition-colors"
-            style={{ color: 'var(--ink-2)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
-          >
-            <ArrowLeft className="w-3 h-3" /> back to tests
-          </button>
-          <span className="vt-eyebrow">§ Author a test</span>
-        </div>
-        <h1
-          className="vt-display"
+    <EditorialHero
+      width="wide"
+      back={{ href: '/tests', label: 'BACK TO PARTS SCHEDULE' }}
+      sheet={`02 · ${project.name?.slice(0, 24) || 'PROJECT'}`}
+      eyebrow={`§ ${isoDate} · DRAFTING BRIEF`}
+      revision="REV · 00 · NEW"
+      title={
+        <>
+          describe the <em>journey</em>.<br />
+          we&apos;ll draft the part.
+        </>
+      }
+      lead={
+        <>
+          Prose on the left, a live compile on the right, a success goal
+          below. Every sentence is badged for confidence before a single
+          pixel is captured.
+        </>
+      }
+    >
+      {presetFeature && (
+        <div
+          className="inline-flex items-center gap-3 px-3 py-2"
           style={{
-            fontSize: 'clamp(44px, 6vw, 84px)',
-            lineHeight: 0.96,
+            background: 'var(--accent-soft)',
+            border: '1px solid var(--accent)',
+            color: 'var(--accent)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
           }}
         >
-          Describe the <em>journey</em>.<br />
-          We&apos;ll write the test.
-        </h1>
-        <p
-          className="mt-5 vt-italic"
-          style={{
-            fontVariationSettings: '"opsz" 24',
-            fontSize: '19px',
-            color: 'var(--ink-1)',
-            maxWidth: '60ch',
-          }}
-        >
-          Prose on the left. A live preview on the right. A goal at the bottom.
-          Every sentence gets a confidence badge before a single pixel is
-          captured.
-        </p>
-        {presetFeature && (
-          <div
-            className="mt-6 inline-flex items-center gap-3 px-3 py-1.5 text-xs"
+          <span style={{ color: 'var(--ink-2)' }}>binding to feature</span>
+          <span
             style={{
-              background: 'var(--accent-soft)',
-              border: '1px solid var(--accent)',
-              color: 'var(--accent)',
-              fontFamily: 'var(--font-mono-feature)',
-              letterSpacing: '0.08em',
+              color: 'var(--ink-0)',
+              fontFamily: 'var(--font-display)',
+              textTransform: 'lowercase',
+              letterSpacing: '0.02em',
+              fontSize: '14px',
             }}
           >
-            <span style={{ color: 'var(--ink-2)' }}>binding to feature</span>
-            <span style={{ color: 'var(--ink-0)', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
-              {presetFeature.name}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                const url = new URL(window.location.href);
-                url.searchParams.delete('featureId');
-                router.replace(url.pathname + url.search);
-              }}
-              style={{ color: 'var(--ink-2)' }}
-              title="Remove feature link"
-            >
-              ×
-            </button>
+            {presetFeature.name}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('featureId');
+              router.replace(url.pathname + url.search);
+            }}
+            style={{ color: 'var(--ink-2)', cursor: 'pointer' }}
+            title="Remove feature link"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* ========== PART IDENTITY ========== */}
+        <Plate leader="FIG. A · PART IDENTITY" stamp="REQUIRED">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FieldCallout label="PART NAME" required>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="login · happy path"
+                className="vt-input"
+              />
+            </FieldCallout>
+            <FieldCallout label="GOAL / DESCRIPTION">
+              <input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="one-line summary · optional"
+                className="vt-input"
+              />
+            </FieldCallout>
           </div>
-        )}
-      </header>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Test Details — always visible */}
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground flex items-center gap-2">
-              <FlaskConical className="w-5 h-5" /> Test details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Name <span className="text-red-400">*</span>
-                </label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Login happy path"
-                  className="bg-muted border-border text-foreground"
+          {activeTab !== 'story' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <FieldCallout label="ENVIRONMENT">
+                <select
+                  value={platform}
+                  onChange={(e) => {
+                    setPlatform(e.target.value as Platform);
+                    setDeviceProfileId(undefined);
+                    setScriptSteps([]);
+                    setMobileSteps([]);
+                    setScript('');
+                  }}
+                  className="vt-input"
+                >
+                  <option value="WEB">WEB · PLAYWRIGHT</option>
+                  <option value="MOBILE_WEB">MOBILE WEB · EMULATED</option>
+                  <option value="IOS">IOS · APPIUM</option>
+                  <option value="ANDROID">ANDROID · APPIUM</option>
+                </select>
+              </FieldCallout>
+              <FieldCallout label="DEVICE PROFILE">
+                <DeviceSelector
+                  projectId={project?.id}
+                  platform={platform}
+                  value={deviceProfileId}
+                  onChange={(id) => setDeviceProfileId(id)}
+                  className="w-full"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Description
-                </label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Optional"
-                  className="bg-muted border-border text-foreground"
-                />
-              </div>
+              </FieldCallout>
             </div>
+          )}
+        </Plate>
 
-            {activeTab !== 'story' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Platform
-                  </label>
-                  <select
-                    value={platform}
-                    onChange={(e) => {
-                      setPlatform(e.target.value as Platform);
-                      setDeviceProfileId(undefined);
-                      setScriptSteps([]);
-                      setMobileSteps([]);
-                      setScript('');
-                    }}
-                    className="w-full h-10 rounded-md bg-muted border border-border text-foreground px-3 text-sm"
-                  >
-                    <option value="WEB">🌐 Web (Playwright)</option>
-                    <option value="MOBILE_WEB">📱 Mobile Web (Emulated)</option>
-                    <option value="IOS">🍎 iOS (Appium)</option>
-                    <option value="ANDROID">🤖 Android (Appium)</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Device profile
-                  </label>
-                  <DeviceSelector
-                    projectId={project?.id}
-                    platform={platform}
-                    value={deviceProfileId}
-                    onChange={(id) => setDeviceProfileId(id)}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* ========== TAB STRIP ========== */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            AUTHORING MODE
+          </span>
+          <TabStrip
+            tabs={[
+              { value: 'story', label: 'STORY' },
+              { value: 'record', label: 'RECORD' },
+              { value: 'script', label: 'SCRIPT' },
+            ]}
+            value={activeTab}
+            onChange={(v) => setActiveTab(v)}
+          />
+        </div>
 
-        {/* Tabs */}
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as any)}
-          className="w-full"
-        >
-          <TabsList className="bg-muted grid w-full grid-cols-3 max-w-md">
-            <TabsTrigger value="story" className="data-[state=active]:bg-accent">
-              <BookOpen className="w-4 h-4 mr-2" /> Story
-            </TabsTrigger>
-            <TabsTrigger
-              value="record"
-              className="data-[state=active]:bg-accent"
-            >
-              <Radio className="w-4 h-4 mr-2" /> Record
-            </TabsTrigger>
-            <TabsTrigger
-              value="script"
-              className="data-[state=active]:bg-accent"
-            >
-              <Code className="w-4 h-4 mr-2" /> Script
-            </TabsTrigger>
-          </TabsList>
-
-          {/* ------------------------------------------------------------ */}
-          {/* STORY TAB                                                     */}
-          {/* ------------------------------------------------------------ */}
-          <TabsContent value="story" className="mt-6 space-y-6">
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-foreground flex items-center gap-2">
-                    <BookOpen className="w-5 h-5" /> The journey
-                  </CardTitle>
-                  <div className="flex items-center gap-2 text-xs">
-                    <Badge
-                      variant="outline"
-                      className="bg-emerald-900/30 text-emerald-300 border-emerald-700/50"
-                    >
-                      exact
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="bg-amber-900/30 text-amber-300 border-amber-700/50"
-                    >
-                      heuristic
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="bg-neutral-800 text-neutral-400 border-neutral-700"
-                    >
-                      unknown
-                    </Badge>
-                  </div>
-                </div>
-                <CardDescription className="text-muted-foreground">
-                  One action per sentence. URLs are auto-detected. Quoted text
-                  becomes a click or type target.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Template chips + capture mode toggle row. Shown only on
-                    an empty story so the editor stays uncluttered once the
-                    user is typing. */}
-                {story.trim().length === 0 && (
+        {/* ========== STORY TAB ========== */}
+        {activeTab === 'story' && (
+          <>
+            {/* Templates strip (only on empty) */}
+            {story.trim().length === 0 && (
+              <Plate leader="FIG. B · REFERENCE DRAWINGS" stamp="OPTIONAL">
+                <div className="space-y-4">
+                  {/* Import from bug report */}
                   <div className="space-y-3">
-                    {/* Import from… */}
-                    <div className="flex items-center gap-2">
-                      <Button
+                    <div className="flex items-center gap-3">
+                      <button
                         type="button"
-                        variant="outline"
-                        size="sm"
                         onClick={() => setShowImport(!showImport)}
+                        className="vt-btn"
                       >
-                        <MessageSquare className="w-4 h-4 mr-1" />
-                        {showImport ? 'Hide import' : 'Import from bug report'}
-                      </Button>
+                        {showImport ? 'HIDE IMPORT' : 'IMPORT BUG REPORT'}
+                      </button>
                       {showImport && (
                         <select
                           value={importSource}
-                          onChange={(e) =>
-                            setImportSource(e.target.value as any)
-                          }
-                          className="h-9 rounded-md bg-muted border border-border text-foreground px-2 text-sm"
+                          onChange={(e) => setImportSource(e.target.value as any)}
+                          className="vt-input"
+                          style={{ width: 'auto', minWidth: '180px', padding: '8px 12px' }}
                         >
-                          <option value="markdown">Markdown</option>
-                          <option value="github">GitHub issue</option>
-                          <option value="jira">Jira ticket</option>
-                          <option value="slack">Slack message</option>
+                          <option value="markdown">MARKDOWN</option>
+                          <option value="github">GITHUB ISSUE</option>
+                          <option value="jira">JIRA TICKET</option>
+                          <option value="slack">SLACK MESSAGE</option>
                         </select>
                       )}
                     </div>
                     {showImport && (
                       <div className="space-y-2">
-                        <Textarea
+                        <textarea
                           value={importText}
                           onChange={(e) => setImportText(e.target.value)}
-                          placeholder={`Paste a bug report here. We extract the steps-to-reproduce as your story, the expected result as the goal, and the actual result as NOT-visible assertions.
-
-Example:
-# Login fails with valid credentials
-
-## Steps to reproduce
-1. Go to /login
-2. Click "Sign in"
-
-## Expected
-User is redirected to /dashboard
-
-## Actual
-"Invalid credentials" toast appears`}
-                          className="bg-muted border-border text-foreground font-mono min-h-[160px]"
+                          placeholder={`Paste a bug report. We extract steps-to-reproduce as the story, expected as the goal, and actual as NOT-visible assertions.`}
+                          className="vt-input"
+                          style={{ minHeight: '160px', fontFamily: 'var(--font-mono)' }}
                         />
-                        <Button
+                        <button
                           type="button"
-                          size="sm"
                           disabled={importText.trim().length < 20}
                           onClick={async () => {
                             try {
@@ -736,670 +715,751 @@ User is redirected to /dashboard
                               });
                               setStory(result.story);
                               if (result.goal) setGoal(result.goal);
-                              if (result.title && !name)
-                                setName(result.title);
+                              if (result.title && !name) setName(result.title);
                               setShowImport(false);
                               setImportText('');
-                              toast.success('Imported bug report');
+                              toast.success('Bug report imported');
                             } catch (error: any) {
                               toast.error(error.message || 'Import failed');
                             }
                           }}
+                          className="vt-btn vt-btn--primary"
                         >
-                          Extract
-                        </Button>
-                      </div>
-                    )}
-
-                    {templateData?.templates && templateData.templates.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                          <Sparkles className="w-3.5 h-3.5" />
-                          Start from a template
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {templateData.templates.map((t) => (
-                            <button
-                              key={t.slug}
-                              type="button"
-                              onClick={() => {
-                                setStory(t.storyText);
-                                if (t.goalText) setGoal(t.goalText);
-                                api
-                                  .post(`/templates/${t.slug}/pick`, {
-                                    projectId: project?.id,
-                                  })
-                                  .catch(() => {});
-                              }}
-                              className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-accent text-foreground border border-border transition-colors"
-                              title={t.description}
-                            >
-                              {t.title}
-                            </button>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setStory('');
-                              setGoal('');
-                            }}
-                            className="text-xs px-3 py-1.5 rounded-full bg-transparent text-muted-foreground hover:text-foreground border border-border border-dashed"
-                          >
-                            Blank
-                          </button>
-                        </div>
+                          EXTRACT
+                        </button>
                       </div>
                     )}
                   </div>
-                )}
 
-                {/* Capture mode toggle */}
-                <div className="flex items-center gap-1 text-xs w-fit bg-muted rounded-md p-1">
-                  <button
-                    type="button"
-                    onClick={() => setCaptureMode('story')}
-                    className={`px-3 py-1 rounded ${
-                      captureMode === 'story'
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    <BookOpen className="w-3.5 h-3.5 inline mr-1.5" />
-                    Story
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCaptureMode('incremental')}
-                    className={`px-3 py-1 rounded ${
-                      captureMode === 'incremental'
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    <ListPlus className="w-3.5 h-3.5 inline mr-1.5" />
-                    Incremental
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Left pane: the story */}
-                  <div className="space-y-3 relative">
-                    {captureMode === 'story' ? (
-                      <>
-                        <Textarea
-                          ref={storyRef}
-                          value={story}
-                          onChange={(e) => {
-                            setStory(e.target.value);
-                            // Open slash picker when the current line
-                            // begins with "/" followed by word chars only.
-                            const textarea = e.target;
-                            const cursor = textarea.selectionStart;
-                            const before = textarea.value.slice(0, cursor);
-                            const lineStart =
-                              before.lastIndexOf('\n') + 1;
-                            const line = before.slice(lineStart);
-                            setSlashOpen(/^\/[a-z]*$/i.test(line));
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Escape') setSlashOpen(false);
-                          }}
-                          placeholder={STORY_PLACEHOLDER}
-                          className="bg-muted border-border text-foreground font-mono min-h-[300px]"
-                        />
-                        {slashOpen && (
-                          <div className="absolute left-0 right-0 top-0 -translate-y-full mb-2 bg-popover border border-border rounded-md shadow-lg max-h-64 overflow-y-auto">
-                            {SLASH_COMMANDS.filter((c) => {
-                              // Filter by prefix of the slash-token
-                              const textarea = storyRef.current;
-                              if (!textarea) return true;
-                              const cursor = textarea.selectionStart;
-                              const before = textarea.value.slice(0, cursor);
-                              const lineStart =
-                                before.lastIndexOf('\n') + 1;
-                              const line = before.slice(lineStart);
-                              return c.key.startsWith(line.toLowerCase());
-                            }).map((cmd) => (
-                              <button
-                                type="button"
-                                key={cmd.key}
-                                className="w-full text-left px-3 py-2 hover:bg-accent border-b border-border/50 last:border-0"
-                                onClick={() => {
-                                  const textarea = storyRef.current;
-                                  if (!textarea) return;
-                                  const cursor = textarea.selectionStart;
-                                  const before = textarea.value.slice(
-                                    0,
-                                    cursor,
-                                  );
-                                  const after = textarea.value.slice(cursor);
-                                  const lineStart =
-                                    before.lastIndexOf('\n') + 1;
-                                  // Drop the partial slash-token, insert
-                                  // the template scaffold.
-                                  const newVal =
-                                    before.slice(0, lineStart) +
-                                    cmd.template +
-                                    after;
-                                  setStory(newVal);
-                                  setSlashOpen(false);
-                                  requestAnimationFrame(() => {
-                                    textarea.focus();
-                                    const pos =
-                                      lineStart + cmd.template.length;
-                                    textarea.setSelectionRange(pos, pos);
-                                  });
-                                }}
-                              >
-                                <div className="flex items-baseline gap-2">
-                                  <span className="font-mono text-sm text-foreground">
-                                    {cmd.label}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {cmd.description}
-                                  </span>
-                                </div>
-                                <div className="text-xs font-mono text-muted-foreground mt-0.5 truncate">
-                                  {cmd.template.split('\n')[0]}
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <div className="space-y-2">
-                          <label className="text-xs uppercase tracking-wider text-muted-foreground">
-                            Step {parsedSteps.length + 1} — what should happen next?
-                          </label>
-                          <Input
-                            ref={nextStepRef}
-                            value={nextStep}
-                            onChange={(e) => setNextStep(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && nextStep.trim()) {
-                                e.preventDefault();
-                                // Append as a new sentence to the story
-                                const s = nextStep.trim().replace(/\.$/, '');
-                                setStory((prev) =>
-                                  prev.trim()
-                                    ? `${prev.trim()}\n${s}`
-                                    : s,
-                                );
-                                setNextStep('');
-                                requestAnimationFrame(() => {
-                                  nextStepRef.current?.focus();
-                                });
-                              }
+                  {templateData?.templates && templateData.templates.length > 0 && (
+                    <div className="space-y-3">
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '10px',
+                          letterSpacing: '0.22em',
+                          textTransform: 'uppercase',
+                          color: 'var(--accent)',
+                        }}
+                      >
+                        — TEMPLATES —
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {templateData.templates.map((t) => (
+                          <button
+                            key={t.slug}
+                            type="button"
+                            onClick={() => {
+                              setStory(t.storyText);
+                              if (t.goalText) setGoal(t.goalText);
+                              api
+                                .post(`/templates/${t.slug}/pick`, { projectId: project?.id })
+                                .catch(() => {});
                             }}
-                            placeholder='e.g. click the "Sign in" button'
-                            className="bg-muted border-border text-foreground"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Press <kbd className="px-1 rounded bg-muted-foreground/20">Enter</kbd> to add the step. Backspace
-                            to delete the last one.
-                          </p>
-                        </div>
-                        <div className="bg-muted/40 border border-border rounded-md p-3 min-h-[240px] space-y-1">
-                          {story.trim() === '' ? (
-                            <div className="text-sm text-muted-foreground italic">
-                              No steps yet.
-                            </div>
-                          ) : (
-                            story
-                              .split('\n')
-                              .filter((l) => l.trim())
-                              .map((line, i) => (
-                                <div
-                                  key={i}
-                                  className="text-sm font-mono text-foreground"
-                                >
-                                  <span className="text-muted-foreground w-6 inline-block">
-                                    {i + 1}.
-                                  </span>
-                                  {line}
-                                </div>
-                              ))
-                          )}
-                        </div>
+                            className="vt-btn"
+                            title={t.description}
+                          >
+                            {t.title}
+                          </button>
+                        ))}
                         <button
                           type="button"
                           onClick={() => {
-                            const lines = story.split('\n').filter((l) => l.trim());
-                            lines.pop();
-                            setStory(lines.join('\n'));
+                            setStory('');
+                            setGoal('');
                           }}
-                          disabled={!story.trim()}
-                          className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+                          className="vt-btn vt-btn--ghost"
+                          style={{ borderStyle: 'dashed', borderColor: 'var(--rule)' }}
                         >
-                          ← Remove last step
+                          BLANK
                         </button>
-                      </>
-                    )}
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">
-                        Base URL (optional)
-                      </label>
-                      <Input
-                        value={baseUrl}
-                        onChange={(e) => setBaseUrl(e.target.value)}
-                        placeholder="https://app.example.com"
-                        className="bg-muted border-border text-foreground"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Prepended to relative paths in the story ("/orders" →
-                        "{baseUrl || 'https://...'}/orders").
-                      </p>
-                    </div>
-
-                    {/* Capture toggles — visible so the user knows what
-                        the next run will produce. Defaults to
-                        screenshot-per-step ON because the Set-as-
-                        baseline flow needs frames; user can switch off. */}
-                    <div className="space-y-2 pt-2 border-t border-border">
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Capture
                       </div>
-                      <label className="flex items-start gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={screenshotEveryStep}
-                          onChange={(e) =>
-                            setScreenshotEveryStep(e.target.checked)
-                          }
-                          className="mt-1"
-                        />
-                        <span>
-                          <span className="text-foreground">
-                            Screenshot every step
-                          </span>
-                          <span className="block text-xs text-muted-foreground">
-                            Needed for the film-strip timeline and
-                            Set-as-baseline. Leave on unless you have a
-                            reason not to.
-                          </span>
-                        </span>
-                      </label>
-                      <label className="flex items-start gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={videoRecording}
-                          onChange={(e) => setVideoRecording(e.target.checked)}
-                          className="mt-1"
-                        />
-                        <span>
-                          <span className="text-foreground">Record video</span>
-                          <span className="block text-xs text-muted-foreground">
-                            Full browser session recording. Heavier, but
-                            useful for debugging flaky failures.
-                          </span>
-                        </span>
-                      </label>
                     </div>
-                  </div>
+                  )}
+                </div>
+              </Plate>
+            )}
 
-                  {/* Right pane: live preview */}
-                  <div className="space-y-2">
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider">
-                      Preview
-                    </div>
-                    <div className="bg-muted/40 border border-border rounded-md p-3 min-h-[300px] space-y-1.5">
-                      {parsedSteps.length === 0 ? (
-                        <div className="text-sm text-muted-foreground italic">
-                          Start typing a story — steps will appear here.
-                        </div>
-                      ) : (
-                        parsedSteps.map((step, i) => {
-                          const badge = confidenceFor(step, i, parseWarnings);
-                          return (
-                            <div
-                              key={i}
-                              className="flex items-start gap-2 text-sm"
-                            >
-                              <span className="text-muted-foreground w-6 text-right tabular-nums">
-                                {i + 1}.
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className={`${CONFIDENCE_COLORS[badge]} text-[10px] px-1.5 py-0 font-mono`}
-                                title={
-                                  badge === 'unknown'
-                                    ? 'Will use DOM analysis at runtime'
-                                    : badge
-                                }
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* LEFT — the journey */}
+              <Plate leader="FIG. C · JOURNEY (PROSE)" stamp="ONE LINE · ONE ACTION">
+                <div className="space-y-4">
+                  <div className="relative">
+                    <textarea
+                      ref={storyRef}
+                      value={story}
+                      onChange={(e) => {
+                        setStory(e.target.value);
+                        const textarea = e.target;
+                        const cursor = textarea.selectionStart;
+                        const before = textarea.value.slice(0, cursor);
+                        const lineStart = before.lastIndexOf('\n') + 1;
+                        const line = before.slice(lineStart);
+                        setSlashOpen(/^\/[a-z]*$/i.test(line));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') setSlashOpen(false);
+                      }}
+                      placeholder={STORY_PLACEHOLDER}
+                      className="vt-input"
+                      style={{
+                        minHeight: '300px',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '13px',
+                        lineHeight: 1.55,
+                      }}
+                    />
+                    {slashOpen && (
+                      <div
+                        className="absolute left-0 right-0 top-0 -translate-y-full max-h-64 overflow-y-auto"
+                        style={{
+                          border: '1px solid var(--rule-strong)',
+                          background: 'var(--bg-1)',
+                          marginBottom: '4px',
+                        }}
+                      >
+                        {SLASH_COMMANDS.filter((c) => {
+                          const textarea = storyRef.current;
+                          if (!textarea) return true;
+                          const cursor = textarea.selectionStart;
+                          const before = textarea.value.slice(0, cursor);
+                          const lineStart = before.lastIndexOf('\n') + 1;
+                          const line = before.slice(lineStart);
+                          return c.key.startsWith(line.toLowerCase());
+                        }).map((cmd) => (
+                          <button
+                            type="button"
+                            key={cmd.key}
+                            className="w-full text-left px-3 py-2 transition-colors"
+                            style={{
+                              borderBottom: '1px solid var(--rule-soft)',
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '12px',
+                              color: 'var(--ink-1)',
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background = 'var(--bg-2)')
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = 'transparent')
+                            }
+                            onClick={() => {
+                              const textarea = storyRef.current;
+                              if (!textarea) return;
+                              const cursor = textarea.selectionStart;
+                              const before = textarea.value.slice(0, cursor);
+                              const after = textarea.value.slice(cursor);
+                              const lineStart = before.lastIndexOf('\n') + 1;
+                              const newVal =
+                                before.slice(0, lineStart) + cmd.template + after;
+                              setStory(newVal);
+                              setSlashOpen(false);
+                              requestAnimationFrame(() => {
+                                textarea.focus();
+                                const pos = lineStart + cmd.template.length;
+                                textarea.setSelectionRange(pos, pos);
+                              });
+                            }}
+                          >
+                            <div className="flex items-baseline gap-2">
+                              <span style={{ color: 'var(--accent)' }}>{cmd.label}</span>
+                              <span
+                                style={{
+                                  fontSize: '10px',
+                                  letterSpacing: '0.14em',
+                                  textTransform: 'uppercase',
+                                  color: 'var(--ink-2)',
+                                }}
                               >
-                                {badge === 'unknown' ? '?' : badge}
-                              </Badge>
-                              <span className="font-mono text-foreground">
-                                {step.type}
-                              </span>
-                              <span className="text-muted-foreground truncate">
-                                {step.url || step.selector || step.value || ''}
+                                {cmd.description}
                               </span>
                             </div>
-                          );
-                        })
-                      )}
+                            <div
+                              style={{
+                                fontSize: '11px',
+                                color: 'var(--ink-2)',
+                                marginTop: '2px',
+                              }}
+                            >
+                              {cmd.template.split('\n')[0]}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <FieldCallout
+                    label="BASE URL (OPTIONAL)"
+                    hint={`Prepended to relative paths ("/orders" → "${
+                      baseUrl || 'https://…'
+                    }/orders").`}
+                  >
+                    <input
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      placeholder="https://app.example.com"
+                      className="vt-input"
+                    />
+                  </FieldCallout>
+
+                  {/* Capture toggles */}
+                  <div
+                    className="pt-4 space-y-3"
+                    style={{ borderTop: '1px solid var(--rule)' }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '10px',
+                        letterSpacing: '0.22em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-2)',
+                      }}
+                    >
+                      CAPTURE SPEC
                     </div>
+                    <label
+                      className="flex items-start gap-3 cursor-pointer"
+                      style={{ fontSize: '13px', color: 'var(--ink-1)' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={screenshotEveryStep}
+                        onChange={(e) => setScreenshotEveryStep(e.target.checked)}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span style={{ color: 'var(--ink-0)' }}>
+                          Screenshot every step.
+                        </span>
+                        <br />
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            color: 'var(--ink-2)',
+                            fontFamily: 'var(--font-mono)',
+                            letterSpacing: '0.08em',
+                          }}
+                        >
+                          Required for film-strip and Set-as-baseline.
+                        </span>
+                      </span>
+                    </label>
+                    <label
+                      className="flex items-start gap-3 cursor-pointer"
+                      style={{ fontSize: '13px', color: 'var(--ink-1)' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={videoRecording}
+                        onChange={(e) => setVideoRecording(e.target.checked)}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span style={{ color: 'var(--ink-0)' }}>Record video.</span>
+                        <br />
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            color: 'var(--ink-2)',
+                            fontFamily: 'var(--font-mono)',
+                            letterSpacing: '0.08em',
+                          }}
+                        >
+                          Heavier; useful for flakiness forensics.
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </Plate>
+
+              {/* RIGHT — compiled preview */}
+              <Plate
+                leader="FIG. D · COMPILE PREVIEW"
+                stamp={
+                  parsedSteps.length > 0
+                    ? `${String(parsedSteps.length).padStart(2, '0')} STEPS`
+                    : 'AWAITING INPUT'
+                }
+              >
+                {parsedSteps.length === 0 ? (
+                  <div
+                    className="py-16 text-center"
+                    style={{
+                      border: '1px dashed var(--rule)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-2)',
+                      lineHeight: 1.8,
+                    }}
+                  >
+                    — preview will render —<br />
+                    — once you begin the journey —
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {parsedSteps.map((step, i) => {
+                      const badge = confidenceFor(step, i, parseWarnings);
+                      const s = CONFIDENCE_STYLE[badge];
+                      return (
+                        <div
+                          key={i}
+                          className="grid items-start gap-3 py-1.5 px-2"
+                          style={{
+                            gridTemplateColumns: '32px 78px 1fr',
+                            borderBottom:
+                              i < parsedSteps.length - 1
+                                ? '1px dashed var(--rule-soft)'
+                                : 'none',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '11px',
+                              color: 'var(--accent)',
+                              textAlign: 'right',
+                              fontVariantNumeric: 'tabular-nums',
+                              letterSpacing: '0.12em',
+                            }}
+                          >
+                            {String(i + 1).padStart(2, '0')}
+                          </span>
+                          <span
+                            className="text-center"
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '9px',
+                              letterSpacing: '0.18em',
+                              textTransform: 'uppercase',
+                              color: s.color,
+                              border: `1px solid ${s.border}`,
+                              background: s.bg,
+                              padding: '3px 6px',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                            title={badge === 'unknown' ? 'DOM analysis at runtime' : badge}
+                          >
+                            {s.label}
+                          </span>
+                          <div
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '12px',
+                              color: 'var(--ink-1)',
+                            }}
+                          >
+                            <span style={{ color: 'var(--ink-0)' }}>{step.type}</span>
+                            <span style={{ color: 'var(--ink-2)' }}>
+                              {' '}
+                              · {step.url || step.selector || step.value || '—'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                     {parseWarnings.length > 0 && (
-                      <div className="text-xs text-amber-300/80">
+                      <div
+                        className="mt-3 pt-3 space-y-1"
+                        style={{
+                          borderTop: '1px solid var(--rule)',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '10.5px',
+                          letterSpacing: '0.08em',
+                          color: 'var(--warn)',
+                        }}
+                      >
                         {parseWarnings.slice(0, 3).map((w, i) => (
                           <div key={i}>⚠ {w}</div>
                         ))}
                       </div>
                     )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                )}
+              </Plate>
+            </div>
 
             {/* Goal block */}
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-foreground flex items-center gap-2">
-                    <Target className="w-5 h-5" /> Success goal
-                  </CardTitle>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPatternHelp(!showPatternHelp)}
-                    className="text-muted-foreground"
+            <Plate
+              leader="FIG. E · SUCCESS GOAL"
+              stamp={
+                goalResult
+                  ? goalResult.canSave
+                    ? 'COMPILES'
+                    : 'BLOCKED'
+                  : 'OPTIONAL'
+              }
+            >
+              <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '14px',
+                    color: 'var(--ink-1)',
+                    maxWidth: '62ch',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  What must be true when this part passes? Leave blank for
+                  plain step-based pass/fail.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowPatternHelp(!showPatternHelp)}
+                  className="vt-btn"
+                >
+                  {showPatternHelp ? 'HIDE PATTERNS' : 'SHOW PATTERNS'}
+                </button>
+              </div>
+
+              <textarea
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                placeholder={GOAL_PLACEHOLDER}
+                className="vt-input"
+                style={{ minHeight: '120px', fontFamily: 'var(--font-mono)' }}
+              />
+
+              {showPatternHelp && patternData?.patterns && (
+                <div
+                  className="mt-4 p-4"
+                  style={{ border: '1px dashed var(--rule)' }}
+                >
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10px',
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color: 'var(--accent)',
+                      marginBottom: '10px',
+                    }}
                   >
-                    <HelpCircle className="w-4 h-4 mr-1" />
-                    {showPatternHelp ? 'Hide patterns' : 'Show patterns'}
-                  </Button>
+                    LAYER-1 PATTERN VOCABULARY · NO AI REQUIRED
+                  </div>
+                  <div className="grid gap-2">
+                    {patternData.patterns.map((p) => (
+                      <div key={p.pattern}>
+                        <div
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '12px',
+                            color: 'var(--ink-0)',
+                          }}
+                        >
+                          {p.pattern}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: 'var(--font-hand)',
+                            fontSize: '14px',
+                            color: 'var(--accent)',
+                          }}
+                        >
+                          e.g. {p.example}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <CardDescription className="text-muted-foreground">
-                  What should be true when this test passes? Optional — leave
-                  blank for plain step-based pass/fail.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  value={goal}
-                  onChange={(e) => setGoal(e.target.value)}
-                  placeholder={GOAL_PLACEHOLDER}
-                  className="bg-muted border-border text-foreground min-h-[100px]"
-                />
+              )}
 
-                {/* Pattern reference drawer */}
-                {showPatternHelp && patternData?.patterns && (
-                  <div className="bg-muted/40 border border-border rounded-md p-3">
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-                      Layer-1 pattern vocabulary (no AI required)
-                    </div>
-                    <div className="grid gap-2">
-                      {patternData.patterns.map((p) => (
-                        <div key={p.pattern} className="text-sm">
-                          <div className="font-medium text-foreground">
-                            {p.pattern}
-                          </div>
-                          <div className="text-xs text-muted-foreground italic">
-                            e.g. {p.example}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Compilation result */}
-                {goalResult && (
-                  <div className="space-y-2">
-                    {goalResult.checks.length > 0 && (
-                      <div className="flex items-start gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <span className="text-emerald-300">
-                            {goalResult.checks.length} verifiable check
-                            {goalResult.checks.length === 1 ? '' : 's'}
-                          </span>{' '}
-                          will run against the final page.
-                        </div>
+              {goalResult && (
+                <div className="mt-4 space-y-2">
+                  {goalResult.checks.length > 0 && (
+                    <div
+                      className="flex items-start gap-2 p-3"
+                      style={{
+                        border: '1px solid var(--pass)',
+                        background: 'var(--pass-soft)',
+                        color: 'var(--pass)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '12px',
+                      }}
+                    >
+                      <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" strokeWidth={1.5} />
+                      <div>
+                        {goalResult.checks.length} VERIFIABLE CHECK
+                        {goalResult.checks.length === 1 ? '' : 'S'} WILL RUN.
                       </div>
-                    )}
-                    {goalResult.unresolvedClauses.length > 0 && (
+                    </div>
+                  )}
+                  {goalResult.unresolvedClauses.length > 0 && (
+                    <div
+                      className="p-3"
+                      style={{
+                        border: `1px solid ${
+                          goalResult.canSave ? 'var(--accent)' : 'var(--fail)'
+                        }`,
+                        background: goalResult.canSave
+                          ? 'var(--accent-soft)'
+                          : 'var(--fail-soft)',
+                      }}
+                    >
                       <div
-                        className={
-                          goalResult.canSave
-                            ? 'border border-blue-800/60 bg-blue-900/10 rounded-md p-3'
-                            : 'border border-red-800/60 bg-red-900/10 rounded-md p-3'
-                        }
+                        className="flex items-start gap-2"
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '12px',
+                          color: goalResult.canSave ? 'var(--accent)' : 'var(--fail)',
+                        }}
                       >
-                        <div className="flex items-start gap-2 text-sm">
-                          {goalResult.canSave ? (
-                            <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                          )}
-                          <div className="space-y-1">
-                            <div
-                              className={
-                                goalResult.canSave
-                                  ? 'text-blue-300'
-                                  : 'text-red-300'
-                              }
-                            >
-                              {goalResult.canSave
-                                ? `${goalResult.unresolvedClauses.length} clause${
-                                    goalResult.unresolvedClauses.length === 1
-                                      ? ''
-                                      : 's'
-                                  } will be evaluated by the LLM at runtime.`
-                                : `${goalResult.unresolvedClauses.length} clause${
-                                    goalResult.unresolvedClauses.length === 1
-                                      ? ''
-                                      : 's'
-                                  } cannot be verified without an LLM. Rewrite them in pattern form (see "Show patterns") or configure an AI provider.`}
-                            </div>
-                            <ul className="text-xs text-muted-foreground space-y-0.5">
-                              {goalResult.unresolvedClauses.map((c, i) => (
-                                <li key={i}>
-                                  • <span className="italic">"{c}"</span>
-                                </li>
-                              ))}
-                            </ul>
+                        {goalResult.canSave ? (
+                          <Info className="w-4 h-4 mt-0.5 flex-shrink-0" strokeWidth={1.5} />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" strokeWidth={1.5} />
+                        )}
+                        <div className="space-y-1">
+                          <div>
+                            {goalResult.canSave
+                              ? `${goalResult.unresolvedClauses.length} CLAUSE${
+                                  goalResult.unresolvedClauses.length === 1 ? '' : 'S'
+                                } WILL RUN VIA LLM AT RUNTIME.`
+                              : `${goalResult.unresolvedClauses.length} CLAUSE${
+                                  goalResult.unresolvedClauses.length === 1 ? '' : 'S'
+                                } CANNOT VERIFY WITHOUT AN LLM.`}
                           </div>
+                          <ul
+                            style={{
+                              fontFamily: 'var(--font-hand)',
+                              fontSize: '15px',
+                              color: 'var(--ink-1)',
+                              fontStyle: 'italic',
+                            }}
+                          >
+                            {goalResult.unresolvedClauses.map((c, i) => (
+                              <li key={i}>· &ldquo;{c}&rdquo;</li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Plate>
 
-            {/* Story actions */}
-            <div className="flex items-center justify-end gap-3">
-              <Button
+            {/* Actions */}
+            <div
+              className="flex items-center justify-end gap-3 pt-4"
+              style={{ borderTop: '1px solid var(--rule)' }}
+            >
+              <button
                 type="button"
-                variant="ghost"
                 onClick={() => router.push('/tests')}
+                className="vt-btn vt-btn--ghost"
               >
-                Cancel
-              </Button>
-              <Button
+                CANCEL
+              </button>
+              <button
                 type="submit"
                 disabled={!canSaveStory || storyMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="vt-btn vt-btn--primary"
+                style={{ opacity: !canSaveStory || storyMutation.isPending ? 0.5 : 1 }}
               >
                 {storyMutation.isPending ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} /> DRAFTING…
                   </>
                 ) : (
-                  'Save story test'
+                  'DRAFT PART'
                 )}
-              </Button>
+              </button>
             </div>
-          </TabsContent>
+          </>
+        )}
 
-          {/* ------------------------------------------------------------ */}
-          {/* RECORD TAB — stubbed for 1a, implemented Phase 6+             */}
-          {/* ------------------------------------------------------------ */}
-          <TabsContent value="record" className="mt-6">
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <Radio className="w-5 h-5" /> Record browser actions
-                </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Coming in a later phase — a browser extension that watches
-                  real clicks and compiles them to steps.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-muted/40 border border-dashed border-border rounded-md p-12 text-center space-y-3">
-                  <Radio className="w-10 h-10 text-muted-foreground mx-auto" />
-                  <div className="text-muted-foreground">
-                    Not yet available. Use <strong>Story</strong> (prose) or{' '}
-                    <strong>Script</strong> (YAML/JSON) for now.
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setActiveTab('story')}
-                  >
-                    Switch to Story
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ------------------------------------------------------------ */}
-          {/* SCRIPT TAB — existing YAML/JSON authoring, preserved          */}
-          {/* ------------------------------------------------------------ */}
-          <TabsContent value="script" className="mt-6 space-y-6">
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-foreground flex items-center gap-2">
-                    <FileText className="w-5 h-5" /> Script
-                  </CardTitle>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setScript(YAML_EXAMPLE)}
-                  >
-                    Load YAML example
-                  </Button>
-                </div>
-                <CardDescription className="text-muted-foreground">
-                  Power users, or CI/CD test generation. Accepts YAML or JSON.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setScriptMode('yaml')}
-                    className={`px-3 py-1 rounded ${
-                      scriptMode === 'yaml'
-                        ? 'bg-accent text-accent-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    YAML
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setScriptMode('natural')}
-                    className={`px-3 py-1 rounded ${
-                      scriptMode === 'natural'
-                        ? 'bg-accent text-accent-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    Natural
-                  </button>
-                </div>
-                <Textarea
-                  value={script}
-                  onChange={(e) => setScript(e.target.value)}
-                  placeholder={
-                    scriptMode === 'yaml'
-                      ? YAML_EXAMPLE
-                      : 'Plain-English one step per line.'
-                  }
-                  className="bg-muted border-border text-foreground font-mono min-h-[250px]"
-                />
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={parseScript}
-                    disabled={!script.trim()}
-                  >
-                    <Wand2 className="w-4 h-4 mr-2" /> Parse
-                  </Button>
-                </div>
-
-                {scriptWarnings.length > 0 && (
-                  <div className="p-3 bg-yellow-900/20 border border-yellow-800 rounded-lg">
-                    <div className="flex items-center gap-2 text-yellow-400 mb-2">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="font-medium">Warnings</span>
-                    </div>
-                    <ul className="text-sm text-yellow-300 space-y-1">
-                      {scriptWarnings.map((w, i) => (
-                        <li key={i}>{w}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {isMobileNative && (
-                  <TouchGestureRecorder
-                    steps={mobileSteps}
-                    onAddStep={(step) =>
-                      setMobileSteps([...mobileSteps, step])
-                    }
-                    onRemoveStep={(index) =>
-                      setMobileSteps(mobileSteps.filter((_, i) => i !== index))
-                    }
-                  />
-                )}
-
-                {scriptSteps.length > 0 && !isMobileNative && (
-                  <StepEditor
-                    steps={scriptSteps}
-                    platform={platform}
-                    onChange={(s) => setScriptSteps(s)}
-                  />
-                )}
-              </CardContent>
-            </Card>
-
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => router.push('/tests')}
+        {/* ========== RECORD TAB ========== */}
+        {activeTab === 'record' && (
+          <Plate leader="FIG. B · RECORDING" stamp="NOT YET WIRED">
+            <div
+              className="py-16 text-center space-y-4"
+              style={{ border: '1px dashed var(--rule)' }}
+            >
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
               >
-                Cancel
-              </Button>
-              <Button
+                · · · RECORD MODE · · ·
+              </div>
+              <div
+                className="vt-display"
+                style={{ fontSize: '28px', color: 'var(--ink-1)' }}
+              >
+                coming in a later <em>revision</em>
+              </div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '14px',
+                  color: 'var(--ink-2)',
+                  maxWidth: '54ch',
+                  margin: '0 auto',
+                }}
+              >
+                A browser extension watches real clicks and compiles them to
+                steps. For now, use STORY (prose) or SCRIPT (YAML / JSON).
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab('story')}
+                className="vt-btn"
+              >
+                SWITCH TO STORY
+              </button>
+            </div>
+          </Plate>
+        )}
+
+        {/* ========== SCRIPT TAB ========== */}
+        {activeTab === 'script' && (
+          <>
+            <Plate
+              leader="FIG. B · SCRIPT SOURCE"
+              stamp={scriptMode === 'yaml' ? 'YAML' : 'NATURAL'}
+            >
+              <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                <TabStrip
+                  tabs={[
+                    { value: 'yaml', label: 'YAML' },
+                    { value: 'natural', label: 'NATURAL' },
+                  ]}
+                  value={scriptMode}
+                  onChange={(v) => setScriptMode(v)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setScript(YAML_EXAMPLE)}
+                  className="vt-btn vt-btn--ghost"
+                >
+                  LOAD YAML EXAMPLE
+                </button>
+              </div>
+
+              <textarea
+                value={script}
+                onChange={(e) => setScript(e.target.value)}
+                placeholder={
+                  scriptMode === 'yaml'
+                    ? YAML_EXAMPLE
+                    : 'Plain-English · one step per line.'
+                }
+                className="vt-input"
+                style={{
+                  minHeight: '260px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '13px',
+                }}
+              />
+              <div className="flex justify-end mt-4">
+                <button
+                  type="button"
+                  onClick={parseScript}
+                  disabled={!script.trim()}
+                  className="vt-btn"
+                  style={{ opacity: !script.trim() ? 0.4 : 1 }}
+                >
+                  <Wand2 className="w-3.5 h-3.5" strokeWidth={1.5} /> PARSE
+                </button>
+              </div>
+
+              {scriptWarnings.length > 0 && (
+                <div
+                  className="mt-4 p-3"
+                  style={{ border: '1px solid var(--warn)', background: 'var(--warn-soft)' }}
+                >
+                  <div
+                    className="flex items-center gap-2"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color: 'var(--warn)',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    <AlertCircle className="w-4 h-4" strokeWidth={1.5} />
+                    WARNINGS
+                  </div>
+                  <ul
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '12px',
+                      color: 'var(--ink-1)',
+                    }}
+                  >
+                    {scriptWarnings.map((w, i) => (
+                      <li key={i}>· {w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Plate>
+
+            {isMobileNative && (
+              <Plate leader="FIG. C · TOUCH GESTURES" stamp="NATIVE">
+                <TouchGestureRecorder
+                  steps={mobileSteps}
+                  onAddStep={(step) => setMobileSteps([...mobileSteps, step])}
+                  onRemoveStep={(index) =>
+                    setMobileSteps(mobileSteps.filter((_, i) => i !== index))
+                  }
+                />
+              </Plate>
+            )}
+
+            {scriptSteps.length > 0 && !isMobileNative && (
+              <Plate
+                leader="FIG. C · COMPILED STEPS"
+                stamp={`${String(scriptSteps.length).padStart(2, '0')} STEPS`}
+              >
+                <StepEditor
+                  steps={scriptSteps}
+                  platform={platform}
+                  onChange={(s) => setScriptSteps(s)}
+                />
+              </Plate>
+            )}
+
+            <div
+              className="flex items-center justify-end gap-3 pt-4"
+              style={{ borderTop: '1px solid var(--rule)' }}
+            >
+              <button
+                type="button"
+                onClick={() => router.push('/tests')}
+                className="vt-btn vt-btn--ghost"
+              >
+                CANCEL
+              </button>
+              <button
                 type="submit"
                 disabled={!canSaveScript || scriptMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="vt-btn vt-btn--primary"
+                style={{ opacity: !canSaveScript || scriptMutation.isPending ? 0.5 : 1 }}
               >
                 {scriptMutation.isPending ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} /> DRAFTING…
                   </>
                 ) : (
-                  'Create test'
+                  'DRAFT PART'
                 )}
-              </Button>
+              </button>
             </div>
-          </TabsContent>
-        </Tabs>
+          </>
+        )}
       </form>
-    </div>
+    </EditorialHero>
   );
 }

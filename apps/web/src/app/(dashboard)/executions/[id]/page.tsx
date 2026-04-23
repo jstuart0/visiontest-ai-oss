@@ -4,31 +4,11 @@ import { use, useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  Play,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Activity,
-  ImageIcon,
-  Terminal,
-  Loader2,
-  Video,
-  Radio,
-  Square,
-  RefreshCw,
-  RotateCcw,
-} from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { useCurrentProject } from '@/hooks/useProject';
 import { api, getAuthToken } from '@/lib/api';
-import { ScreenshotGallery, type GalleryScreenshot, type GalleryStep } from '@/components/screenshot-gallery';
+import { ScreenshotGallery, type GalleryScreenshot } from '@/components/screenshot-gallery';
 import { FilmStrip } from '@/components/execution/FilmStrip';
 import { GoalEvalCard } from '@/components/execution/GoalEvalCard';
 import { VideoPlayer } from '@/components/video-player';
@@ -49,6 +29,8 @@ interface Execution {
   id: string;
   status: 'PENDING' | 'QUEUED' | 'RUNNING' | 'PASSED' | 'FAILED' | 'CANCELLED' | 'TIMEOUT';
   triggeredBy: string;
+  platform?: string;
+  mode?: string;
   startedAt: string | null;
   completedAt: string | null;
   duration: number | null;
@@ -83,14 +65,14 @@ interface StreamEvent {
   timestamp: number;
 }
 
-const statusConfig = {
-  PENDING: { icon: Clock, color: 'bg-muted', textColor: 'text-muted-foreground', label: 'Pending' },
-  QUEUED: { icon: Clock, color: 'bg-yellow-500', textColor: 'text-yellow-400', label: 'Queued' },
-  RUNNING: { icon: Activity, color: 'bg-blue-500', textColor: 'text-blue-400', label: 'Running' },
-  PASSED: { icon: CheckCircle2, color: 'bg-green-500', textColor: 'text-green-400', label: 'Passed' },
-  FAILED: { icon: XCircle, color: 'bg-red-500', textColor: 'text-red-400', label: 'Failed' },
-  CANCELLED: { icon: AlertTriangle, color: 'bg-orange-500', textColor: 'text-orange-400', label: 'Cancelled' },
-  TIMEOUT: { icon: AlertTriangle, color: 'bg-orange-500', textColor: 'text-orange-400', label: 'Timeout' },
+const statusLabels: Record<Execution['status'], string> = {
+  PENDING: 'PENDING',
+  QUEUED: 'QUEUED',
+  RUNNING: 'RUNNING',
+  PASSED: 'PASS',
+  FAILED: 'REJECT',
+  CANCELLED: 'CANCELLED',
+  TIMEOUT: 'TIMEOUT',
 };
 
 export default function ExecutionDetailPage({
@@ -126,7 +108,6 @@ export default function ExecutionDetailPage({
   // Initialize steps from test data
   useEffect(() => {
     if (execution?.test?.steps && steps.length === 0) {
-      // Parse steps if it's a JSON string
       let rawSteps = execution.test.steps;
       if (typeof rawSteps === 'string') {
         try {
@@ -156,7 +137,6 @@ export default function ExecutionDetailPage({
     if (!execution) return;
     const token = getAuthToken();
 
-    // Load screenshots from execution response
     if (execution.screenshots && execution.screenshots.length > 0 && screenshots.length === 0) {
       const loaded: GalleryScreenshot[] = execution.screenshots.map((s) => {
         const url = token
@@ -170,7 +150,6 @@ export default function ExecutionDetailPage({
       }
     }
 
-    // Load videos from execution response
     if (execution.videos && execution.videos.length > 0 && videos.length === 0) {
       setVideos(execution.videos.map((v) => ({
         url: token ? `${v.url}${v.url.includes('?') ? '&' : '?'}token=${token}` : v.url,
@@ -196,7 +175,6 @@ export default function ExecutionDetailPage({
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const streamUrl = `${baseUrl}/stream/executions/${executionId}`;
 
-    // Note: EventSource doesn't support custom headers, so we pass token as query param
     const eventSource = new EventSource(`${streamUrl}?token=${token}`);
     eventSourceRef.current = eventSource;
 
@@ -278,7 +256,6 @@ export default function ExecutionDetailPage({
 
       case 'video:ready':
         addLog(`[${timestamp}] Video recording ready`);
-        // Refetch execution to get video data
         queryClient.invalidateQueries({ queryKey: ['execution', executionId] });
         break;
 
@@ -292,11 +269,11 @@ export default function ExecutionDetailPage({
   };
 
   const addLog = (message: string) => {
-    setLogs((prev) => [...prev.slice(-99), message]); // Keep last 100 logs
+    setLogs((prev) => [...prev.slice(-99), message]);
   };
 
   const formatDuration = (ms: number | null) => {
-    if (!ms) return '-';
+    if (!ms) return '——';
     if (ms < 1000) return `${ms}ms`;
     if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
     return `${(ms / 60000).toFixed(1)}m`;
@@ -304,561 +281,902 @@ export default function ExecutionDetailPage({
 
   if (isLoading || !execution) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="vt-sheet">
+        <span className="vt-crop vt-crop--tl" /><span className="vt-crop vt-crop--tr" />
+        <span className="vt-crop vt-crop--bl" /><span className="vt-crop vt-crop--br" />
+        <div
+          className="py-24 text-center flex items-center justify-center gap-4"
+          style={{
+            border: '1px dashed var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+          }}
+        >
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>— LOADING SHEET —</span>
+        </div>
       </div>
     );
   }
 
-  const config = statusConfig[execution.status];
-  const StatusIcon = config.icon;
-  const progress = steps.length > 0 
-    ? (steps.filter((s) => s.status === 'passed').length / steps.length) * 100 
-    : 0;
+  const passedCount = steps.filter((s) => s.status === 'passed').length;
+  const failedCount = steps.filter((s) => s.status === 'failed').length;
+  const progress = steps.length > 0 ? (passedCount / steps.length) * 100 : 0;
+
+  const stampClass =
+    execution.status === 'PASSED'
+      ? 'vt-rev-stamp vt-rev-stamp--pass'
+      : execution.status === 'FAILED'
+      ? 'vt-rev-stamp vt-rev-stamp--reject'
+      : 'vt-rev-stamp';
+
+  const runDate = new Date(execution.createdAt);
+  const startedDate = execution.startedAt ? new Date(execution.startedAt) : null;
+
+  const runIdShort = execution.id.slice(-8).toUpperCase();
+  const env = (execution.platform || 'WEB').toUpperCase();
+  const mode = (execution.mode || 'STEP').toUpperCase();
+  const trig = (execution.triggeredBy || 'MANUAL').toUpperCase();
 
   return (
-    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      {/* ── Editorial run header ────────────────────────────────── */}
-      <header className="mb-10 pb-7 border-b" style={{ borderColor: 'var(--rule)' }}>
-        <div className="flex items-center gap-4 mb-5">
+    <div className="min-h-screen">
+      {/* SHEET · RUN DETAIL ─────────────────────────────────────── */}
+      <section className="vt-sheet">
+        <span className="vt-crop vt-crop--tl" /><span className="vt-crop vt-crop--tr" />
+        <span className="vt-crop vt-crop--bl" /><span className="vt-crop vt-crop--br" />
+
+        {/* Top strip: back link + sheet metadata */}
+        <div
+          className="flex items-center gap-4 mb-6 flex-wrap"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.24em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
           <button
             type="button"
             onClick={() => router.push('/executions')}
-            className="vt-kicker inline-flex items-center gap-2 transition-colors"
-            style={{ color: 'var(--ink-2)' }}
+            className="inline-flex items-center gap-2 transition-colors"
+            style={{ color: 'var(--ink-1)' }}
             onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-1)')}
           >
-            <ArrowLeft className="w-3 h-3" /> back to runs
+            <ArrowLeft className="w-3 h-3" strokeWidth={1.5} />
+            BACK TO REGISTER
           </button>
-          <span className="vt-kicker" style={{ color: 'var(--brass)' }}>
-            § Run · {new Date(execution.createdAt).toLocaleDateString()}
-            {' '}
-            {new Date(execution.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <span style={{ color: 'var(--ink-3)' }}>·</span>
+          <span>SHT · 03.R</span>
+          <span style={{ color: 'var(--ink-3)' }}>·</span>
+          <span>{runDate.toISOString().slice(0, 10).replace(/-/g, '.')}</span>
+          <span className="ml-auto flex items-center gap-3">
+            <span className={stampClass}>{statusLabels[execution.status]}</span>
+            {isLive && (
+              <span className="vt-chip vt-chip--accent vt-breathe" style={{ letterSpacing: '0.24em' }}>
+                LIVE
+              </span>
+            )}
           </span>
         </div>
 
-        <div className="flex items-start justify-between gap-8 flex-wrap">
-          <div className="flex-1 min-w-[280px]">
-            <h1
-              className="vt-display"
-              style={{
-                fontSize: 'clamp(38px, 5vw, 68px)',
-                lineHeight: 0.98,
-                letterSpacing: '-0.028em',
-              }}
-            >
-              {(() => {
-                const name = execution.test?.name || 'Execution';
-                const parts = name.split(' ');
-                if (parts.length < 2) return name;
-                return (
-                  <>
-                    {parts.slice(0, -1).join(' ')}{' '}
-                    <em>{parts.slice(-1)}</em>
-                  </>
-                );
-              })()}
-            </h1>
-            <div
-              className="mt-4 vt-mono text-[12px] tracking-[0.08em]"
-              style={{ color: 'var(--ink-2)' }}
-            >
-              <span style={{ color: 'var(--ink-1)' }}>
-                {execution.id.slice(-8)}
+        {/* Title block — drawing-sheet masthead with grid of metadata */}
+        <div className="mb-10">
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(36px, 5.5vw, 72px)',
+              lineHeight: 0.98,
+              letterSpacing: '-0.01em',
+              textTransform: 'lowercase',
+              color: 'var(--ink-0)',
+              margin: 0,
+            }}
+          >
+            {(() => {
+              const name = (execution.test?.name || 'execution').toLowerCase();
+              const parts = name.split(' ');
+              if (parts.length < 2) return name;
+              return (
+                <>
+                  {parts.slice(0, -1).join(' ')}{' '}
+                  <span style={{ color: 'var(--accent)' }}>{parts.slice(-1)}</span>
+                </>
+              );
+            })()}
+          </h1>
+
+          {/* Title-block metadata grid */}
+          <div className="vt-title-block mt-7">
+            <div className="span2">
+              <span className="k">RUN ID</span>
+              <span className="v big" style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
+                #{runIdShort}
               </span>
-              {' · '}
-              {execution.duration
-                ? `${(execution.duration / 1000).toFixed(2)}s`
-                : 'in flight'}
-              {' · '}
-              {execution.test?.id && (
-                <Link
-                  href={`/tests/${execution.test.id}`}
-                  className="hover:text-[color:var(--accent)] transition-colors"
-                >
-                  open spec
-                </Link>
-              )}
             </div>
-            <div className="mt-5 flex items-center gap-3">
-              {(() => {
-                const cls =
-                  execution.status === 'PASSED'
-                    ? 'vt-chip vt-chip--pass'
-                    : execution.status === 'FAILED'
-                    ? 'vt-chip vt-chip--fail'
-                    : execution.status === 'RUNNING' || execution.status === 'QUEUED' || execution.status === 'PENDING'
-                    ? 'vt-chip vt-chip--accent'
-                    : 'vt-chip';
-                return (
-                  <span className={cls}>
-                    <span className="vt-dot" />
-                    {config.label}
-                  </span>
-                );
-              })()}
-              {isLive && (
-                <span
-                  className="vt-chip vt-chip--accent vt-breathe"
-                  style={{ letterSpacing: '0.24em' }}
-                >
-                  LIVE
-                </span>
-              )}
+            <div>
+              <span className="k">STARTED</span>
+              <span className="v">
+                {startedDate
+                  ? startedDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                  : '——:——'}
+              </span>
+            </div>
+            <div>
+              <span className="k">DURATION</span>
+              <span className="v">{formatDuration(execution.duration)}</span>
+            </div>
+            <div>
+              <span className="k">ENV</span>
+              <span className="v">{env}</span>
+            </div>
+            <div>
+              <span className="k">MODE</span>
+              <span className="v">{mode}</span>
+            </div>
+
+            <div className="span2">
+              <span className="k">TEST SPEC</span>
+              <span className="v">
+                {execution.test?.id ? (
+                  <Link
+                    href={`/tests/${execution.test.id}`}
+                    style={{ color: 'var(--ink-0)' }}
+                    className="hover:text-[color:var(--accent)] transition-colors"
+                  >
+                    OPEN SPEC →
+                  </Link>
+                ) : (
+                  '——'
+                )}
+              </span>
+            </div>
+            <div>
+              <span className="k">TRIGGERED</span>
+              <span className="v">{trig}</span>
+            </div>
+            <div>
+              <span className="k">STEPS</span>
+              <span className="v" style={{ fontFamily: 'var(--font-mono)' }}>
+                {String(steps.length).padStart(2, '0')}
+              </span>
+            </div>
+            <div>
+              <span className="k">PASS</span>
+              <span className="v" style={{ color: 'var(--pass)', fontFamily: 'var(--font-mono)' }}>
+                {String(passedCount).padStart(2, '0')}
+              </span>
+            </div>
+            <div>
+              <span className="k">REJECT</span>
+              <span className="v" style={{ color: 'var(--fail)', fontFamily: 'var(--font-mono)' }}>
+                {String(failedCount).padStart(2, '0')}
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 self-start">
+
+          {/* ACTIONS BAR — ruled, no shadows */}
+          <div
+            className="mt-6 flex flex-wrap items-center gap-0"
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 30%, transparent)',
+            }}
+          >
+            <span
+              className="px-4 py-3"
+              style={{
+                borderRight: '1px solid var(--rule)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '9px',
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+              }}
+            >
+              ACTIONS
+            </span>
+
             {isLive && (
-              <Button
-                variant="destructive"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => {
                   api.post(`/executions/${executionId}/stop`).then(() => {
                     toast.success('Execution stopped');
                     queryClient.invalidateQueries({ queryKey: ['execution', executionId] });
-                  }).catch(() => toast.error('Failed to stop'));
+                  }).catch(() => toast.error('Failed to stop execution'));
+                }}
+                className="px-5 py-3 transition-colors"
+                style={{
+                  borderRight: '1px solid var(--rule)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--fail)',
+                  background: 'var(--fail-soft)',
                 }}
               >
-                <Square className="h-3 w-3 mr-1" /> Stop
-              </Button>
+                ■ STOP
+              </button>
+            )}
+
+            {!isLive && execution.status !== 'PENDING' && (
+              <button
+                type="button"
+                onClick={() => {
+                  api.post(`/executions/${executionId}/rerun`).then((data: any) => {
+                    toast.success('Rerun started');
+                    router.push(`/executions/${data.id || data.execution?.id || executionId}`);
+                  }).catch(() => toast.error('Failed to rerun'));
+                }}
+                className="px-5 py-3 transition-colors"
+                style={{
+                  borderRight: '1px solid var(--rule)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-1)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-1)')}
+              >
+                ↻ RERUN
+              </button>
+            )}
+
+            {!isLive && execution.status !== 'PENDING' && (
+              <button
+                type="button"
+                onClick={() => {
+                  api.post(`/executions/${executionId}/compare`).then(() => {
+                    toast.success('Visual comparison started');
+                    queryClient.invalidateQueries({ queryKey: ['execution', executionId] });
+                  }).catch(() => toast.error('Failed to start comparison'));
+                }}
+                className="px-5 py-3 transition-colors"
+                style={{
+                  borderRight: '1px solid var(--rule)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-1)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-1)')}
+              >
+                ⊕ COMPARE
+              </button>
+            )}
+
+            {!isLive && execution.status === 'PASSED' && screenshots.length > 0 && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await api.post<any>(
+                      `/baselines/from-execution/${executionId}`,
+                      {},
+                    );
+                    toast.success(
+                      res.replaced
+                        ? `Baseline "${res.name}" updated — future runs will compare to these ${screenshots.length} screenshots`
+                        : `Baseline "${res.name}" created — future runs will compare to these ${screenshots.length} screenshots`,
+                    );
+                    queryClient.invalidateQueries({ queryKey: ['baselines'] });
+                  } catch (err: any) {
+                    toast.error(err?.message || 'Failed to set baseline');
+                  }
+                }}
+                title="Promote these screenshots to a baseline. Future runs will compare against them."
+                className="px-5 py-3 transition-colors"
+                style={{
+                  borderRight: '1px solid var(--rule)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--accent)',
+                  background: 'var(--accent-soft)',
+                }}
+              >
+                ★ SET AS BASELINE
+              </button>
+            )}
+
+            {execution.status === 'FAILED' && (
+              <button
+                type="button"
+                onClick={() => {
+                  api.post('/fixes/candidates', {
+                    projectId: project?.id,
+                    executionId: executionId,
+                    testId: execution.test?.id,
+                    sourceType: 'execution',
+                    title: `Failed execution: ${execution.test?.name || executionId}`,
+                    plainLanguageSummary: execution.errorMessage || 'Test execution failed',
+                    failureType: 'RUNTIME',
+                    severity: 'MEDIUM',
+                  }).then((data: any) => {
+                    toast.success('Bug candidate created');
+                    router.push(`/fixes/${data.id}`);
+                  }).catch(() => toast.error('Failed to create bug candidate'));
+                }}
+                className="px-5 py-3 transition-colors"
+                style={{
+                  borderRight: '1px solid var(--rule)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--fail)',
+                  background: 'var(--fail-soft)',
+                }}
+              >
+                ⚑ INVESTIGATE & FIX
+              </button>
             )}
           </div>
         </div>
-      </header>
-      <div className="flex items-center gap-4">
-        {/* legacy spacer — keeps pre-existing JSX structure below stable */}
-        <div style={{ display: 'none' }}>
-          <Button variant="ghost" size="icon" onClick={() => router.push('/executions')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </div>
-        <div className="flex-1"></div>
-        <div className="flex items-center gap-2">
-          {isLive && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                api.post(`/executions/${executionId}/stop`).then(() => {
-                  toast.success('Execution stopped');
-                  queryClient.invalidateQueries({ queryKey: ['execution', executionId] });
-                }).catch(() => toast.error('Failed to stop execution'));
-              }}
-            >
-              <Square className="h-3 w-3 mr-1" /> Stop
-            </Button>
-          )}
-          {!isLive && execution.status !== 'PENDING' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                api.post(`/executions/${executionId}/rerun`).then((data: any) => {
-                  toast.success('Rerun started');
-                  router.push(`/executions/${data.id || data.execution?.id || executionId}`);
-                }).catch(() => toast.error('Failed to rerun'));
-              }}
-            >
-              <RefreshCw className="h-3 w-3 mr-1" /> Rerun
-            </Button>
-          )}
-          {!isLive && execution.status !== 'PENDING' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                api.post(`/executions/${executionId}/compare`).then(() => {
-                  toast.success('Visual comparison started');
-                  queryClient.invalidateQueries({ queryKey: ['execution', executionId] });
-                }).catch(() => toast.error('Failed to start comparison'));
-              }}
-            >
-              Compare
-            </Button>
-          )}
-          {/* Set-as-baseline — one-click promotion of this execution's
-              screenshots to a baseline named after the test. Replaces
-              an existing baseline with the same (name, branch) so
-              iterating on a design is a single button press. */}
-          {!isLive &&
-            execution.status === 'PASSED' &&
-            screenshots.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-blue-400 border-blue-700/40 hover:bg-blue-900/20"
-              onClick={async () => {
-                try {
-                  const res = await api.post<any>(
-                    `/baselines/from-execution/${executionId}`,
-                    {},
-                  );
-                  toast.success(
-                    res.replaced
-                      ? `Baseline "${res.name}" updated — future runs will compare to these ${screenshots.length} screenshots`
-                      : `Baseline "${res.name}" created — future runs will compare to these ${screenshots.length} screenshots`,
-                  );
-                  queryClient.invalidateQueries({ queryKey: ['baselines'] });
-                } catch (err: any) {
-                  toast.error(err?.message || 'Failed to set baseline');
-                }
-              }}
-              title="Promote these screenshots to a baseline. Future runs will compare against them."
-            >
-              <ImageIcon className="w-4 h-4 mr-1" />
-              Set as baseline
-            </Button>
-          )}
-          {execution.status === 'FAILED' && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-orange-600 border-orange-600/30 hover:bg-orange-600/10"
-              onClick={() => {
-                api.post('/fixes/candidates', {
-                  projectId: project?.id,
-                  executionId: executionId,
-                  testId: execution.test?.id,
-                  sourceType: 'execution',
-                  title: `Failed execution: ${execution.test?.name || executionId}`,
-                  plainLanguageSummary: execution.errorMessage || 'Test execution failed',
-                  failureType: 'RUNTIME',
-                  severity: 'MEDIUM',
-                }).then((data: any) => {
-                  toast.success('Bug candidate created');
-                  router.push(`/fixes/${data.id}`);
-                }).catch(() => toast.error('Failed to create bug candidate'));
-              }}
-            >
-              Investigate & Fix
-            </Button>
-          )}
-        </div>
-      </div>
 
-      {/* Progress bar for running executions */}
-      {isLive && (
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">
-                Step {currentStep + 1} of {steps.length}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {Math.round(progress)}% complete
-              </span>
+        {/* LIVE PROGRESS ─────────────────────────────────────────── */}
+        {isLive && (
+          <div className="mb-10" style={{ border: '1px solid var(--rule-strong)', padding: '16px' }}>
+            <div
+              className="flex items-center justify-between mb-3"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              <span>STEP {String(currentStep + 1).padStart(2, '0')} / {String(steps.length).padStart(2, '0')}</span>
+              <span style={{ color: 'var(--accent)' }}>{Math.round(progress)}% COMPLETE</span>
             </div>
-            <Progress value={progress} className="h-2" />
-          </CardContent>
-        </Card>
-      )}
+            <div style={{ height: '2px', background: 'var(--rule)', position: 'relative' }}>
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: `${progress}%`,
+                  background: 'var(--accent)',
+                  transition: 'width 0.3s ease',
+                }}
+              />
+            </div>
+          </div>
+        )}
 
-      {/* Goal evaluation (Phase 1a) */}
-      {(execution.goalAchieved !== null && execution.goalAchieved !== undefined) && (
-        <GoalEvalCard
-          achieved={execution.goalAchieved}
-          reasoning={execution.goalReasoning}
-          checks={execution.goalChecks}
-          goal={execution.test?.goal}
-        />
-      )}
+        {/* GOAL EVAL (kept component, sits inside the sheet) ─────── */}
+        {(execution.goalAchieved !== null && execution.goalAchieved !== undefined) && (
+          <div className="mb-10">
+            <GoalEvalCard
+              achieved={execution.goalAchieved}
+              reasoning={execution.goalReasoning}
+              checks={execution.goalChecks}
+              goal={execution.test?.goal}
+            />
+          </div>
+        )}
 
-      {/* Teaching card — fills the silent gap where a PASSED run has no
-          screenshots. Without this the "Set as baseline" button is
-          simply absent; users had no signal about why or how to fix.
-          Only shown for non-scan runs where step execution actually
-          happened (not EXPLORE mode which has its own tree view). */}
-      {!isLive &&
-        execution.status === 'PASSED' &&
-        (execution as any).mode !== 'EXPLORE' &&
-        screenshots.length === 0 && (
-        <Card className="bg-card border-border">
-          <CardContent className="py-5 flex items-start gap-3">
-            <ImageIcon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-foreground text-sm font-medium">
-                No screenshots captured in this run
+        {/* TEACHING — empty frame strip for PASSED runs with no screenshots */}
+        {!isLive &&
+          execution.status === 'PASSED' &&
+          (execution as any).mode !== 'EXPLORE' &&
+          screenshots.length === 0 && (
+            <div
+              className="mb-10 p-6"
+              style={{ border: '1px dashed var(--rule)' }}
+            >
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.24em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                  marginBottom: '10px',
+                }}
+              >
+                § NOTE — NO PLATES CAPTURED
               </div>
-              <p className="text-muted-foreground text-xs mt-1 max-w-xl">
-                Set-as-baseline and the film-strip timeline need at
-                least one frame. Enable{' '}
-                <span className="font-medium text-foreground">
-                  Screenshot every step
-                </span>{' '}
-                in this test&apos;s settings and run it again — new
-                story tests have it on by default.
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '14px',
+                  color: 'var(--ink-1)',
+                  lineHeight: 1.55,
+                  maxWidth: '64ch',
+                  margin: 0,
+                }}
+              >
+                The set-as-baseline stamp and the frame strip both need at least one plate. Enable{' '}
+                <span style={{ color: 'var(--accent)' }}>Screenshot every step</span> in this test&apos;s settings and re-run.
               </p>
-            </div>
-            {execution.test?.id && (
-              <Link href={`/tests/${execution.test.id}`}>
-                <Button variant="outline" size="sm">
-                  Open test settings
-                </Button>
-              </Link>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Film-strip timeline (Phase 3) — horizontal frames */}
-      {!isLive && screenshots.length > 0 && (
-        <FilmStrip
-          frames={steps.map((s, i) => ({
-            stepIndex: i,
-            screenshotUrl:
-              screenshots.find((sc) => sc.stepIndex === i)?.url || null,
-            status: s.status,
-          }))}
-          selectedStep={selectedScreenshotStep ?? 0}
-          onSelect={setSelectedScreenshotStep}
-        />
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Steps Panel */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Terminal className="h-5 w-5" />
-              Test Steps
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {steps.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No steps available</p>
-              ) : (
-                steps.map((step, index) => {
-                  const stepStatusConfig = {
-                    pending: { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted/50' },
-                    running: { icon: Loader2, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-                    passed: { icon: CheckCircle2, color: 'text-green-400', bg: 'bg-green-500/10' },
-                    failed: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10' },
-                  };
-                  const stepConfig = stepStatusConfig[step.status];
-                  const StepIcon = stepConfig.icon;
-
-                  return (
-                    <div
-                      key={index}
-                      className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${stepConfig.bg} ${
-                        step.status === 'running' ? 'ring-2 ring-blue-500/50' : ''
-                      } ${selectedScreenshotStep === index ? 'ring-2 ring-blue-400/70' : ''}`}
-                      onClick={() => setSelectedScreenshotStep(index)}
-                    >
-                      <StepIcon
-                        className={`h-5 w-5 mt-0.5 ${stepConfig.color} ${
-                          step.status === 'running' ? 'animate-spin' : ''
-                        }`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">
-                            {index + 1}. {step.action}
-                          </span>
-                        </div>
-                        {step.selector && (
-                          <code className="text-xs text-muted-foreground block truncate">
-                            {step.selector}
-                          </code>
-                        )}
-                        {step.value && (
-                          <span className="text-xs text-muted-foreground">
-                            Value: {step.value}
-                          </span>
-                        )}
-                        {step.error && (
-                          <p className="text-xs text-red-400 mt-1">{step.error}</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+              {execution.test?.id && (
+                <Link
+                  href={`/tests/${execution.test.id}`}
+                  className="vt-btn inline-flex mt-4"
+                >
+                  OPEN TEST SETTINGS
+                </Link>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Screenshot / Video / Live Panel */}
-        <div className="space-y-6">
-          {/* View mode toggle during live execution */}
-          {isLive && (
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'live' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('live')}
-                className={viewMode === 'live' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
-              >
-                <Radio className="w-4 h-4 mr-1" />
-                Watch Live
-              </Button>
-              <Button
-                variant={viewMode === 'screenshots' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('screenshots')}
-                className={viewMode === 'screenshots' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
-              >
-                <ImageIcon className="w-4 h-4 mr-1" />
-                Screenshots ({screenshots.length})
-              </Button>
-            </div>
           )}
 
-          {/* Live Browser Viewer */}
-          {isLive && viewMode === 'live' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Radio className="h-5 w-5 text-red-500" />
-                  Live Browser
-                  <Badge className="bg-red-500 text-white animate-pulse text-xs">LIVE</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LiveBrowserViewer executionId={executionId} />
-              </CardContent>
-            </Card>
-          )}
+        {/* SECTION · FRAME STRIP ─────────────────────────────────── */}
+        <div className="vt-section-head" style={{ margin: '24px 0 20px' }}>
+          <span className="num">§ 01</span>
+          <span className="ttl">frame strip · plates in sequence</span>
+          <span className="rule" />
+          <span className="stamp">{String(steps.length).padStart(2, '0')} FRAMES</span>
+        </div>
 
-          {/* Screenshot Gallery */}
-          {(!isLive || viewMode === 'screenshots') && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Screenshots
-                  {screenshots.length > 0 && (
-                    <Badge variant="secondary" className="text-xs">
-                      {screenshots.length}
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {screenshots.length > 0 ? (
-                  <ScreenshotGallery
-                    screenshots={screenshots}
-                    steps={steps.map((s) => ({
-                      index: s.index,
-                      action: s.action,
-                      status: s.status,
-                    }))}
-                    selectedStep={selectedScreenshotStep}
-                    onSelectStep={setSelectedScreenshotStep}
-                  />
-                ) : latestScreenshot ? (
-                  <img
-                    src={latestScreenshot}
-                    alt="Latest screenshot"
-                    className="w-full rounded-lg border"
-                  />
-                ) : (
-                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                    <p className="text-muted-foreground text-sm">
-                      {isLive ? 'Waiting for screenshot...' : 'No screenshots available'}
-                    </p>
+        {!isLive && screenshots.length > 0 && (
+          <div className="mb-6">
+            <FilmStrip
+              frames={steps.map((s, i) => ({
+                stepIndex: i,
+                screenshotUrl:
+                  screenshots.find((sc) => sc.stepIndex === i)?.url || null,
+                status: s.status,
+              }))}
+              selectedStep={selectedScreenshotStep ?? 0}
+              onSelect={setSelectedScreenshotStep}
+            />
+          </div>
+        )}
+
+        {/* Numbered step-frames — drawn as sheet thumbnails with callouts */}
+        {steps.length > 0 ? (
+          <div
+            className="grid gap-0 mb-10"
+            style={{
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 30%, transparent)',
+            }}
+          >
+            {steps.map((step, index) => {
+              const stepShot = screenshots.find((sc) => sc.stepIndex === index)?.url;
+              const stampCls =
+                step.status === 'passed'
+                  ? 'vt-rev-stamp vt-rev-stamp--pass'
+                  : step.status === 'failed'
+                  ? 'vt-rev-stamp vt-rev-stamp--reject'
+                  : 'vt-rev-stamp';
+              const stampLabel =
+                step.status === 'passed'
+                  ? 'PASS'
+                  : step.status === 'failed'
+                  ? 'REJECT'
+                  : step.status === 'running'
+                  ? 'RUN'
+                  : 'PEND';
+              const selected = selectedScreenshotStep === index;
+              return (
+                <button
+                  type="button"
+                  key={index}
+                  onClick={() => setSelectedScreenshotStep(index)}
+                  className="text-left transition-colors"
+                  style={{
+                    borderRight: '1px solid var(--rule)',
+                    borderBottom: '1px solid var(--rule)',
+                    padding: '14px',
+                    background: selected ? 'var(--accent-soft)' : 'transparent',
+                  }}
+                >
+                  {/* Frame header — § number + dimension callout */}
+                  <div
+                    className="flex items-center justify-between mb-3"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '9.5px',
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-2)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    <span style={{ color: 'var(--accent)' }}>§{String(index + 1).padStart(2, '0')}</span>
+                    <span>{(step.action || 'STEP').toUpperCase()}</span>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
-          {/* Video Player */}
-          {!isLive && videos.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Video className="h-5 w-5" />
-                  Video Recording
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                  {/* Plate — thumbnail or placeholder */}
+                  <div
+                    style={{
+                      border: '1px solid var(--rule)',
+                      background: 'var(--bg-3)',
+                      aspectRatio: '16/10',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {stepShot ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={stepShot}
+                        alt={`Step ${index + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center"
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '9px',
+                          letterSpacing: '0.22em',
+                          textTransform: 'uppercase',
+                          color: 'var(--ink-3)',
+                        }}
+                      >
+                        {step.status === 'running' ? '— CAPTURING —' : '— NO PLATE —'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Leader + stamp */}
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      {step.selector && (
+                        <div
+                          className="truncate"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '10px',
+                            color: 'var(--ink-2)',
+                            letterSpacing: '0.04em',
+                          }}
+                        >
+                          {step.selector}
+                        </div>
+                      )}
+                      {step.value && (
+                        <div
+                          className="truncate"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '10px',
+                            color: 'var(--ink-3)',
+                            letterSpacing: '0.04em',
+                          }}
+                        >
+                          ↳ {step.value}
+                        </div>
+                      )}
+                      {step.error && (
+                        <div
+                          className="truncate"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '10px',
+                            color: 'var(--fail)',
+                            letterSpacing: '0.04em',
+                          }}
+                          title={step.error}
+                        >
+                          ! {step.error}
+                        </div>
+                      )}
+                    </div>
+                    <span className={stampCls} style={{ fontSize: '9px', padding: '3px 7px', flexShrink: 0 }}>
+                      {stampLabel}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            className="py-16 text-center mb-10"
+            style={{
+              border: '1px dashed var(--rule)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            — NO STEPS RECORDED —
+          </div>
+        )}
+
+        {/* LIVE VIEW / SCREENSHOT GALLERY / VIDEO ─────────────────── */}
+        <div className="vt-section-head">
+          <span className="num">§ 02</span>
+          <span className="ttl">visual record · plates &amp; motion</span>
+          <span className="rule" />
+          <span className="stamp">{String(screenshots.length).padStart(2, '0')} PLATES</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0"
+          style={{ border: '1px solid var(--rule-strong)' }}
+        >
+          {/* LEFT PANE — Live / Screenshots */}
+          <div style={{ borderRight: '1px solid var(--rule)', padding: '18px' }}>
+            {isLive && (
+              <div
+                className="flex gap-0 mb-4"
+                style={{ border: '1px solid var(--rule)' }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setViewMode('live')}
+                  className="flex-1 py-2 px-3 transition-colors"
+                  style={{
+                    borderRight: '1px solid var(--rule)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: viewMode === 'live' ? 'var(--accent)' : 'var(--ink-2)',
+                    background: viewMode === 'live' ? 'var(--accent-soft)' : 'transparent',
+                  }}
+                >
+                  ● WATCH LIVE
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('screenshots')}
+                  className="flex-1 py-2 px-3 transition-colors"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: viewMode === 'screenshots' ? 'var(--accent)' : 'var(--ink-2)',
+                    background: viewMode === 'screenshots' ? 'var(--accent-soft)' : 'transparent',
+                  }}
+                >
+                  ▦ PLATES ({screenshots.length})
+                </button>
+              </div>
+            )}
+
+            <div
+              className="flex items-center justify-between mb-3 pb-2"
+              style={{
+                borderBottom: '1px solid var(--rule)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '9px',
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+              }}
+            >
+              <span>
+                FIG. A · {isLive && viewMode === 'live' ? 'LIVE BROWSER' : 'PLATE SET'}
+              </span>
+              <span>{isLive && viewMode === 'live' ? 'REAL-TIME' : `${screenshots.length} PLATES`}</span>
+            </div>
+
+            {isLive && viewMode === 'live' ? (
+              <LiveBrowserViewer executionId={executionId} />
+            ) : screenshots.length > 0 ? (
+              <ScreenshotGallery
+                screenshots={screenshots}
+                steps={steps.map((s) => ({
+                  index: s.index,
+                  action: s.action,
+                  status: s.status,
+                }))}
+                selectedStep={selectedScreenshotStep}
+                onSelectStep={setSelectedScreenshotStep}
+              />
+            ) : latestScreenshot ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={latestScreenshot}
+                alt="Latest plate"
+                style={{ width: '100%', border: '1px solid var(--rule)' }}
+              />
+            ) : (
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  aspectRatio: '16/10',
+                  border: '1px dashed var(--rule)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-3)',
+                }}
+              >
+                {isLive ? '— WAITING FOR PLATE —' : '— NO PLATES —'}
+              </div>
+            )}
+
+            {/* VIDEO — shown below when present and not live */}
+            {!isLive && videos.length > 0 && (
+              <div className="mt-6">
+                <div
+                  className="flex items-center justify-between mb-3 pb-2"
+                  style={{
+                    borderBottom: '1px solid var(--rule)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '9px',
+                    letterSpacing: '0.24em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                  }}
+                >
+                  <span>FIG. B · MOTION RECORD</span>
+                  <span>MP4 · {videos[0].format || 'WEBM'}</span>
+                </div>
                 <VideoPlayer
                   src={videos[0].url}
                   poster={screenshots.length > 0 ? screenshots[0].url : undefined}
                 />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Live Logs */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Terminal className="h-5 w-5" />
-                Live Log
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-background rounded-lg p-3 h-48 overflow-y-auto font-mono text-xs">
-                {logs.length === 0 ? (
-                  <span className="text-muted-foreground">
-                    {isLive ? 'Waiting for events...' : 'No log entries'}
-                  </span>
-                ) : (
-                  logs.map((log, i) => (
-                    <div key={i} className="text-muted-foreground">
-                      {log}
-                    </div>
-                  ))
-                )}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
+
+          {/* RIGHT PANE — Live log / printout */}
+          <div style={{ padding: '18px' }}>
+            <div
+              className="flex items-center justify-between mb-3 pb-2"
+              style={{
+                borderBottom: '1px solid var(--rule)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '9px',
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+              }}
+            >
+              <span>PRINTOUT · EVENT LOG</span>
+              <span>{String(logs.length).padStart(3, '0')} LINES</span>
+            </div>
+            <div
+              style={{
+                height: '420px',
+                overflowY: 'auto',
+                background: 'var(--bg-3)',
+                border: '1px solid var(--rule)',
+                padding: '14px 16px',
+                borderLeft: '3px solid var(--rule-strong)', // faint hairline gutter
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                lineHeight: 1.6,
+                color: 'var(--ink-2)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {logs.length === 0 ? (
+                <span style={{ color: 'var(--ink-3)' }}>
+                  {isLive ? '— WAITING FOR EVENTS —' : '— NO LOG ENTRIES —'}
+                </span>
+              ) : (
+                logs.map((log, i) => (
+                  <div key={i} style={{ color: 'var(--ink-1)' }}>
+                    <span style={{ color: 'var(--ink-3)', marginRight: '10px' }}>
+                      {String(i + 1).padStart(3, '0')}
+                    </span>
+                    {log}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Execution Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Execution Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <dt className="text-sm text-muted-foreground">Status</dt>
-              <dd className={`font-medium ${config.textColor}`}>{config.label}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">Duration</dt>
-              <dd className="font-medium">{formatDuration(execution.duration)}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">Triggered By</dt>
-              <dd className="font-medium capitalize">{execution.triggeredBy?.toLowerCase()}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">Created</dt>
-              <dd className="font-medium">{new Date(execution.createdAt).toLocaleString()}</dd>
-            </div>
-            {execution.platform && (
-              <div>
-                <dt className="text-sm text-muted-foreground">Platform</dt>
-                <dd className="font-medium">{execution.platform}</dd>
+        {/* SECTION · RAW DATA ─────────────────────────────────────── */}
+        <div className="vt-section-head">
+          <span className="num">§ 03</span>
+          <span className="ttl">raw data · run metadata</span>
+          <span className="rule" />
+          <span className="stamp">PRINTOUT</span>
+        </div>
+
+        <div
+          style={{
+            border: '1px solid var(--rule-strong)',
+            background: 'color-mix(in oklab, var(--bg-1) 30%, transparent)',
+          }}
+        >
+          <dl
+            className="grid grid-cols-2 md:grid-cols-4"
+            style={{ margin: 0 }}
+          >
+            {[
+              { k: 'STATUS', v: statusLabels[execution.status], c: execution.status === 'PASSED' ? 'var(--pass)' : execution.status === 'FAILED' ? 'var(--fail)' : 'var(--ink-0)' },
+              { k: 'DURATION', v: formatDuration(execution.duration) },
+              { k: 'TRIGGERED BY', v: (execution.triggeredBy || '——').toUpperCase() },
+              { k: 'CREATED', v: new Date(execution.createdAt).toLocaleString() },
+              execution.platform ? { k: 'PLATFORM', v: execution.platform.toUpperCase() } : null,
+              execution.startedAt ? { k: 'STARTED', v: new Date(execution.startedAt).toLocaleString() } : null,
+              execution.completedAt ? { k: 'COMPLETED', v: new Date(execution.completedAt).toLocaleString() } : null,
+              { k: 'RUN ID', v: execution.id },
+            ].filter(Boolean).map((row: any, i: number) => (
+              <div
+                key={row.k}
+                style={{
+                  padding: '14px 16px',
+                  borderRight: '1px solid var(--rule)',
+                  borderBottom: '1px solid var(--rule)',
+                }}
+              >
+                <dt
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '9px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                    marginBottom: '6px',
+                  }}
+                >
+                  {row.k}
+                </dt>
+                <dd
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '12px',
+                    letterSpacing: '0.04em',
+                    color: row.c || 'var(--ink-0)',
+                    fontVariantNumeric: 'tabular-nums',
+                    margin: 0,
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {row.v}
+                </dd>
               </div>
-            )}
-            {execution.startedAt && (
-              <div>
-                <dt className="text-sm text-muted-foreground">Started</dt>
-                <dd className="font-medium">{new Date(execution.startedAt).toLocaleString()}</dd>
-              </div>
-            )}
-            {execution.completedAt && (
-              <div>
-                <dt className="text-sm text-muted-foreground">Completed</dt>
-                <dd className="font-medium">{new Date(execution.completedAt).toLocaleString()}</dd>
-              </div>
-            )}
+            ))}
           </dl>
           {execution.errorMessage && (
-            <div className="mt-4 p-3 bg-red-500/10 rounded-lg">
-              <p className="text-sm text-red-400">{execution.errorMessage}</p>
+            <div
+              style={{
+                padding: '14px 16px',
+                background: 'var(--fail-soft)',
+                borderTop: '1px solid var(--fail)',
+                borderLeft: '3px solid var(--fail)',
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '9px',
+                  letterSpacing: '0.24em',
+                  textTransform: 'uppercase',
+                  color: 'var(--fail)',
+                  marginBottom: '6px',
+                }}
+              >
+                § ERROR · REDLINE
+              </div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '12px',
+                  color: 'var(--fail)',
+                  lineHeight: 1.5,
+                  margin: 0,
+                  wordBreak: 'break-word',
+                }}
+              >
+                {execution.errorMessage}
+              </p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,257 +1,799 @@
 'use client';
 
-// /design — canonical reference for the Darkroom / Editorial design system.
-// Bookmark for designers/engineers. Every token, typographic scale,
-// primitive component, and status pattern lives here with a label.
+// /design — canonical Blueprint design system reference.
+// A single plate that catalogs every token, typographic specimen,
+// drafting primitive, and atomic component used across VisionTest.ai.
+// Bookmark this sheet; everything here is load-bearing for the UI language.
 
-import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
-import { Sun, Moon, CheckCircle2, XCircle, AlertCircle, Clock, Plus, ArrowRight } from 'lucide-react';
+import { EditorialHero } from '@/components/shell/EditorialHero';
+
+const SURFACES: Array<{ token: string; value: string; role: string }> = [
+  { token: '--bg-0', value: '#0A1838', role: 'sheet ground' },
+  { token: '--bg-1', value: '#0E1B42', role: 'card / panel' },
+  { token: '--bg-2', value: '#112151', role: 'inset / hover' },
+  { token: '--bg-3', value: '#0C1633', role: 'deepest inset' },
+];
+
+const INKS: Array<{ token: string; value: string; role: string }> = [
+  { token: '--ink-0', value: '#C9E3EE', role: 'primary text' },
+  { token: '--ink-1', value: '#A8D8E8', role: 'strong line' },
+  { token: '--ink-2', value: '#6E93A8', role: 'dim / label' },
+  { token: '--ink-3', value: '#415A70', role: 'ghost' },
+];
+
+const ACCENTS: Array<{ token: string; value: string; role: string }> = [
+  { token: '--accent', value: '#D4A24C', role: 'revision ochre' },
+  { token: '--brass', value: '#A8D8E8', role: 'secondary line' },
+  { token: '--rule', value: 'rgba 22%', role: 'hairline divider' },
+  { token: '--rule-strong', value: 'rgba 45%', role: 'title rule' },
+];
+
+const STATUS: Array<{ token: string; value: string; role: string }> = [
+  { token: '--pass', value: '#7BB98A', role: 'approved' },
+  { token: '--fail', value: '#DC3D37', role: 'rejected' },
+  { token: '--warn', value: '#D4A24C', role: 'flagged' },
+  { token: '--grid-major', value: 'rgba 14%', role: 'drafting grid' },
+];
 
 export default function DesignReferencePage() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
   return (
-    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      {/* Masthead */}
-      <header className="pb-7 border-b mb-16 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
-        <div>
-          <div className="vt-eyebrow mb-5">§ Design · Reference</div>
-          <h1 className="vt-display" style={{ fontSize: 'clamp(44px, 6vw, 84px)', lineHeight: 0.96 }}>
-            The <em>Darkroom</em> / Editorial<br />system.
-          </h1>
-          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '58ch' }}>
-            Two themes, one language. Fraunces for display, Instrument Sans
-            for body, Fragment Mono for data. Film grain and safelight on
-            patinated black; bone paper and cadmium red for daylight.
-          </p>
-        </div>
-        {mounted && (
-          <button
-            type="button"
-            onClick={() => setTheme(theme === 'darkroom' ? 'editorial' : 'darkroom')}
-            className="vt-btn"
-          >
-            {theme === 'darkroom' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            {theme === 'darkroom' ? 'Switch to Editorial' : 'Switch to Darkroom'}
-          </button>
-        )}
-      </header>
-
-      {/* ── Palette ─────────────────────────────── */}
-      <Section kicker="§ 01" title="Palette" lead="Semantic tokens — the same component adapts to both themes by swapping these values. Never hardcode a color.">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Swatch name="--bg-0" role="Page background" v="var(--bg-0)" />
-          <Swatch name="--bg-1" role="Card / panel" v="var(--bg-1)" />
-          <Swatch name="--bg-2" role="Inset / hover" v="var(--bg-2)" />
-          <Swatch name="--bg-3" role="Input raised" v="var(--bg-3)" />
-          <Swatch name="--ink-0" role="Primary text" v="var(--ink-0)" />
-          <Swatch name="--ink-1" role="Secondary" v="var(--ink-1)" />
-          <Swatch name="--ink-2" role="Mute" v="var(--ink-2)" />
-          <Swatch name="--rule" role="Border / rule" v="var(--rule)" />
-          <Swatch name="--accent" role="Safelight / cadmium" v="var(--accent)" />
-          <Swatch name="--brass" role="Metadata / italic" v="var(--brass)" />
-          <Swatch name="--pass" role="Phosphor / forest" v="var(--pass)" />
-          <Swatch name="--fail" role="Kodak red / maroon" v="var(--fail)" />
-        </div>
-      </Section>
-
-      {/* ── Typography ─────────────────────────────── */}
-      <Section kicker="§ 02" title="Typography" lead="Three families, every theme. Hierarchy is made with optical size and italics, not with extra weight.">
-        <div className="space-y-10">
-          <TypeSample label="Display · opsz 144 · weight 300" family="var(--font-display)" style={{ fontSize: '84px', fontVariationSettings: '"opsz" 144', fontWeight: 300, lineHeight: 0.95, letterSpacing: '-0.035em' }}>
-            Watch every <em style={{ color: 'var(--accent)' }}>change.</em>
-          </TypeSample>
-          <TypeSample label="Display · opsz 72 · italic" family="var(--font-display)" style={{ fontSize: '44px', fontVariationSettings: '"opsz" 72', fontStyle: 'italic', fontWeight: 350, lineHeight: 1.1 }}>
-            A darkroom for your <em>interface</em>.
-          </TypeSample>
-          <TypeSample label="Display · opsz 24 · italic lede" family="var(--font-display)" style={{ fontSize: '22px', fontVariationSettings: '"opsz" 24', fontStyle: 'italic', color: 'var(--ink-1)' }}>
-            Every step is evidence; every goal, a hypothesis.
-          </TypeSample>
-          <TypeSample label="Body · Instrument Sans · 16px" family="var(--font-body)" style={{ fontSize: '16px', lineHeight: 1.55, color: 'var(--ink-0)' }}>
-            VisionTest runs your user stories as real browser sessions,
-            photographs every step, and tells you what changed.
-          </TypeSample>
-          <TypeSample label="Mono · Fragment Mono · 13px" family="var(--font-mono-feature)" style={{ fontSize: '13px', letterSpacing: '0.02em', color: 'var(--ink-1)' }}>
-            exec 01HXAMPLE····xxxxxxxxxxxxxxxxxx · 4.23s · chromium · main
-          </TypeSample>
-          <TypeSample label="Eyebrow · mono · uppercase" style={{}}>
-            <span className="vt-eyebrow">Chapter I · The Darkroom</span>
-          </TypeSample>
-          <TypeSample label="Kicker · mono · brass" style={{}}>
-            <span className="vt-kicker" style={{ color: 'var(--brass)' }}>§ Run · 2026-04-22 · chromium · main</span>
-          </TypeSample>
-        </div>
-      </Section>
-
-      {/* ── Buttons ─────────────────────────────── */}
-      <Section kicker="§ 03" title="Buttons" lead=".vt-btn for secondary, .vt-btn--primary for the single focal action, .vt-btn--ghost for in-flow tertiary.">
-        <div className="flex items-center gap-3 flex-wrap">
-          <button className="vt-btn vt-btn--primary">
-            <Plus className="w-4 h-4" />
-            Primary
-          </button>
-          <button className="vt-btn">
-            Secondary
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <button className="vt-btn vt-btn--ghost">Ghost</button>
-          <button className="vt-btn" disabled style={{ opacity: 0.5 }}>
-            Disabled
-          </button>
-        </div>
-      </Section>
-
-      {/* ── Chips ─────────────────────────────── */}
-      <Section kicker="§ 04" title="Status chips" lead="Used for run status, scan tree rows, goal verdicts. Tone is conveyed via tint + dot glow, never via emoji.">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="vt-chip">default</span>
-          <span className="vt-chip vt-chip--accent"><CheckCircle2 className="w-3.5 h-3.5" />accent</span>
-          <span className="vt-chip vt-chip--pass"><span className="vt-dot" />passed</span>
-          <span className="vt-chip vt-chip--fail"><span className="vt-dot" />failed</span>
-          <span className="vt-chip vt-chip--warn"><AlertCircle className="w-3.5 h-3.5" />warning</span>
-          <span className="vt-chip vt-breathe"><Clock className="w-3.5 h-3.5" />running</span>
-        </div>
-      </Section>
-
-      {/* ── Input ─────────────────────────────── */}
-      <Section kicker="§ 05" title="Inputs" lead=".vt-input is a hairline-bottom-rule input. No box, no rounded corners. The placeholder is italic serif to feel hand-set.">
-        <div className="max-w-xl">
-          <input className="vt-input" placeholder="https://your-site.com" />
-        </div>
-      </Section>
-
-      {/* ── Panel ─────────────────────────────── */}
-      <Section kicker="§ 06" title="Panels" lead=".vt-panel frames content; .vt-panel--inset sits on a darker surface. Used sparingly — most content stands on rules alone.">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="vt-panel">
-            <div className="vt-kicker mb-3" style={{ color: 'var(--brass)' }}>sample</div>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 360, lineHeight: 1.1, letterSpacing: '-0.01em' }}>
-              Login, <em style={{ color: 'var(--accent)' }}>happy path</em>
-            </h3>
-            <p className="mt-3 text-[14.5px]" style={{ color: 'var(--ink-1)' }}>
-              Sits inside a .vt-panel. No drop shadow, just a hairline border
-              and generous padding.
-            </p>
-          </div>
-          <div className="vt-panel vt-panel--inset">
-            <div className="vt-kicker mb-3" style={{ color: 'var(--brass)' }}>inset</div>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 360, lineHeight: 1.1, letterSpacing: '-0.01em' }}>
-              Goal <em style={{ color: 'var(--accent)' }}>verdict</em>
-            </h3>
-            <p className="mt-3 text-[14.5px]" style={{ color: 'var(--ink-1)' }}>
-              Uses --bg-2 to sit recessed inside a container surface.
-            </p>
-          </div>
-        </div>
-      </Section>
-
-      {/* ── Rules ─────────────────────────────── */}
-      <Section kicker="§ 07" title="Rules & ornaments" lead="Hairline division, not outline boxes. The ornament ◈ is the signature mid-section break.">
-        <div className="space-y-8">
-          <div className="vt-rule" />
-          <div className="vt-ornament">◈</div>
-          <div className="vt-rule--strong" />
-        </div>
-      </Section>
-
-      {/* ── Motion ─────────────────────────────── */}
-      <Section kicker="§ 08" title="Motion" lead="Slow reveals, safelight breathing. No bouncy easings. No parallax. Never more than 420ms for entrances.">
-        <div className="flex items-center gap-6 flex-wrap">
-          <div className="vt-panel flex items-center gap-3">
-            <span className="vt-dot vt-breathe" style={{ color: 'var(--accent)', width: 14, height: 14 }} />
-            <span className="vt-kicker">vt-breathe</span>
-          </div>
-          <div className="vt-panel flex items-center gap-3 vt-reveal">
-            <span className="vt-dot" style={{ color: 'var(--pass)', width: 10, height: 10 }} />
-            <span className="vt-kicker">vt-reveal</span>
-          </div>
-        </div>
-      </Section>
-
-      {/* Colophon */}
-      <footer
-        className="mt-24 pt-6 border-t vt-mono text-[11px] tracking-[0.14em] uppercase flex justify-between gap-4 flex-wrap"
-        style={{ borderColor: 'var(--rule)', color: 'var(--ink-2)' }}
+    <>
+      <EditorialHero
+        title={<>design <span style={{ color: 'var(--accent)' }}>·</span> system</>}
+        lead="Blueprint. Navy ground, chalk linework, ochre revisions, red rejects. One plate, every token and primitive used across the product."
+        sheet="99 OF 99"
+        revision={<>REV · 02 · CHECKED · J.S.</>}
+        eyebrow="§ REFERENCE · BLUEPRINT"
+        width="wide"
       >
-        <span>Design system · {mounted ? (theme || 'darkroom') : 'darkroom'}</span>
-        <span>Fraunces · Instrument Sans · Fragment Mono</span>
-      </footer>
-    </div>
+        {/* ─────────────────────────────────────────────────────────────── */}
+        {/* § 01 · TOKENS                                                   */}
+        {/* ─────────────────────────────────────────────────────────────── */}
+        <Section num="§ 01" title="tokens" stamp="4 GROUPS · 16 VARS">
+          <p className="mt-1 mb-8" style={lead}>
+            Every colour referenced by a component is one of these tokens. Never hardcode a hex.
+            Surfaces deepen inward (bg-0 → bg-3); ink lightens outward (ink-0 → ink-3). The ochre
+            accent is reserved for active revisions and single focal actions.
+          </p>
+
+          <TokenGrid heading="Surfaces · the stock" rows={SURFACES} />
+          <TokenGrid heading="Ink · chalk line values" rows={INKS} />
+          <TokenGrid heading="Accent · ochre + chalk" rows={ACCENTS} />
+          <TokenGrid heading="Status · verdicts" rows={STATUS} />
+        </Section>
+
+        {/* ─────────────────────────────────────────────────────────────── */}
+        {/* § 02 · TYPOGRAPHY                                               */}
+        {/* ─────────────────────────────────────────────────────────────── */}
+        <Section num="§ 02" title="typography" stamp="4 FAMILIES · TAB NUMS">
+          <p className="mt-1 mb-8" style={lead}>
+            Four typefaces, each with one job. Display for page titles, body for prose, mono for
+            labels / data / ruled metadata, hand for sparing revision marks. Hierarchy comes from
+            size and optical context, not weight.
+          </p>
+
+          <div className="space-y-10">
+            <TypeSpecimen
+              label="display · var(--font-display)"
+              meta="Major Mono Display · 88 / 0.96 · lowercase · -0.01em"
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(44px, 7vw, 88px)',
+                  lineHeight: 0.96,
+                  letterSpacing: '-0.01em',
+                  textTransform: 'lowercase',
+                  color: 'var(--ink-0)',
+                }}
+              >
+                visiontest<span style={{ color: 'var(--accent)' }}>·</span>ai
+              </span>
+            </TypeSpecimen>
+
+            <TypeSpecimen
+              label="body · var(--font-body)"
+              meta="Space Grotesk · 16 / 1.6 · regular"
+            >
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '16px',
+                  lineHeight: 1.6,
+                  color: 'var(--ink-1)',
+                  maxWidth: '60ch',
+                }}
+              >
+                Every interface is a schematic. VisionTest.ai captures your pages as precise plates,
+                compares them against the approved baseline, and redlines the deltas the way an
+                engineer marks up a drawing set — with intention, not noise.
+              </p>
+            </TypeSpecimen>
+
+            <TypeSpecimen
+              label="mono · var(--font-mono)"
+              meta="JetBrains Mono · 13 · tabular · 0.16em"
+            >
+              <div
+                className="vt-mono"
+                style={{
+                  fontSize: '13px',
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-1)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                VT-SCH-0041-A · REV 02 · 2026.04.23 · CHROMIUM · 1440×0900 · 4.82s
+              </div>
+            </TypeSpecimen>
+
+            <TypeSpecimen
+              label="hand · var(--font-hand)"
+              meta="Caveat · 22 · ochre · rev notes only"
+            >
+              <span className="vt-annotation">see detail A — header rule changed 1px → 0.5px</span>
+            </TypeSpecimen>
+
+            <TypeSpecimen label="labels · utilities" meta=".vt-eyebrow · .vt-kicker · .vt-leader">
+              <div className="space-y-4">
+                <div className="vt-eyebrow">§ eyebrow · section marker</div>
+                <div className="vt-kicker">kicker · metadata row</div>
+                <div className="vt-leader">leader · detail a</div>
+              </div>
+            </TypeSpecimen>
+          </div>
+        </Section>
+
+        {/* ─────────────────────────────────────────────────────────────── */}
+        {/* § 03 · DRAFTING PRIMITIVES                                      */}
+        {/* ─────────────────────────────────────────────────────────────── */}
+        <Section num="§ 03" title="drafting primitives" stamp="SIGNATURE MARKS">
+          <p className="mt-1 mb-8" style={lead}>
+            The signature marks that make a VisionTest plate recognisable. Use them sparingly;
+            they are the frame of a drawing, not decoration.
+          </p>
+
+          {/* title block */}
+          <PrimitiveLabel name=".vt-title-block" role="sheet metadata grid" />
+          <div className="vt-title-block mb-12">
+            <div className="span2">
+              <span className="k">project</span>
+              <span className="v big">visiontest · ai</span>
+            </div>
+            <div className="span2">
+              <span className="k">plate</span>
+              <span className="v">VT-SCH-0041-A</span>
+            </div>
+            <div>
+              <span className="k">sheet</span>
+              <span className="v">99 / 99</span>
+            </div>
+            <div>
+              <span className="k">scale</span>
+              <span className="v">1 : 1</span>
+            </div>
+            <div className="span2">
+              <span className="k">title</span>
+              <span className="v big">design system reference</span>
+            </div>
+            <div className="span2">
+              <span className="k">drawn</span>
+              <span className="v">j. stuart · {today}</span>
+            </div>
+            <div>
+              <span className="k">checked</span>
+              <span className="v">j.s.</span>
+            </div>
+            <div>
+              <span className="k">rev</span>
+              <span className="v" style={{ color: 'var(--accent)' }}>02</span>
+            </div>
+          </div>
+
+          {/* revision stamps */}
+          <PrimitiveLabel name=".vt-rev-stamp" role="three variants" />
+          <div className="flex items-center gap-4 flex-wrap mb-12">
+            <span className="vt-rev-stamp">REV · 02 · {today}</span>
+            <span className="vt-rev-stamp vt-rev-stamp--pass">APPROVED · J.S.</span>
+            <span className="vt-rev-stamp vt-rev-stamp--reject">REJECT · SEE NOTE</span>
+          </div>
+
+          {/* section head */}
+          <PrimitiveLabel name=".vt-section-head" role="numbered plate head" />
+          <div className="mb-12" style={{ marginTop: '-16px' }}>
+            <div className="vt-section-head" style={{ margin: '24px 0 0' }}>
+              <span className="num">§ XX</span>
+              <span className="ttl">sample section head</span>
+              <span className="rule" />
+              <span className="stamp">STAMP · META</span>
+            </div>
+          </div>
+
+          {/* dimension callout */}
+          <PrimitiveLabel name=".vt-dim-h" role="dimension callout" />
+          <div
+            className="mb-12"
+            style={{
+              border: '1px solid var(--rule)',
+              padding: '28px 40px',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+            }}
+          >
+            <div className="vt-dim-h">
+              <span className="tick-l" />
+              <span className="v">1440</span>
+              <span className="tick-r" />
+            </div>
+          </div>
+
+          {/* crop marks */}
+          <PrimitiveLabel name=".vt-crop --tl/--tr/--bl/--br" role="sheet corner marks" />
+          <div
+            className="mb-12"
+            style={{
+              position: 'relative',
+              height: '200px',
+              border: '1px solid var(--rule)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+            }}
+          >
+            <span className="vt-crop vt-crop--tl" />
+            <span className="vt-crop vt-crop--tr" />
+            <span className="vt-crop vt-crop--bl" />
+            <span className="vt-crop vt-crop--br" />
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+              }}
+            >
+              SAMPLE SHEET · 4 CROP MARKS
+            </div>
+          </div>
+
+          {/* annotation */}
+          <PrimitiveLabel name=".vt-annotation" role="handwritten rev note" />
+          <div
+            style={{
+              border: '1px dashed var(--rule)',
+              padding: '20px 24px',
+              background: 'color-mix(in oklab, var(--bg-1) 30%, transparent)',
+            }}
+          >
+            <span className="vt-annotation">
+              header rule 1px → 0.5px — see detail A, reviewer concurs
+            </span>
+          </div>
+        </Section>
+
+        {/* ─────────────────────────────────────────────────────────────── */}
+        {/* § 04 · ATOMS                                                    */}
+        {/* ─────────────────────────────────────────────────────────────── */}
+        <Section num="§ 04" title="atoms" stamp="CHIPS · BUTTONS · INPUT · PANEL">
+          <p className="mt-1 mb-8" style={lead}>
+            The smallest composable pieces. Every product screen is built from these — no bespoke
+            one-off controls.
+          </p>
+
+          <PrimitiveLabel name=".vt-chip" role="four status variants" />
+          <div className="flex items-center gap-3 flex-wrap mb-10">
+            <span className="vt-chip">default</span>
+            <span className="vt-chip vt-chip--accent">
+              <span className="vt-dot" />
+              accent
+            </span>
+            <span className="vt-chip vt-chip--pass">
+              <span className="vt-dot" />
+              passed
+            </span>
+            <span className="vt-chip vt-chip--fail">
+              <span className="vt-dot" />
+              failed
+            </span>
+            <span className="vt-chip vt-chip--warn">
+              <span className="vt-dot" />
+              warn
+            </span>
+          </div>
+
+          <PrimitiveLabel name=".vt-btn" role="primary · default · ghost · disabled" />
+          <div className="flex items-center gap-3 flex-wrap mb-10">
+            <button type="button" className="vt-btn vt-btn--primary">PRIMARY</button>
+            <button type="button" className="vt-btn">DEFAULT</button>
+            <button type="button" className="vt-btn vt-btn--ghost">GHOST</button>
+            <button type="button" className="vt-btn" disabled style={{ opacity: 0.45 }}>
+              DISABLED
+            </button>
+          </div>
+
+          <PrimitiveLabel name=".vt-input" role="hairline-rule field" />
+          <div className="max-w-xl mb-10">
+            <input
+              className="vt-input"
+              placeholder="https://your-site.com"
+              aria-label="sample input"
+            />
+          </div>
+
+          <PrimitiveLabel name=".vt-panel · .vt-panel--inset" role="framed content surface" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+            <div className="vt-panel">
+              <div className="vt-kicker mb-3">sample · default</div>
+              <h3
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '22px',
+                  lineHeight: 1.1,
+                  color: 'var(--ink-0)',
+                  textTransform: 'lowercase',
+                }}
+              >
+                login · <span style={{ color: 'var(--accent)' }}>happy path</span>
+              </h3>
+              <p
+                className="mt-3"
+                style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--ink-1)' }}
+              >
+                Sits on --bg-1. Hairline border, no shadow, no rounded corners.
+              </p>
+            </div>
+            <div className="vt-panel vt-panel--inset">
+              <div className="vt-kicker mb-3">sample · inset</div>
+              <h3
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '22px',
+                  lineHeight: 1.1,
+                  color: 'var(--ink-0)',
+                  textTransform: 'lowercase',
+                }}
+              >
+                goal · <span style={{ color: 'var(--accent)' }}>verdict</span>
+              </h3>
+              <p
+                className="mt-3"
+                style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--ink-1)' }}
+              >
+                Sits on --bg-2 to sit recessed inside a container panel.
+              </p>
+            </div>
+          </div>
+
+          <PrimitiveLabel name=".vt-rule · .vt-ornament" role="dividers" />
+          <div className="space-y-6">
+            <div className="vt-rule" />
+            <div className="vt-rule--dashed" />
+            <div className="vt-rule--strong" />
+            <div className="vt-ornament">◈</div>
+          </div>
+        </Section>
+
+        {/* ─────────────────────────────────────────────────────────────── */}
+        {/* § 05 · SAMPLE COMPOSITION                                       */}
+        {/* ─────────────────────────────────────────────────────────────── */}
+        <Section num="§ 05" title="sample composition" stamp="FIG. 1 · HOW THEY SIT TOGETHER">
+          <p className="mt-1 mb-8" style={lead}>
+            A miniature hero showing how atoms compose into a plate. Title block on the left,
+            orthographic figure on the right, status chips along the bottom rail.
+          </p>
+
+          <div
+            className="relative"
+            style={{
+              border: '1px solid var(--rule-strong)',
+              padding: '40px 44px 28px',
+              background: 'color-mix(in oklab, var(--bg-1) 45%, transparent)',
+            }}
+          >
+            <span className="vt-crop vt-crop--tl" />
+            <span className="vt-crop vt-crop--tr" />
+            <span className="vt-crop vt-crop--bl" />
+            <span className="vt-crop vt-crop--br" />
+
+            <div
+              className="flex items-center gap-4 mb-6 flex-wrap"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.26em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              <span>FIG. 1 · HERO</span>
+              <span className="flex-1 min-w-[40px]" style={{ height: '1px', background: 'var(--ink-3)' }} />
+              <span className="vt-rev-stamp">REV · 02 · {today}</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-10 items-start">
+              <div>
+                <h3
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'clamp(32px, 4vw, 52px)',
+                    lineHeight: 0.98,
+                    letterSpacing: '-0.01em',
+                    textTransform: 'lowercase',
+                    color: 'var(--ink-0)',
+                    margin: 0,
+                  }}
+                >
+                  visual regression<br />
+                  <span style={{ color: 'var(--accent)' }}>drafted</span>{' '}
+                  <span style={{ color: 'var(--ink-2)' }}>—</span> redlined.
+                </h3>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '15px',
+                    color: 'var(--ink-1)',
+                    maxWidth: '52ch',
+                    lineHeight: 1.55,
+                    marginTop: '20px',
+                  }}
+                >
+                  Every deploy is a revision. Capture plates, diff against the approved baseline,
+                  and ship the deltas with an engineer&apos;s stamp.
+                </p>
+
+                <div className="flex items-center gap-3 flex-wrap mt-6">
+                  <button type="button" className="vt-btn vt-btn--primary">SCAN IN 60s</button>
+                  <button type="button" className="vt-btn">SIGN IN</button>
+                </div>
+
+                <div className="flex items-center gap-3 flex-wrap mt-8">
+                  <span className="vt-chip vt-chip--pass"><span className="vt-dot" />32 passed</span>
+                  <span className="vt-chip vt-chip--fail"><span className="vt-dot" />3 failed</span>
+                  <span className="vt-chip vt-chip--warn"><span className="vt-dot" />1 warn</span>
+                  <span className="vt-chip">4.82s</span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  border: '1px solid var(--rule)',
+                  padding: '12px',
+                  background: 'color-mix(in oklab, var(--bg-3) 50%, transparent)',
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '9px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                    paddingBottom: '8px',
+                    marginBottom: '8px',
+                    borderBottom: '1px solid var(--rule)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <span>DETAIL A</span>
+                  <span>1 : 4</span>
+                </div>
+                <svg viewBox="0 0 240 260" className="w-full h-auto" style={{ color: 'var(--ink-1)' }}>
+                  {/* desktop viewport */}
+                  <rect x="14" y="14" width="212" height="130" fill="none" stroke="currentColor" strokeWidth="1" />
+                  <line x1="14" y1="34" x2="226" y2="34" stroke="currentColor" strokeWidth="0.5" opacity="0.5" />
+                  <circle cx="24" cy="24" r="2" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                  <circle cx="32" cy="24" r="2" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                  <circle cx="40" cy="24" r="2" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                  <text
+                    x="120"
+                    y="82"
+                    textAnchor="middle"
+                    fontSize="8"
+                    fontFamily="monospace"
+                    letterSpacing="1.5"
+                    fill="var(--ink-2)"
+                  >
+                    1440 × 900
+                  </text>
+                  <text
+                    x="120"
+                    y="95"
+                    textAnchor="middle"
+                    fontSize="7"
+                    fontFamily="monospace"
+                    letterSpacing="1"
+                    fill="var(--ink-3)"
+                  >
+                    DESKTOP
+                  </text>
+
+                  {/* dashed separator */}
+                  <line
+                    x1="14"
+                    y1="158"
+                    x2="226"
+                    y2="158"
+                    stroke="currentColor"
+                    strokeWidth="0.5"
+                    strokeDasharray="2,2"
+                    opacity="0.5"
+                  />
+
+                  {/* mobile · highlighted in ochre */}
+                  <rect
+                    x="40"
+                    y="172"
+                    width="54"
+                    height="76"
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x="67"
+                    y="213"
+                    textAnchor="middle"
+                    fontSize="7"
+                    fontFamily="monospace"
+                    fill="var(--accent)"
+                    letterSpacing="1"
+                  >
+                    390×844
+                  </text>
+
+                  {/* tablet */}
+                  <rect
+                    x="120"
+                    y="172"
+                    width="86"
+                    height="76"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x="163"
+                    y="213"
+                    textAnchor="middle"
+                    fontSize="7"
+                    fontFamily="monospace"
+                    fill="var(--ink-2)"
+                    letterSpacing="1"
+                  >
+                    820×1180
+                  </text>
+
+                  {/* leader */}
+                  <line x1="94" y1="182" x2="118" y2="166" stroke="var(--accent)" strokeWidth="0.5" />
+                  <circle cx="94" cy="182" r="1.5" fill="var(--accent)" />
+                  <text
+                    x="122"
+                    y="164"
+                    fontSize="7"
+                    fontFamily="monospace"
+                    fill="var(--accent)"
+                    letterSpacing="1"
+                  >
+                    A
+                  </text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        {/* ─────────────────────────────────────────────────────────────── */}
+        {/* Footer                                                          */}
+        {/* ─────────────────────────────────────────────────────────────── */}
+        <footer
+          className="mt-16 pt-8"
+          style={{
+            borderTop: '1px solid var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>VISIONTEST · AI</div>
+            <div>SHEET 99 / 99</div>
+            <div>REV · 02 · {today}</div>
+            <div className="md:text-right">CHECKED · J.S. · MIT</div>
+          </div>
+        </footer>
+      </EditorialHero>
+    </>
   );
 }
 
+/* ───────────────────────────────────────────────────────────────────── */
+/* Internals                                                             */
+/* ───────────────────────────────────────────────────────────────────── */
+
+const lead: React.CSSProperties = {
+  fontFamily: 'var(--font-body)',
+  fontSize: '15px',
+  lineHeight: 1.55,
+  color: 'var(--ink-1)',
+  maxWidth: '64ch',
+};
+
 function Section({
-  kicker,
+  num,
   title,
-  lead,
+  stamp,
   children,
 }: {
-  kicker: string;
+  num: string;
   title: string;
-  lead?: string;
+  stamp: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mb-20">
-      <div className="vt-editorial mb-10">
-        <div>
-          <div className="vt-kicker mb-3" style={{ color: 'var(--brass)' }}>{kicker}</div>
-          <h2 className="vt-display" style={{ fontSize: 'clamp(28px, 3.5vw, 46px)', letterSpacing: '-0.018em', lineHeight: 1.04 }}>
-            {title}
-          </h2>
-        </div>
-        {lead && (
-          <p
-            className="self-end pb-2 text-[15.5px] leading-[1.55]"
-            style={{ color: 'var(--ink-1)', maxWidth: '48ch' }}
-          >
-            {lead}
-          </p>
-        )}
+    <section className="pt-4">
+      <div className="vt-section-head" style={{ margin: '56px 0 20px' }}>
+        <span className="num">{num}</span>
+        <span className="ttl">{title}</span>
+        <span className="rule" />
+        <span className="stamp">{stamp}</span>
       </div>
-      <div>{children}</div>
+      {children}
     </section>
   );
 }
 
-function Swatch({ name, role, v }: { name: string; role: string; v: string }) {
+function TokenGrid({
+  heading,
+  rows,
+}: {
+  heading: string;
+  rows: Array<{ token: string; value: string; role: string }>;
+}) {
   return (
-    <div>
+    <div className="mb-12">
       <div
-        aria-hidden
-        className="aspect-[5/3] border"
+        className="flex items-center gap-4 mb-4"
         style={{
-          background: v,
-          borderColor: 'var(--rule)',
-          boxShadow: 'inset 0 0 0 1px color-mix(in oklab, var(--ink-0) 3%, transparent)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.24em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+          fontVariantNumeric: 'tabular-nums',
         }}
-      />
-      <div className="mt-2 vt-mono text-[11px]" style={{ color: 'var(--ink-0)' }}>{name}</div>
-      <div className="vt-mono text-[10.5px] tracking-[0.1em]" style={{ color: 'var(--ink-2)' }}>{role}</div>
+      >
+        <span>{heading}</span>
+        <span className="flex-1" style={{ height: '1px', background: 'var(--rule)' }} />
+        <span>{rows.length} · VARS</span>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {rows.map((r) => (
+          <Swatch key={r.token} token={r.token} value={r.value} role={r.role} />
+        ))}
+      </div>
     </div>
   );
 }
 
-function TypeSample({
+function Swatch({ token, value, role }: { token: string; value: string; role: string }) {
+  return (
+    <div>
+      <div
+        aria-hidden
+        style={{
+          aspectRatio: '5 / 3',
+          background: `var(${token})`,
+          border: '1px solid var(--rule)',
+          boxShadow: 'inset 0 0 0 1px color-mix(in oklab, var(--ink-0) 4%, transparent)',
+        }}
+      />
+      <div
+        className="mt-2 vt-mono"
+        style={{
+          fontSize: '11px',
+          letterSpacing: '0.08em',
+          color: 'var(--ink-0)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {token}
+      </div>
+      <div
+        className="vt-mono"
+        style={{
+          fontSize: '10px',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+          marginTop: '2px',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {role}
+      </div>
+      <div
+        className="vt-mono"
+        style={{
+          fontSize: '10px',
+          letterSpacing: '0.06em',
+          color: 'var(--ink-3)',
+          marginTop: '2px',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function TypeSpecimen({
   label,
-  family,
-  style,
+  meta,
   children,
 }: {
   label: string;
-  family?: string;
-  style: React.CSSProperties;
+  meta: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[180px_1fr] gap-8 items-baseline">
-      <div className="vt-kicker pt-2" style={{ color: 'var(--ink-2)' }}>
-        {label}
+    <div
+      className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-6 md:gap-10 items-start"
+      style={{ borderTop: '1px solid var(--rule-soft)', paddingTop: '24px' }}
+    >
+      <div>
+        <div
+          className="vt-mono"
+          style={{
+            fontSize: '10.5px',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--accent)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {label}
+        </div>
+        <div
+          className="vt-mono mt-2"
+          style={{
+            fontSize: '10px',
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {meta}
+        </div>
       </div>
-      <div style={{ fontFamily: family, ...style }}>{children}</div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function PrimitiveLabel({ name, role }: { name: string; role: string }) {
+  return (
+    <div
+      className="flex items-center gap-4 mb-4"
+      style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: '10px',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      <span style={{ color: 'var(--accent)' }}>{name}</span>
+      <span className="flex-1" style={{ height: '1px', background: 'var(--rule)' }} />
+      <span style={{ color: 'var(--ink-2)' }}>{role}</span>
     </div>
   );
 }

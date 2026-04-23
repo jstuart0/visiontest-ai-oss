@@ -1,27 +1,26 @@
 'use client';
 
-import { use, useEffect } from 'react';
+// Test detail — Blueprint / part drawing.
+//
+// The page opens with a full title-block for the part (ID, name, goal,
+// source, environment, credentials, revision stamp). The primary figure
+// is the numbered strip of compiled steps. Supporting plates: visuals,
+// masks, execution history. Edit / enable-disable / run / delete preserved.
+
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowLeft,
   Play,
   Save,
   Trash2,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Activity,
   Image as ImageIcon,
   Settings,
   History,
   List,
+  AlertTriangle,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -32,53 +31,222 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useCurrentProject } from '@/hooks/useProject';
-import { testsApi, visualApi, masksApi, flakyApi, baselinesApi, type Test, type VisualComparison, type Mask, type Execution } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import {
+  testsApi,
+  visualApi,
+  masksApi,
+  flakyApi,
+  baselinesApi,
+  type Test,
+  type VisualComparison,
+  type Mask,
+} from '@/lib/api';
 import { toast } from 'sonner';
-import { useState } from 'react';
 import Link from 'next/link';
 import { Switch } from '@/components/ui/switch';
 import { StepEditor, type TestStep as EditorTestStep } from '@/components/step-editor';
-// Note: useEffect is imported at the top
 
-const statusConfig = {
-  passed: {
-    color: 'bg-green-500',
-    textColor: 'text-green-400',
-    bgColor: 'bg-green-500/10',
-    icon: CheckCircle2,
-    label: 'Passed',
-  },
-  failed: {
-    color: 'bg-red-500',
-    textColor: 'text-red-400',
-    bgColor: 'bg-red-500/10',
-    icon: XCircle,
-    label: 'Failed',
-  },
-  flaky: {
-    color: 'bg-yellow-500',
-    textColor: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/10',
-    icon: AlertTriangle,
-    label: 'Flaky',
-  },
-  running: {
-    color: 'bg-blue-500',
-    textColor: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
-    icon: Activity,
-    label: 'Running',
-  },
-  pending: {
-    color: 'bg-muted',
-    textColor: 'text-muted-foreground',
-    bgColor: 'bg-muted/50',
-    icon: Clock,
-    label: 'Pending',
-  },
+// --- helpers -----------------------------------------------------------
+function partId(id: string): string {
+  let h = 5381;
+  for (let i = 0; i < id.length; i++) h = ((h << 5) + h + id.charCodeAt(i)) >>> 0;
+  const n = (h % 900) + 100;
+  return `T-${n}`;
+}
+
+type StatusKey = 'passed' | 'failed' | 'flaky' | 'running' | 'pending';
+const STATUS_META: Record<StatusKey, { label: string; variant: '' | '--pass' | '--reject' | '--warn' }> = {
+  passed: { label: 'PASS', variant: '--pass' },
+  failed: { label: 'FAIL', variant: '--reject' },
+  flaky: { label: 'FLAKY', variant: '--warn' },
+  running: { label: 'ACTIVE', variant: '' },
+  pending: { label: 'DRAFT', variant: '' },
 };
+function normalizeStatus(s: string | undefined | null): StatusKey {
+  const k = (s || '').toLowerCase();
+  if (k === 'passed' || k === 'pass') return 'passed';
+  if (k === 'failed' || k === 'fail') return 'failed';
+  if (k === 'flaky') return 'flaky';
+  if (k === 'running') return 'running';
+  return 'pending';
+}
 
+function stepSummary(step: any): { type: string; target: string; assertion: string | null } {
+  const type = (step?.type || 'step').toString().toUpperCase();
+  const target =
+    step?.url || step?.selector || step?.value || step?.name || '—';
+  const assertion = step?.assertion || null;
+  return { type, target: String(target), assertion };
+}
+
+// -----------------------------------------------------------------------
+// Sub-atoms
+// -----------------------------------------------------------------------
+function Plate({
+  leader,
+  stamp,
+  children,
+}: {
+  leader: string;
+  stamp?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      style={{
+        border: '1px solid var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 45%, transparent)',
+      }}
+    >
+      <div
+        className="flex items-center justify-between px-4 py-2"
+        style={{
+          borderBottom: '1px solid var(--rule)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        <span>{leader}</span>
+        {stamp && <span style={{ color: 'var(--accent)' }}>{stamp}</span>}
+      </div>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function TitleBlock({
+  test,
+  statusKey,
+  isoDate,
+  projectName,
+}: {
+  test: Test;
+  statusKey: StatusKey;
+  isoDate: string;
+  projectName?: string;
+}) {
+  const steps = (() => {
+    const raw = (test as any)?.steps;
+    if (!raw) return [];
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+  const source = (test as any)?.config?.storyText
+    ? 'STORY'
+    : steps.length
+      ? 'SCRIPT'
+      : 'DRAFT';
+  const env = (test.platform || 'WEB').toString();
+  const credential = (test as any)?.config?.credentialId
+    ? 'BOUND'
+    : 'NONE';
+  const meta = STATUS_META[statusKey];
+
+  return (
+    <div className="vt-title-block mt-10">
+      <div className="span2">
+        <span className="k">PART</span>
+        <span className="v big" style={{ color: 'var(--accent)' }}>
+          {partId(test.id)}
+        </span>
+      </div>
+      <div className="span3">
+        <span className="k">NAME</span>
+        <span
+          className="v big"
+          style={{
+            fontFamily: 'var(--font-display)',
+            textTransform: 'lowercase',
+            letterSpacing: '0.01em',
+          }}
+        >
+          {test.name}
+        </span>
+      </div>
+      <div>
+        <span className="k">LAST RUN</span>
+        <span className={`vt-rev-stamp ${meta.variant ? `vt-rev-stamp${meta.variant}` : ''}`} style={{ marginTop: '2px' }}>
+          {meta.label}
+        </span>
+      </div>
+
+      <div className="span2">
+        <span className="k">GOAL / DESCRIPTION</span>
+        <span
+          className="v"
+          style={{
+            textTransform: 'none',
+            letterSpacing: '0.02em',
+            fontFamily: 'var(--font-body)',
+            lineHeight: 1.45,
+          }}
+        >
+          {test.description || '—'}
+        </span>
+      </div>
+      <div>
+        <span className="k">SOURCE</span>
+        <span className="v">{source}</span>
+      </div>
+      <div>
+        <span className="k">ENVIRONMENT</span>
+        <span className="v">{env}</span>
+      </div>
+      <div>
+        <span className="k">CREDENTIALS</span>
+        <span className="v">{credential}</span>
+      </div>
+      <div>
+        <span className="k">STATE</span>
+        <span className="v" style={{ color: test.status === 'DISABLED' ? 'var(--fail)' : 'var(--pass)' }}>
+          {test.status || 'ACTIVE'}
+        </span>
+      </div>
+
+      <div className="span2">
+        <span className="k">PROJECT</span>
+        <span className="v">{projectName || '—'}</span>
+      </div>
+      <div className="span2">
+        <span className="k">CHECKED</span>
+        <span className="v">{isoDate}</span>
+      </div>
+      <div className="span2">
+        <span className="k">STEPS · FLAKY SCORE</span>
+        <span className="v">
+          {String(steps.length).padStart(2, '0')}{' '}
+          <span style={{ color: 'var(--ink-2)' }}>·</span>{' '}
+          <span
+            style={{
+              color:
+                (test.flakyScore || 0) > 50
+                  ? 'var(--fail)'
+                  : (test.flakyScore || 0) > 20
+                    ? 'var(--warn)'
+                    : 'var(--ink-1)',
+            }}
+          >
+            {test.flakyScore !== undefined && test.flakyScore !== null
+              ? `${String(test.flakyScore).padStart(2, '0')}%`
+              : '—'}
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------
+// Page
+// -----------------------------------------------------------------------
 export default function TestDetailPage({
   params,
 }: {
@@ -103,12 +271,10 @@ export default function TestDetailPage({
     enabled: !!project?.id,
   });
 
-  // Update form fields when test loads
   useEffect(() => {
     if (test) {
       setName(test.name);
       setDescription(test.description || '');
-      // Load config flags
       const cfg = (test as any).config || {};
       setScreenshotEveryStep(cfg.screenshotEveryStep ?? false);
       setVideoRecording(cfg.videoRecording ?? false);
@@ -132,22 +298,22 @@ export default function TestDetailPage({
       testsApi.update(project!.id, testId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['test', project?.id, testId] });
-      toast.success('Test updated');
+      toast.success('Revision saved');
       setHasChanges(false);
     },
     onError: (error: { message: string }) => {
-      toast.error(error.message || 'Failed to update test');
+      toast.error(error.message || 'Could not save revision');
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => testsApi.delete(project!.id, testId),
     onSuccess: () => {
-      toast.success('Test deleted');
+      toast.success('Part struck from schedule');
       router.push('/tests');
     },
     onError: (error: { message: string }) => {
-      toast.error(error.message || 'Failed to delete test');
+      toast.error(error.message || 'Could not remove part');
     },
   });
 
@@ -155,17 +321,14 @@ export default function TestDetailPage({
     mutationFn: () => testsApi.run(project!.id, testId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['test', project?.id, testId] });
-      toast.success('Test run started - redirecting to live view...');
+      toast.success('Run queued — redirecting to live view…');
       router.push(`/executions/${data.id}`);
     },
     onError: (error: { message: string }) => {
-      toast.error(error.message || 'Failed to run test');
+      toast.error(error.message || 'Could not run part');
     },
   });
 
-  // Set-as-baseline from the latest PASSED execution.
-  // The button is hidden when no passed execution exists; this keeps
-  // the workflow single-click when it's viable and invisible otherwise.
   const latestPassed = (test as any)?.recentExecutions?.find(
     (e: { status: string }) => e.status === 'PASSED',
   );
@@ -194,16 +357,16 @@ export default function TestDetailPage({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['test', project?.id, testId] });
-      toast.success(test?.status === 'QUARANTINED' ? 'Test released from quarantine' : 'Test quarantined');
+      toast.success(
+        test?.status === 'QUARANTINED' ? 'Released from quarantine' : 'Moved to quarantine',
+      );
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to update quarantine status'),
+    onError: (error: any) => toast.error(error.message || 'Failed to update quarantine'),
   });
 
   const handleSave = () => {
     const updates: any = { name, description: description || undefined };
-    if (editedSteps) {
-      updates.steps = editedSteps;
-    }
+    if (editedSteps) updates.steps = editedSteps;
     updates.config = {
       ...((test as any)?.config || {}),
       screenshotEveryStep,
@@ -218,220 +381,386 @@ export default function TestDetailPage({
     setHasChanges(true);
   };
 
+  // ---------------------------------------------------------------------
+  // Loading / error states
+  // ---------------------------------------------------------------------
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading test...</div>
-      </div>
+      <EditorialHero
+        width="wide"
+        back={{ href: '/tests', label: 'BACK TO PARTS SCHEDULE' }}
+        sheet="—"
+        title="loading part…"
+      >
+        <div
+          className="py-16 text-center"
+          style={{
+            border: '1px dashed var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+          }}
+        >
+          <span className="vt-breathe">fetching drawing set…</span>
+        </div>
+      </EditorialHero>
     );
   }
 
   if (!test) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <div className="text-muted-foreground mb-4">Test not found</div>
-        <Link href="/tests">
-          <Button variant="outline">Back to Tests</Button>
-        </Link>
-      </div>
+      <EditorialHero
+        width="wide"
+        back={{ href: '/tests', label: 'BACK TO PARTS SCHEDULE' }}
+        sheet="— · NOT FOUND"
+        title={
+          <>
+            part <em style={{ color: 'var(--fail)' }}>not found</em>.
+          </>
+        }
+        lead="This part has been struck from the schedule, or the link is stale."
+      >
+        <div
+          className="py-14 text-center"
+          style={{ border: '1px dashed var(--fail)' }}
+        >
+          <Link href="/tests" className="vt-btn">
+            RETURN TO SCHEDULE
+          </Link>
+        </div>
+      </EditorialHero>
     );
   }
 
-  // Derive display status from last execution, not test entity status
-  const lastStatus = ((test as any).lastStatus || '').toLowerCase();
-  const displayStatus = lastStatus === 'passed' || lastStatus === 'failed' || lastStatus === 'running' || lastStatus === 'flaky'
-    ? lastStatus
-    : (test as any).lastRun ? 'pending' : 'pending';
-  const config =
-    statusConfig[displayStatus as keyof typeof statusConfig] || statusConfig.pending;
-  const StatusIcon = config.icon;
-
+  const lastStatus = normalizeStatus((test as any).lastStatus);
+  const steps: any[] = (() => {
+    if (editedSteps) return editedSteps;
+    const raw = (test as any)?.steps;
+    if (!raw) return [];
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
   const testVisuals = visuals?.filter((v) => v.testId === testId) || [];
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+  const meta = STATUS_META[lastStatus];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push('/tests')}
-            className="text-muted-foreground hover:text-foreground hover:bg-accent"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">{test.name}</h1>
-              <Badge
-                variant="secondary"
-                className={cn('gap-1', config.bgColor, config.textColor)}
-              >
-                <StatusIcon className="w-3 h-3" />
-                {config.label}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground mt-1">
-              {test.lastRun
-                ? `Last run: ${new Date(test.lastRun).toLocaleString()}`
-                : 'Never run'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
+    <EditorialHero
+      width="wide"
+      back={{ href: '/tests', label: 'BACK TO PARTS SCHEDULE' }}
+      sheet={`02 · ${partId(test.id)}`}
+      eyebrow={`§ ${isoDate} · PART DETAIL`}
+      revision={<>REV · {meta.label}</>}
+      title={<span style={{ textTransform: 'lowercase' }}>{test.name}</span>}
+      lead={test.description || undefined}
+      actions={
+        <>
           {hasChanges && (
-            <Button
+            <button
+              type="button"
               onClick={handleSave}
               disabled={updateMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="vt-btn vt-btn--primary"
             >
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </Button>
+              <Save className="w-3.5 h-3.5" strokeWidth={1.5} />
+              SAVE REVISION
+            </button>
           )}
-          <Button
-            variant="outline"
+          <button
+            type="button"
             onClick={() => runMutation.mutate()}
             disabled={runMutation.isPending}
-            className="bg-card border-border text-muted-foreground hover:bg-accent"
+            className="vt-btn"
           >
-            <Play className="w-4 h-4 mr-2" />
-            Run Test
-          </Button>
+            <Play className="w-3.5 h-3.5" strokeWidth={1.5} />
+            RUN
+          </button>
           {latestPassed && (
-            <Button
-              variant="outline"
+            <button
+              type="button"
               onClick={() => setBaselineMutation.mutate()}
               disabled={setBaselineMutation.isPending}
-              className="text-blue-400 border-blue-700/40 hover:bg-blue-900/20"
+              className="vt-btn"
               title={`Use the latest passing run (${new Date(
                 latestPassed.createdAt,
-              ).toLocaleDateString()}) as the visual baseline. Future runs will compare against it.`}
+              ).toLocaleDateString()}) as the baseline.`}
             >
-              <ImageIcon className="w-4 h-4 mr-2" />
-              Set as baseline
-            </Button>
+              <ImageIcon className="w-3.5 h-3.5" strokeWidth={1.5} />
+              SET BASELINE
+            </button>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
+            type="button"
             onClick={() => setShowDelete(true)}
-            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            className="vt-btn"
+            style={{ borderColor: 'var(--rule)', color: 'var(--fail)' }}
+            title="Remove part"
           >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+          </button>
+        </>
+      }
+    >
+      {/* --- TITLE BLOCK ------------------------------------------------ */}
+      <TitleBlock
+        test={test}
+        statusKey={lastStatus}
+        isoDate={isoDate}
+        projectName={project?.name}
+      />
 
-      {/* Tabs */}
-      <Tabs defaultValue="steps" className="space-y-6">
-        <TabsList className="bg-card border border-border">
-          <TabsTrigger
-            value="steps"
-            className="data-[state=active]:bg-accent data-[state=active]:text-foreground"
-          >
-            <List className="w-4 h-4 mr-2" />
-            Steps
-          </TabsTrigger>
-          <TabsTrigger
-            value="settings"
-            className="data-[state=active]:bg-accent data-[state=active]:text-foreground"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </TabsTrigger>
-          <TabsTrigger
-            value="visuals"
-            className="data-[state=active]:bg-accent data-[state=active]:text-foreground"
-          >
-            <ImageIcon className="w-4 h-4 mr-2" />
-            Visuals ({testVisuals.length})
-          </TabsTrigger>
-          <TabsTrigger
-            value="masks"
-            className="data-[state=active]:bg-accent data-[state=active]:text-foreground"
-          >
-            Masks ({masks?.length || 0})
-          </TabsTrigger>
-          <TabsTrigger
-            value="history"
-            className="data-[state=active]:bg-accent data-[state=active]:text-foreground"
-          >
-            <History className="w-4 h-4 mr-2" />
-            History
-          </TabsTrigger>
+      {/* --- TABS ------------------------------------------------------- */}
+      <Tabs defaultValue="steps" className="space-y-6 mt-2">
+        <TabsList
+          className="rounded-none p-0"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--rule-strong)',
+            display: 'inline-flex',
+          }}
+        >
+          {[
+            { v: 'steps', icon: List, label: 'STEPS' },
+            { v: 'settings', icon: Settings, label: 'SETTINGS' },
+            { v: 'visuals', icon: ImageIcon, label: `VISUALS · ${testVisuals.length}` },
+            { v: 'masks', icon: null, label: `MASKS · ${masks?.length || 0}` },
+            { v: 'history', icon: History, label: 'HISTORY' },
+          ].map((t, i) => (
+            <TabsTrigger
+              key={t.v}
+              value={t.v}
+              className="rounded-none"
+              style={{
+                borderRight: i < 4 ? '1px solid var(--rule)' : 'none',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                padding: '10px 16px',
+                color: 'var(--ink-1)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {t.icon ? <t.icon className="w-3.5 h-3.5 mr-2" strokeWidth={1.5} /> : null}
+              {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        {/* Steps Tab */}
+        {/* --- STEPS --- */}
         <TabsContent value="steps" className="space-y-6">
-          <StepEditor
-            steps={(() => {
-              if (editedSteps) return editedSteps;
-              const raw = (test as any)?.steps;
-              if (!raw) return [];
-              const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-              return Array.isArray(parsed) ? parsed : [];
-            })()}
-            platform={(test as any)?.platform || 'WEB'}
-            onChange={(newSteps) => {
-              setEditedSteps(newSteps);
-              setHasChanges(true);
-            }}
-          />
+          <Plate
+            leader="FIG. 1 · COMPILED STEPS"
+            stamp={`${String(steps.length).padStart(2, '0')} PLATES`}
+          >
+            {steps.length === 0 ? (
+              <div
+                className="py-12 text-center"
+                style={{
+                  border: '1px dashed var(--rule)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                — no steps recorded yet —
+              </div>
+            ) : (
+              <div className="space-y-0">
+                {/* Numbered strip — each step = a numbered plate */}
+                {steps.map((step, i) => {
+                  const { type, target, assertion } = stepSummary(step);
+                  return (
+                    <div key={i}>
+                      <div
+                        className="grid items-start gap-4 px-4 py-4"
+                        style={{
+                          gridTemplateColumns: '56px 120px 1fr',
+                          borderTop: i === 0 ? '1px solid var(--rule)' : 'none',
+                          borderBottom: '1px solid var(--rule-soft)',
+                        }}
+                      >
+                        {/* Plate number */}
+                        <div
+                          className="text-center py-1"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '18px',
+                            color: 'var(--accent)',
+                            border: '1px solid var(--accent)',
+                            fontVariantNumeric: 'tabular-nums',
+                            letterSpacing: '0.08em',
+                            lineHeight: 1,
+                            padding: '10px 0',
+                          }}
+                        >
+                          {String(i + 1).padStart(2, '0')}
+                        </div>
+                        {/* Type */}
+                        <div
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '10px',
+                            letterSpacing: '0.22em',
+                            textTransform: 'uppercase',
+                            color: 'var(--ink-1)',
+                            padding: '4px 0',
+                          }}
+                        >
+                          {type}
+                        </div>
+                        {/* Target + assertion */}
+                        <div className="space-y-2">
+                          <div
+                            style={{
+                              fontFamily: 'var(--font-display)',
+                              fontSize: '17px',
+                              color: 'var(--ink-0)',
+                              textTransform: 'lowercase',
+                              letterSpacing: '0.01em',
+                              lineHeight: 1.25,
+                            }}
+                          >
+                            {target}
+                          </div>
+                          {assertion && (
+                            <div
+                              style={{
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: '11px',
+                                color: 'var(--ink-2)',
+                                letterSpacing: '0.08em',
+                              }}
+                            >
+                              <span style={{ color: 'var(--accent)' }}>⊢ </span>
+                              expect · {assertion}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {/* Dim callout between plates */}
+                      {i < steps.length - 1 && (
+                        <div
+                          className="vt-dim-h"
+                          style={{ margin: '6px 0' }}
+                          aria-hidden
+                        >
+                          <span className="tick-l" />
+                          <span className="tick-r" />
+                          <span className="v">THEN</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Inline StepEditor for authoring changes */}
+            <div
+              className="mt-6 pt-6"
+              style={{ borderTop: '1px solid var(--rule-strong)' }}
+            >
+              <div
+                className="mb-4"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--accent)',
+                }}
+              >
+                — REVISE STEPS —
+              </div>
+              <StepEditor
+                steps={steps}
+                platform={(test as any)?.platform || 'WEB'}
+                onChange={(newSteps) => {
+                  setEditedSteps(newSteps);
+                  setHasChanges(true);
+                }}
+              />
+            </div>
+          </Plate>
         </TabsContent>
 
-        {/* Settings Tab */}
+        {/* --- SETTINGS --- */}
         <TabsContent value="settings" className="space-y-6">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Test Details</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Configure your test settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Test Name
-                </label>
-                <Input
+          <Plate leader="FIG. 2 · PART IDENTITY" stamp="EDITABLE">
+            <div className="space-y-5">
+              <label className="block space-y-2">
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                  }}
+                >
+                  — PART NAME
+                </span>
+                <input
                   value={name}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  className="bg-muted border-border text-foreground"
+                  className="vt-input"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Description
-                </label>
-                <Input
+              </label>
+              <label className="block space-y-2">
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                  }}
+                >
+                  — GOAL / DESCRIPTION
+                </span>
+                <input
                   value={description}
                   onChange={(e) => handleChange('description', e.target.value)}
-                  placeholder="Optional description"
-                  className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+                  placeholder="optional summary"
+                  className="vt-input"
                 />
-              </div>
-            </CardContent>
-          </Card>
+              </label>
+            </div>
+          </Plate>
 
-          {/* Execution Settings */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Execution Settings</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Configure how tests are executed
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Screenshot every step
-                  </label>
-                  <p className="text-xs text-muted-foreground">
-                    Automatically capture a screenshot after each step completes
+          <Plate leader="FIG. 3 · CAPTURE SPEC" stamp="EXECUTION">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-0)',
+                    }}
+                  >
+                    SCREENSHOT EVERY STEP
+                  </div>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '13px',
+                      color: 'var(--ink-2)',
+                      marginTop: '4px',
+                    }}
+                  >
+                    Required for film-strip and Set-as-baseline.
                   </p>
                 </div>
                 <Switch
@@ -442,13 +771,31 @@ export default function TestDetailPage({
                   }}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Record video
-                  </label>
-                  <p className="text-xs text-muted-foreground">
-                    Record a video of the entire test execution
+              <div
+                className="pt-4 flex items-center justify-between gap-4"
+                style={{ borderTop: '1px solid var(--rule)' }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-0)',
+                    }}
+                  >
+                    RECORD VIDEO
+                  </div>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '13px',
+                      color: 'var(--ink-2)',
+                      marginTop: '4px',
+                    }}
+                  >
+                    Full session capture. Heavier; useful for forensics.
                   </p>
                 </div>
                 <Switch
@@ -459,242 +806,424 @@ export default function TestDetailPage({
                   }}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </Plate>
 
           {test.flakyScore !== undefined && test.flakyScore > 0 && (
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                  Flaky Test Detection
-                </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  This test has been flagged as potentially flaky
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">Flaky Score</span>
-                      <span className="text-sm font-medium text-foreground">
-                        {test.flakyScore}%
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full rounded-full',
+            <Plate
+              leader="FIG. 4 · FLAKINESS"
+              stamp={
+                <span style={{ color: 'var(--warn)' }}>DETECTED</span>
+              }
+            >
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex-1 min-w-[220px]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '10px',
+                        letterSpacing: '0.22em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-2)',
+                      }}
+                    >
+                      FLAKY SCORE
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '13px',
+                        color:
                           test.flakyScore > 50
-                            ? 'bg-red-500'
+                            ? 'var(--fail)'
                             : test.flakyScore > 20
-                            ? 'bg-yellow-500'
-                            : 'bg-green-500'
-                        )}
-                        style={{ width: `${test.flakyScore}%` }}
-                      />
-                    </div>
+                              ? 'var(--warn)'
+                              : 'var(--pass)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {String(test.flakyScore).padStart(2, '0')}%
+                    </span>
                   </div>
-                  <Button
-                    variant={test.status === 'QUARANTINED' ? 'default' : 'outline'}
-                    className={test.status === 'QUARANTINED' ? '' : 'bg-muted border-border text-muted-foreground'}
-                    onClick={() => quarantineMutation.mutate()}
-                    disabled={quarantineMutation.isPending}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '2px',
+                      background: 'var(--rule)',
+                      position: 'relative',
+                    }}
                   >
-                    {test.status === 'QUARANTINED' ? 'Release from Quarantine' : 'Quarantine Test'}
-                  </Button>
+                    <div
+                      style={{
+                        width: `${test.flakyScore}%`,
+                        height: '100%',
+                        background:
+                          test.flakyScore > 50
+                            ? 'var(--fail)'
+                            : test.flakyScore > 20
+                              ? 'var(--warn)'
+                              : 'var(--pass)',
+                      }}
+                    />
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+                <button
+                  type="button"
+                  onClick={() => quarantineMutation.mutate()}
+                  disabled={quarantineMutation.isPending}
+                  className={`vt-btn${test.status === 'QUARANTINED' ? ' vt-btn--primary' : ''}`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  {test.status === 'QUARANTINED'
+                    ? 'RELEASE FROM QUARANTINE'
+                    : 'QUARANTINE PART'}
+                </button>
+              </div>
+            </Plate>
           )}
         </TabsContent>
 
-        {/* Visuals Tab */}
+        {/* --- VISUALS --- */}
         <TabsContent value="visuals" className="space-y-4">
           {testVisuals.length === 0 ? (
-            <Card className="bg-card border-border">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <ImageIcon className="w-12 h-12 text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">No visual snapshots yet</p>
-                <p className="text-sm text-muted-foreground">
-                  Run the test to generate visual snapshots
-                </p>
-              </CardContent>
-            </Card>
+            <Plate leader="FIG. 5 · VISUALS" stamp="NO SNAPSHOTS">
+              <div
+                className="py-12 text-center"
+                style={{
+                  border: '1px dashed var(--rule)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                — no snapshots · run the part to generate plates —
+              </div>
+            </Plate>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {testVisuals.map((visual) => (
+              {testVisuals.map((visual, i) => (
                 <Link key={visual.id} href={`/visual/${visual.id}`}>
-                  <Card className="bg-card border-border hover:border-border/80 transition-colors cursor-pointer">
-                    <CardContent className="p-4">
-                      <div className="aspect-video bg-muted rounded-lg mb-3 flex items-center justify-center">
-                        <ImageIcon className="w-8 h-8 text-muted-foreground/70" />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(visual.createdAt).toLocaleString()}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            visual.status === 'approved' &&
-                              'bg-green-500/10 text-green-400',
-                            visual.status === 'rejected' &&
-                              'bg-red-500/10 text-red-400',
-                            visual.status === 'pending' &&
-                              'bg-yellow-500/10 text-yellow-400',
-                            visual.status === 'changed' &&
-                              'bg-blue-500/10 text-blue-400'
-                          )}
-                        >
-                          {visual.status}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div
+                    className="p-4 transition-colors"
+                    style={{
+                      border: '1px solid var(--rule-strong)',
+                      background: 'color-mix(in oklab, var(--bg-1) 45%, transparent)',
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.borderColor = 'var(--accent)')
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.borderColor = 'var(--rule-strong)')
+                    }
+                  >
+                    <div
+                      className="flex items-center justify-between pb-2 mb-3"
+                      style={{
+                        borderBottom: '1px solid var(--rule)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '9px',
+                        letterSpacing: '0.22em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-2)',
+                      }}
+                    >
+                      <span>PLATE {String(i + 1).padStart(2, '0')}</span>
+                      <span
+                        className={`vt-rev-stamp ${
+                          visual.status === 'approved'
+                            ? 'vt-rev-stamp--pass'
+                            : visual.status === 'rejected'
+                              ? 'vt-rev-stamp--reject'
+                              : ''
+                        }`}
+                      >
+                        {(visual.status || 'PENDING').toString().toUpperCase()}
+                      </span>
+                    </div>
+                    <div
+                      className="flex items-center justify-center"
+                      style={{
+                        aspectRatio: '16 / 9',
+                        background: 'var(--bg-2)',
+                        border: '1px dashed var(--rule)',
+                      }}
+                    >
+                      <ImageIcon
+                        className="w-8 h-8"
+                        strokeWidth={1.5}
+                        style={{ color: 'var(--ink-3)' }}
+                      />
+                    </div>
+                    <div
+                      className="mt-3"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '10px',
+                        letterSpacing: '0.12em',
+                        color: 'var(--ink-2)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {new Date(visual.createdAt).toISOString().slice(0, 16).replace('T', ' ')}
+                    </div>
+                  </div>
                 </Link>
               ))}
             </div>
           )}
         </TabsContent>
 
-        {/* Masks Tab */}
+        {/* --- MASKS --- */}
         <TabsContent value="masks" className="space-y-4">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Ignore Masks</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Define regions to ignore during visual comparison
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!masks || masks.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No masks defined for this test
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {masks.map((mask) => (
-                    <div
-                      key={mask.id}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
+          <Plate leader="FIG. 6 · IGNORE MASKS" stamp={`${masks?.length || 0} REGIONS`}>
+            {!masks || masks.length === 0 ? (
+              <div
+                className="py-12 text-center"
+                style={{
+                  border: '1px dashed var(--rule)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                — no masks defined for this part —
+              </div>
+            ) : (
+              <div>
+                {masks.map((mask, i) => (
+                  <div
+                    key={mask.id}
+                    className="grid items-center px-4 py-3"
+                    style={{
+                      gridTemplateColumns: '40px 1fr 1fr auto',
+                      gap: '16px',
+                      borderBottom:
+                        i < masks.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        color: 'var(--accent)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
                     >
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {mask.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {mask.x}, {mask.y} - {mask.width}x{mask.height}
-                        </p>
-                      </div>
-                      <Badge variant="secondary" className="bg-muted">
-                        {mask.type}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      M-{String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '15px',
+                        color: 'var(--ink-0)',
+                        textTransform: 'lowercase',
+                      }}
+                    >
+                      {mask.name}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        color: 'var(--ink-2)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      ({mask.x}, {mask.y}) · {mask.width}×{mask.height}
+                    </span>
+                    <span className="vt-chip">{mask.type}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Plate>
         </TabsContent>
 
-        {/* History Tab */}
+        {/* --- HISTORY --- */}
         <TabsContent value="history">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Execution History</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Recent test runs and their results
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {(() => {
-                const executions = (test as any).recentExecutions as Array<{
-                  id: string;
-                  status: string;
-                  duration?: number;
-                  createdAt: string;
-                }> | undefined;
-                if (!executions || executions.length === 0) {
-                  return (
-                    <div className="flex flex-col items-center justify-center py-12">
-                      <History className="w-12 h-12 text-muted-foreground/50 mb-4" />
-                      <p className="text-muted-foreground">No executions yet</p>
-                      <p className="text-sm text-muted-foreground">Run the test to see execution history</p>
-                    </div>
-                  );
-                }
+          <Plate leader="FIG. 7 · REVISION HISTORY" stamp="EXECUTION LOG">
+            {(() => {
+              const executions = (test as any).recentExecutions as
+                | Array<{
+                    id: string;
+                    status: string;
+                    duration?: number;
+                    createdAt: string;
+                  }>
+                | undefined;
+              if (!executions || executions.length === 0) {
                 return (
-                  <div className="space-y-2">
-                    {executions.map((exec) => {
-                      const execStatus = exec.status.toLowerCase();
-                      const execConfig = statusConfig[execStatus as keyof typeof statusConfig] || statusConfig.pending;
-                      const ExecIcon = execConfig.icon;
-                      return (
-                        <Link key={exec.id} href={`/executions/${exec.id}`}>
-                          <div className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-accent transition-colors cursor-pointer">
-                            <div className="flex items-center gap-3">
-                              <div className={cn('p-1.5 rounded-md', execConfig.bgColor)}>
-                                <ExecIcon className={cn('w-4 h-4', execConfig.textColor)} />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-foreground">
-                                  {execConfig.label}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {new Date(exec.createdAt).toLocaleString()}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              {exec.duration != null && (
-                                <p className="text-sm text-muted-foreground">
-                                  {(exec.duration / 1000).toFixed(1)}s
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                  <div
+                    className="py-12 text-center"
+                    style={{
+                      border: '1px dashed var(--rule)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-2)',
+                    }}
+                  >
+                    — no runs yet · run the part to log history —
                   </div>
                 );
-              })()}
-            </CardContent>
-          </Card>
+              }
+              return (
+                <div>
+                  {/* Header row */}
+                  <div
+                    className="grid"
+                    style={{
+                      gridTemplateColumns: '60px 120px 1fr 120px',
+                      borderBottom: '1px solid var(--rule)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '9px',
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-2)',
+                    }}
+                  >
+                    <div className="py-2 px-3">REV</div>
+                    <div className="py-2 px-3">RESULT</div>
+                    <div className="py-2 px-3">TIMESTAMP</div>
+                    <div className="py-2 px-3 text-right">DURATION</div>
+                  </div>
+                  {executions.map((exec, i) => {
+                    const execStatus = normalizeStatus(exec.status);
+                    const execMeta = STATUS_META[execStatus];
+                    return (
+                      <Link key={exec.id} href={`/executions/${exec.id}`}>
+                        <div
+                          className="grid items-center transition-colors"
+                          style={{
+                            gridTemplateColumns: '60px 120px 1fr 120px',
+                            borderBottom:
+                              i < executions.length - 1
+                                ? '1px solid var(--rule-soft)'
+                                : 'none',
+                            cursor: 'pointer',
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = 'var(--bg-2)')
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = 'transparent')
+                          }
+                        >
+                          <div
+                            className="py-3 px-3"
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '11px',
+                              color: 'var(--accent)',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {String(executions.length - i).padStart(2, '0')}
+                          </div>
+                          <div className="py-3 px-3">
+                            <span
+                              className={`vt-rev-stamp ${
+                                execMeta.variant
+                                  ? `vt-rev-stamp${execMeta.variant}`
+                                  : ''
+                              }`}
+                            >
+                              {execMeta.label}
+                            </span>
+                          </div>
+                          <div
+                            className="py-3 px-3"
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '11px',
+                              color: 'var(--ink-1)',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {new Date(exec.createdAt)
+                              .toISOString()
+                              .slice(0, 19)
+                              .replace('T', ' ')}
+                          </div>
+                          <div
+                            className="py-3 px-3 text-right"
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '11px',
+                              color: 'var(--ink-2)',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {exec.duration != null
+                              ? `${(exec.duration / 1000).toFixed(1)}s`
+                              : '—'}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </Plate>
         </TabsContent>
       </Tabs>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <Dialog open={showDelete} onOpenChange={setShowDelete}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-foreground">Delete Test</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Are you sure you want to delete &quot;{test.name}&quot;? This action cannot
-              be undone.
+            <DialogTitle
+              className="vt-display"
+              style={{ fontSize: '28px', color: 'var(--ink-0)', textTransform: 'lowercase' }}
+            >
+              strike <em style={{ color: 'var(--fail)', fontStyle: 'normal' }}>part</em> from schedule?
+            </DialogTitle>
+            <DialogDescription
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '14px',
+                color: 'var(--ink-1)',
+              }}
+            >
+              Part{' '}
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>
+                {partId(test.id)}
+              </span>{' '}
+              <em style={{ color: 'var(--ink-0)' }}>&quot;{test.name}&quot;</em>{' '}
+              will be removed. This cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="ghost"
+            <button
+              type="button"
               onClick={() => setShowDelete(false)}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="vt-btn"
             >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
+              CANCEL
+            </button>
+            <button
+              type="button"
               onClick={() => deleteMutation.mutate()}
               disabled={deleteMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
+              className="vt-btn"
+              style={{
+                background: 'var(--fail)',
+                borderColor: 'var(--fail)',
+                color: 'var(--bg-0)',
+              }}
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-            </Button>
+              {deleteMutation.isPending ? 'STRIKING…' : 'STRIKE FROM SCHEDULE'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </EditorialHero>
   );
 }
