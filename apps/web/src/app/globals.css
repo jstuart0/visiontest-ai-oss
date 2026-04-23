@@ -2,18 +2,18 @@
 @import "tw-animate-css";
 
 /* ============================================================================
-   VisionTest.ai — Darkroom / Editorial design system
+   VisionTest.ai — Blueprint design system
    ---------------------------------------------------------------------------
-   Two themes sharing the same structure, components, and typography trio.
-     data-theme="darkroom"  — default, dark, warm amber on patinated black
-     data-theme="editorial" — light, bone paper with cadmium-red accent
-   The Shadcn variable names (--background, --foreground, …) are preserved
-   so existing components pick up the new palette automatically.  Extra
-   tokens for decorative motifs (grain, brass, phosphor) and typographic
-   intent (--font-display, --font-body, --font-mono) are additive.
+   Drafting-sheet aesthetic applied to a web app.
+     data-theme="blueprint" — default, dark, navy + chalk + ochre + reject red
+     data-theme="paper"     — light, pale cold-blue + graphite
+   Shadcn variable names (--background, --foreground, …) are preserved so
+   existing components pick up the new palette automatically.  Additional
+   Blueprint-specific utilities — drafting grid, title blocks, dimension
+   callouts, revision stamps — live at the bottom.
    ============================================================================ */
 
-@custom-variant dark (&:is([data-theme="darkroom"] *, .dark *));
+@custom-variant dark (&:is([data-theme="blueprint"] *, .dark *));
 
 @theme inline {
   /* Shadcn color surfaces — map through to our tokens */
@@ -41,14 +41,14 @@
   --color-warning: var(--warn);
   --color-warning-foreground: var(--bg-0);
 
-  /* Charts — brass, phosphor, blood, amber, ink */
+  /* Charts — chalk, pass, reject, ochre, dim */
   --color-chart-1: var(--accent);
   --color-chart-2: var(--pass);
   --color-chart-3: var(--fail);
   --color-chart-4: var(--warn);
-  --color-chart-5: var(--brass);
+  --color-chart-5: var(--ink-2);
 
-  /* Sidebar (legacy; we no longer use a sidebar but existing code references these) */
+  /* Sidebar — legacy; we don't use one, but existing code references these */
   --color-sidebar: var(--bg-1);
   --color-sidebar-foreground: var(--ink-0);
   --color-sidebar-primary: var(--accent);
@@ -60,68 +60,70 @@
 
   /* Typography */
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-display), ui-serif, Georgia, serif;
+  --font-serif: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-feature), ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* Radii — both themes favor sharp edges with a tiny softening on inputs */
+  /* Radii — schematic drawings are square. Keep edges sharp. */
   --radius-sm: 0;
   --radius-md: 0;
-  --radius-lg: 2px;
-  --radius-xl: 2px;
-  --radius-2xl: 4px;
-  --radius-3xl: 4px;
-  --radius-4xl: 4px;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
 }
 
 /* ============================================================================
-   THEME · DARKROOM (default, dark)
-   Deep patinated black, safelight amber, aged brass, phosphor green.
+   THEME · BLUEPRINT (default, dark)
+   Navy ground + chalk linework + ochre revisions + reject red
    ============================================================================ */
 
 :root,
-[data-theme="darkroom"] {
+[data-theme="blueprint"] {
   color-scheme: dark;
 
-  /* Surfaces — from void outward */
-  --bg-0: #0B0907;            /* page base */
-  --bg-1: #141110;            /* cards / panels */
-  --bg-2: #1E1A17;            /* inset / hover */
-  --bg-3: #272320;            /* inputs / raised */
+  /* Surfaces — drafting stock, deeper as we go in */
+  --bg-0: #0A1838;            /* sheet ground */
+  --bg-1: #0E1B42;            /* card / panel */
+  --bg-2: #112151;            /* inset / hover */
+  --bg-3: #0C1633;            /* deepest inset / shadow side */
 
-  /* Ink */
-  --ink-0: #ECE4D0;           /* primary text */
-  --ink-1: #B5AA90;           /* secondary */
-  --ink-2: #726751;           /* mute */
-  --ink-3: #44402F;           /* ghost */
+  /* Ink — chalk */
+  --ink-0: #C9E3EE;           /* primary text */
+  --ink-1: #A8D8E8;           /* secondary / strong line */
+  --ink-2: #6E93A8;           /* mute / dim line */
+  --ink-3: #415A70;           /* ghost */
 
-  /* Rules & dividers */
-  --rule: rgba(212, 182, 110, 0.16);
-  --rule-soft: rgba(212, 182, 110, 0.08);
+  /* Rules & dividers — chalk at varying opacities */
+  --rule: rgba(168, 216, 232, 0.22);
+  --rule-soft: rgba(168, 216, 232, 0.10);
+  --rule-strong: rgba(168, 216, 232, 0.45);
 
-  /* Signature accent — darkroom safelight */
-  --accent: #FF4B1F;
-  --accent-2: #FF7A4F;
-  --accent-soft: rgba(255, 75, 31, 0.14);
-  --accent-glow: 0 0 24px -4px rgba(255, 75, 31, 0.55);
+  /* Signature accent — revision ink (ochre) */
+  --accent: #D4A24C;
+  --accent-2: #E7B96B;
+  --accent-soft: rgba(212, 162, 76, 0.12);
+  --accent-glow: 0 0 24px -6px rgba(212, 162, 76, 0.4);
 
-  /* Data & metadata — aged brass */
-  --brass: #D4B66E;
-  --brass-soft: rgba(212, 182, 110, 0.12);
+  /* Secondary hue — the chalk itself as an accent line */
+  --brass: #A8D8E8;
+  --brass-soft: rgba(168, 216, 232, 0.14);
 
   /* Status */
-  --pass: #9CDF85;            /* phosphor green */
-  --pass-soft: rgba(156, 223, 133, 0.10);
-  --fail: #F45A6B;            /* kodak red */
-  --fail-soft: rgba(244, 90, 107, 0.10);
-  --warn: #F0B74B;
-  --warn-soft: rgba(240, 183, 75, 0.10);
+  --pass: #7BB98A;
+  --pass-soft: rgba(123, 185, 138, 0.12);
+  --fail: #DC3D37;
+  --fail-soft: rgba(220, 61, 55, 0.12);
+  --warn: #D4A24C;
+  --warn-soft: rgba(212, 162, 76, 0.10);
 
-  /* Atmosphere */
-  --grain-opacity: 0.12;
-  --shadow-1: 0 1px 0 0 var(--rule), 0 16px 32px -16px rgba(0, 0, 0, 0.6);
-  --shadow-2: 0 24px 48px -24px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--rule);
+  /* Drafting grid */
+  --grid-fine: rgba(168, 216, 232, 0.07);
+  --grid-major: rgba(168, 216, 232, 0.14);
 
-  /* Motion */
+  --shadow-1: 0 1px 0 0 var(--rule-soft), 0 24px 48px -32px rgba(0, 0, 0, 0.8);
+  --shadow-2: 0 32px 64px -32px rgba(0, 0, 0, 0.9);
+
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --dur-quick: 0.18s;
@@ -129,42 +131,45 @@
 }
 
 /* ============================================================================
-   THEME · EDITORIAL (light)
-   Bone paper, cadmium-red accent, aged gold for data. Same structure.
+   THEME · PAPER (light)
+   Pale cold-blue stock + graphite linework. Same discipline, sun-bleached.
    ============================================================================ */
 
-[data-theme="editorial"] {
+[data-theme="paper"] {
   color-scheme: light;
 
-  --bg-0: #F6F2E8;
-  --bg-1: #FBF7EC;
-  --bg-2: #EEE7D2;
-  --bg-3: #E4DCC0;
+  --bg-0: #E8EEF2;
+  --bg-1: #F1F5F8;
+  --bg-2: #DDE6EC;
+  --bg-3: #CAD7E0;
 
-  --ink-0: #13100A;
-  --ink-1: #4B4636;
-  --ink-2: #887E66;
-  --ink-3: #B6AC8A;
+  --ink-0: #2A3240;
+  --ink-1: #3F4A5C;
+  --ink-2: #6B7888;
+  --ink-3: #93A0B0;
 
-  --rule: #C9C0A4;
-  --rule-soft: #DDD4B8;
+  --rule: rgba(42, 50, 64, 0.22);
+  --rule-soft: rgba(42, 50, 64, 0.10);
+  --rule-strong: rgba(42, 50, 64, 0.45);
 
-  --accent: #C1272D;           /* cadmium */
-  --accent-2: #8B1A1F;
-  --accent-soft: rgba(193, 39, 45, 0.08);
+  --accent: #8A5A12;
+  --accent-2: #6A450E;
+  --accent-soft: rgba(138, 90, 18, 0.10);
   --accent-glow: none;
 
-  --brass: #B88926;            /* aged gold for italic flourishes */
-  --brass-soft: rgba(184, 137, 38, 0.10);
+  --brass: #2A3240;
+  --brass-soft: rgba(42, 50, 64, 0.06);
 
   --pass: #2F6B3D;
   --pass-soft: rgba(47, 107, 61, 0.08);
-  --fail: #A01B2F;
-  --fail-soft: rgba(160, 27, 47, 0.08);
-  --warn: #B88926;
-  --warn-soft: rgba(184, 137, 38, 0.10);
+  --fail: #B42420;
+  --fail-soft: rgba(180, 36, 32, 0.08);
+  --warn: #8A5A12;
+  --warn-soft: rgba(138, 90, 18, 0.10);
 
-  --grain-opacity: 0;
+  --grid-fine: rgba(42, 50, 64, 0.05);
+  --grid-major: rgba(42, 50, 64, 0.11);
+
   --shadow-1: 0 1px 0 0 var(--rule-soft);
   --shadow-2: 0 2px 0 0 var(--ink-0);
 
@@ -175,7 +180,7 @@
 }
 
 /* ============================================================================
-   Base styles + shared atmosphere
+   Base styles — drafting grid wallpaper on every page
    ============================================================================ */
 
 @layer base {
@@ -184,55 +189,44 @@
     outline-color: color-mix(in oklab, var(--accent) 50%, transparent);
   }
   html {
-    font-feature-settings: "ss01", "cv02", "calt";
+    font-feature-settings: "ss01", "tnum", "calt";
     text-rendering: optimizeLegibility;
   }
   body {
     background: var(--bg-0);
+    background-image:
+      linear-gradient(to right, var(--grid-fine) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-fine) 1px, transparent 1px),
+      linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px),
+      radial-gradient(ellipse at 20% 0%, color-mix(in oklab, var(--bg-1) 50%, transparent) 0%, transparent 40%),
+      radial-gradient(ellipse at 100% 100%, var(--bg-3) 0%, transparent 60%);
+    background-size: 8px 8px, 8px 8px, 64px 64px, 64px 64px, 100% 100%, 100% 100%;
+    background-attachment: fixed;
     color: var(--ink-0);
     font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-    font-size: 15px;
+    font-size: 14px;
+    letter-spacing: 0.01em;
     line-height: 1.5;
     min-height: 100vh;
     position: relative;
   }
 
-  /* Shared film-grain overlay. Only the darkroom theme shows it (via
-     --grain-opacity). Editorial theme sets opacity to 0 so the same DOM
-     does nothing — no theme-specific HTML needed. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9999;
-    opacity: var(--grain-opacity);
-    mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
-    animation: vt-grain 1.2s steps(6) infinite;
-  }
-  @keyframes vt-grain {
-    0%, 100% { transform: translate(0, 0); }
-    20% { transform: translate(-2%, 3%); }
-    40% { transform: translate(1%, -2%); }
-    60% { transform: translate(-1%, 1%); }
-    80% { transform: translate(2%, -3%); }
-  }
-
   ::selection { background: var(--accent); color: var(--bg-0); }
 
-  h1, h2, h3, h4, h5 {
-    font-family: var(--font-display), ui-serif, Georgia, serif;
-    font-weight: 380;
-    letter-spacing: -0.022em;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display), ui-monospace, monospace;
+    font-weight: 400;
+    letter-spacing: -0.005em;
     color: var(--ink-0);
+    text-transform: lowercase;
   }
-  h1 em, h2 em, h3 em { font-style: italic; color: var(--accent); font-weight: 340; }
+  h1 em, h2 em, h3 em { font-style: normal; color: var(--accent); font-weight: 400; }
 }
 
 /* ============================================================================
-   Typographic utilities — used across pages
+   Typographic utilities — Blueprint uses mono for nearly everything labeled
    ============================================================================ */
 
 .vt-eyebrow {
@@ -244,6 +238,7 @@
   display: inline-flex;
   align-items: center;
   gap: 14px;
+  font-variant-numeric: tabular-nums;
 }
 .vt-eyebrow::before {
   content: "";
@@ -259,38 +254,42 @@
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
 }
 
 .vt-display {
-  font-family: var(--font-display), serif;
-  font-variation-settings: "opsz" 144;
-  font-weight: 300;
-  line-height: 0.94;
-  letter-spacing: -0.035em;
+  font-family: var(--font-display), ui-monospace, monospace;
+  font-weight: 400;
+  line-height: 0.96;
+  letter-spacing: -0.01em;
+  text-transform: lowercase;
 }
 
 .vt-italic {
-  font-family: var(--font-display), serif;
-  font-style: italic;
-  font-variation-settings: "opsz" 72;
+  font-family: var(--font-hand), cursive;
+  font-style: normal;
+  color: var(--accent);
 }
 
 .vt-mono {
   font-family: var(--font-mono), monospace;
   font-feature-settings: "zero", "ss01";
+  font-variant-numeric: tabular-nums;
 }
 
 .vt-rule { height: 1px; background: var(--rule); }
-.vt-rule--strong { height: 1px; background: var(--ink-0); }
+.vt-rule--strong { height: 1px; background: var(--rule-strong); }
 .vt-rule--dashed { border-top: 1px dashed var(--rule); height: 0; }
+.vt-rule--double { height: 4px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: transparent; }
 
 /* Hairline divider with a small ornament in the middle (for section breaks). */
 .vt-ornament {
   display: flex; align-items: center; gap: 18px;
-  color: var(--brass);
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: 16px;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 .vt-ornament::before, .vt-ornament::after {
   content: ""; flex: 1; height: 1px; background: var(--rule);
@@ -308,20 +307,21 @@
   border: 1px solid var(--rule);
   font-family: var(--font-mono);
   font-size: 10.5px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-1);
   background: var(--bg-1);
-  border-radius: 2px;
+  font-variant-numeric: tabular-nums;
 }
-.vt-chip--pass   { color: var(--pass); border-color: color-mix(in oklab, var(--pass) 40%, var(--rule)); background: var(--pass-soft); }
-.vt-chip--fail   { color: var(--fail); border-color: color-mix(in oklab, var(--fail) 40%, var(--rule)); background: var(--fail-soft); }
-.vt-chip--warn   { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 40%, var(--rule)); background: var(--warn-soft); }
-.vt-chip--accent { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, var(--rule)); background: var(--accent-soft); }
+.vt-chip--pass   { color: var(--pass); border-color: color-mix(in oklab, var(--pass) 55%, var(--rule)); background: var(--pass-soft); }
+.vt-chip--fail   { color: var(--fail); border-color: color-mix(in oklab, var(--fail) 55%, var(--rule)); background: var(--fail-soft); }
+.vt-chip--warn   { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 55%, var(--rule)); background: var(--warn-soft); }
+.vt-chip--accent { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 55%, var(--rule)); background: var(--accent-soft); }
 
 .vt-dot {
-  width: 8px; height: 8px; border-radius: 50%; background: currentColor;
-  box-shadow: 0 0 12px 0 currentColor;
+  width: 6px; height: 6px; background: currentColor;
+  transform: rotate(45deg);
+  display: inline-block;
 }
 
 .vt-btn {
@@ -329,24 +329,24 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 22px;
-  border: 1px solid var(--rule);
+  padding: 10px 20px;
+  border: 1px solid var(--ink-1);
   background: transparent;
   color: var(--ink-0);
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  letter-spacing: 0.18em;
+  font-size: 11px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
-  transition: transform var(--dur-quick) var(--ease-out), background var(--dur-quick), border-color var(--dur-quick), color var(--dur-quick);
+  font-variant-numeric: tabular-nums;
+  transition: background var(--dur-quick), border-color var(--dur-quick), color var(--dur-quick);
 }
-.vt-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.vt-btn:hover { border-color: var(--accent); color: var(--accent); }
 .vt-btn--primary {
   background: var(--accent);
   color: var(--bg-0);
   border-color: var(--accent);
-  box-shadow: var(--accent-glow);
 }
 .vt-btn--primary:hover {
   background: var(--accent-2);
@@ -359,26 +359,194 @@
 .vt-input {
   width: 100%;
   background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--ink-3);
-  padding: 14px 2px;
+  border: 1px solid var(--rule);
+  padding: 12px 14px;
   font-family: var(--font-mono), monospace;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--ink-0);
+  font-variant-numeric: tabular-nums;
   transition: border-color var(--dur-quick) var(--ease-out);
 }
-.vt-input::placeholder { color: var(--ink-2); font-style: italic; font-family: var(--font-display); }
+.vt-input::placeholder { color: var(--ink-2); font-family: var(--font-mono); letter-spacing: 0.08em; }
 .vt-input:focus { outline: none; border-color: var(--accent); }
 
 .vt-panel {
-  background: var(--bg-1);
+  background: color-mix(in oklab, var(--bg-1) 55%, transparent);
   border: 1px solid var(--rule);
-  padding: 40px 44px;
+  padding: 24px 28px;
   position: relative;
 }
-.vt-panel--inset { background: var(--bg-2); }
+.vt-panel--inset { background: color-mix(in oklab, var(--bg-2) 45%, transparent); }
 
-/* Editorial pattern — 2-col reading layout for long-form pages */
+/* ============================================================================
+   Blueprint primitives — the signature drafting marks
+   ============================================================================ */
+
+/* Sheet — the bordered drawing surface, with corner crop marks */
+.vt-sheet {
+  position: relative;
+  border-left: 1px solid var(--rule);
+  border-right: 1px solid var(--rule);
+  padding: 48px 56px 96px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.vt-sheet + .vt-sheet { border-top: 1px solid var(--rule); }
+
+.vt-crop { position: absolute; width: 24px; height: 24px; pointer-events: none; }
+.vt-crop::before, .vt-crop::after {
+  content: ""; position: absolute; background: var(--ink-1); opacity: 0.55;
+}
+.vt-crop::before { left: 0; top: 0; width: 24px; height: 1px; }
+.vt-crop::after  { left: 0; top: 0; width: 1px; height: 24px; }
+.vt-crop--tl { top: 16px; left: 16px; }
+.vt-crop--tr { top: 16px; right: 16px; transform: scaleX(-1); }
+.vt-crop--bl { bottom: 16px; left: 16px; transform: scaleY(-1); }
+.vt-crop--br { bottom: 16px; right: 16px; transform: scale(-1, -1); }
+
+/* Title block — drawing-sheet metadata grid */
+.vt-title-block {
+  border: 1px solid var(--rule-strong);
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-0);
+  background: color-mix(in oklab, var(--bg-1) 70%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.vt-title-block > div {
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 8px 10px;
+}
+.vt-title-block > div:nth-child(6n) { border-right: none; }
+.vt-title-block > div.span2 { grid-column: span 2; }
+.vt-title-block > div.span3 { grid-column: span 3; }
+.vt-title-block .k { color: var(--ink-2); font-size: 8.5px; display: block; margin-bottom: 3px; }
+.vt-title-block .v { color: var(--ink-0); font-size: 11px; letter-spacing: 0.08em; }
+.vt-title-block .v.big { font-size: 14px; color: var(--ink-1); }
+
+/* Revision stamp — ochre diamond + uppercase label */
+.vt-rev-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 5px 10px 5px 10px;
+  background: var(--accent-soft);
+  font-variant-numeric: tabular-nums;
+}
+.vt-rev-stamp::before {
+  content: ""; width: 8px; height: 8px; border: 1px solid var(--accent);
+  transform: rotate(45deg); display: inline-block;
+}
+.vt-rev-stamp--reject { color: var(--fail); border-color: var(--fail); background: var(--fail-soft); }
+.vt-rev-stamp--reject::before { border-color: var(--fail); }
+.vt-rev-stamp--pass { color: var(--pass); border-color: var(--pass); background: var(--pass-soft); }
+.vt-rev-stamp--pass::before { border-color: var(--pass); }
+
+/* Dimension callout — `← 2400 →` style */
+.vt-dim {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.vt-dim-h {
+  width: 100%;
+  height: 12px;
+  position: relative;
+}
+.vt-dim-h::before, .vt-dim-h::after {
+  content: ""; position: absolute; top: 50%; height: 1px; background: var(--ink-2);
+}
+.vt-dim-h::before { left: 0; right: calc(50% + 40px); }
+.vt-dim-h::after  { right: 0; left:  calc(50% + 40px); }
+.vt-dim-h .v {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono); font-size: 10px; color: var(--ink-2);
+  letter-spacing: 0.12em;
+  background: var(--bg-0); padding: 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.vt-dim-h .tick-l, .vt-dim-h .tick-r {
+  position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--ink-2);
+}
+.vt-dim-h .tick-l { left: 0; }
+.vt-dim-h .tick-r { right: 0; }
+
+/* Section head — numbered + ruled */
+.vt-section-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  margin: 72px 0 24px;
+}
+.vt-section-head .num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 6px 10px;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.vt-section-head .ttl {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--ink-0);
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+.vt-section-head .rule {
+  height: 1px;
+  background: var(--rule-strong);
+}
+.vt-section-head .stamp {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-2);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Leader / callout — for annotating detail boxes on a plate */
+.vt-leader {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Handwritten revision note — rare, used for rev-by-rev annotations */
+.vt-annotation {
+  font-family: var(--font-hand), cursive;
+  font-size: 20px;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+/* Editorial pattern — 2-col reading layout kept for long-form pages */
 .vt-editorial {
   display: grid;
   grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
@@ -387,12 +555,12 @@
 @media (max-width: 960px) { .vt-editorial { grid-template-columns: 1fr; gap: 36px; } }
 
 /* ============================================================================
-   Animations — restrained, purposeful
+   Animations — restrained, one-shot on reveal
    ============================================================================ */
 
 @keyframes vt-breathe {
-  0%, 100% { opacity: 1; filter: saturate(1); }
-  50% { opacity: 0.62; filter: saturate(0.75); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
 }
 
 @keyframes vt-reveal {
@@ -416,7 +584,7 @@
 .vt-stagger > *:nth-child(5) { animation-delay: 360ms; }
 .vt-stagger > *:nth-child(6) { animation-delay: 440ms; }
 
-/* Back-compat animation names used by old pages during the migration */
+/* Back-compat animation names used by existing pages */
 .animate-fade-in { animation: vt-reveal var(--dur-reveal) var(--ease-out) both; }
 .animate-slide-in-right { animation: vt-slide-in var(--dur-reveal) var(--ease-out) both; }
 .animate-scale-in { animation: vt-reveal var(--dur-reveal) var(--ease-out) both; }
@@ -430,10 +598,10 @@
 .stagger-children > *:nth-child(6) { animation-delay: 440ms; }
 
 /* ============================================================================
-   Scrollbars — restrained to match the surface
+   Scrollbars — chalk hairlines on navy
    ============================================================================ */
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--rule); border: 2px solid var(--bg-0); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: var(--brass); }
+::-webkit-scrollbar-thumb { background: var(--rule); border: 2px solid var(--bg-0); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }

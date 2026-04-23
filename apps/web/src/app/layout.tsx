@@ -1,38 +1,43 @@
 import type { Metadata } from 'next';
-import { Fraunces, Instrument_Sans, Fragment_Mono } from 'next/font/google';
+import { Major_Mono_Display, Space_Grotesk, JetBrains_Mono, Caveat } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 
 /**
- * Typography trio for the Darkroom / Editorial design system.
- * Both themes share the same fonts; the themes vary by weight, optical
- * size, and italic usage — not by family. This keeps the design
- * consistent while letting each theme have its own personality.
+ * Blueprint typography.
+ * Major Mono Display — drafting-block display face, lowercase by default.
+ * Space Grotesk    — body copy with a mechanical edge.
+ * JetBrains Mono   — run IDs, timestamps, tabular figures, labels.
+ * Caveat           — rare handwritten revision notes only.
  */
-const fraunces = Fraunces({
+const majorMono = Major_Mono_Display({
   subsets: ['latin'],
+  weight: '400',
   variable: '--font-display',
-  axes: ['opsz', 'SOFT'],
   display: 'swap',
 });
-const instrumentSans = Instrument_Sans({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-body',
   display: 'swap',
 });
-const fragmentMono = Fragment_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: '400',
   variable: '--font-mono-feature',
+  display: 'swap',
+});
+const caveat = Caveat({
+  subsets: ['latin'],
+  variable: '--font-hand',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'VisionTest.ai — watch every change',
+  title: 'VisionTest.ai — Sheet 01 of N: Visual Regression, Drafted',
   description:
-    'A darkroom for your interface. Write test journeys as plain English, develop each step as a frame, and see what changed before your users do.',
+    'A drafting room for your interface. Every release is a revision; every diff, a redline. See what changed before your users do.',
 };
 
 export default function RootLayout({
@@ -41,19 +46,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      // Darkroom is the default theme; the ThemeProvider can set
-      // data-theme="editorial" for the light variant. The `class`
-      // attribute kept for back-compat with remaining .dark selectors.
-      data-theme="darkroom"
+      data-theme="blueprint"
       suppressHydrationWarning
     >
       <body
-        className={`${fraunces.variable} ${instrumentSans.variable} ${fragmentMono.variable}`}
+        className={`${majorMono.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${caveat.variable}`}
       >
         <ThemeProvider
           attribute="data-theme"
-          defaultTheme="darkroom"
-          themes={['darkroom', 'editorial']}
+          defaultTheme="blueprint"
+          themes={['blueprint', 'paper']}
           enableSystem={false}
         >
           <QueryProvider>
