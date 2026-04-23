@@ -146,6 +146,114 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
 });
 
 /**
+ * POST /baselines/from-execution/:executionId
+ *
+ * The user-facing "Set as baseline" button promotes every screenshot
+ * captured during an execution into a same-named baseline. If the
+ * baseline already exists it's replaced (so re-running against a
+ * rotated design is a single click).
+ *
+ * Body:
+ *   name?: string    — defaults to the test's name (or "Run baseline")
+ *   branch?: string  — defaults to "main"
+ *   replace?: boolean — overwrite existing baseline with same (name,branch)
+ */
+router.post(
+  '/from-execution/:executionId',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const execution = await prisma.execution.findUnique({
+        where: { id: req.params.executionId },
+        include: {
+          project: {
+            include: { org: { include: { users: { where: { userId: req.user!.id } } } } },
+          },
+          test: true,
+          screenshots: true,
+        },
+      });
+      if (!execution) throw NotFoundError('Execution');
+      if (execution.project.org.users.length === 0) {
+        throw ForbiddenError('No access to this execution');
+      }
+
+      const screenshots = (execution.screenshots || []).map((s) => ({
+        name: s.name || `step-${s.stepNumber}`,
+        url: s.url,
+        width: s.width ?? 0,
+        height: s.height ?? 0,
+        deviceType: s.deviceType ?? 'desktop',
+      }));
+
+      if (screenshots.length === 0) {
+        throw BadRequestError(
+          'This execution has no screenshots to set as a baseline. Enable Screenshot every step in the test settings and re-run.',
+        );
+      }
+
+      const name =
+        (req.body?.name as string | undefined) ||
+        execution.test?.name ||
+        'Run baseline';
+      const branch = (req.body?.branch as string | undefined) || 'main';
+      const replace = req.body?.replace !== false;
+
+      const existing = await prisma.baseline.findUnique({
+        where: { projectId_name_branch: { projectId: execution.projectId, name, branch } },
+      });
+
+      let baseline;
+      if (existing) {
+        if (!replace) {
+          throw BadRequestError(
+            `Baseline "${name}" already exists on branch "${branch}". Pass replace=true to overwrite.`,
+          );
+        }
+        baseline = await prisma.baseline.update({
+          where: { id: existing.id },
+          data: {
+            screenshots: JSON.stringify(screenshots),
+            metadata: {
+              lastUpdatedBy: req.user!.id,
+              sourceExecutionId: execution.id,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        });
+        logger.info(`Baseline updated from execution ${execution.id}: ${baseline.id}`);
+      } else {
+        baseline = await prisma.baseline.create({
+          data: {
+            projectId: execution.projectId,
+            name,
+            branch,
+            type: 'PROJECT',
+            screenshots: JSON.stringify(screenshots),
+            metadata: {
+              createdBy: req.user!.id,
+              sourceExecutionId: execution.id,
+            },
+          },
+        });
+        logger.info(`Baseline created from execution ${execution.id}: ${baseline.id}`);
+      }
+
+      res.status(existing ? 200 : 201).json({
+        success: true,
+        data: {
+          ...baseline,
+          screenshots,
+          replaced: !!existing,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
  * GET /baselines/branch/:branch
  * Get baseline for a branch (with inheritance)
  */

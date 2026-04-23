@@ -430,6 +430,19 @@ async function processTestExecution(job: Job) {
       logger.warn('Failed to update impact mappings', { executionId, error: err });
     }
 
+    // Automatic visual comparison — for every test in this execution,
+    // if a baseline exists that matches (projectId, name=test.name,
+    // branch='main'), diff every captured screenshot against it and
+    // persist a Comparison row. Comparisons appear in /visual and on
+    // /executions/:id so approval / reject is reachable from a normal
+    // test run. Skipped silently when no baseline exists — that's the
+    // default state until the user presses Set-as-baseline once.
+    try {
+      await autoCompareExecution(executionId, tests);
+    } catch (err) {
+      logger.warn('Auto-compare step failed', { executionId, error: err });
+    }
+
     // Publish completion status
     await publishStatusChange(executionId, finalStatus);
 
@@ -498,6 +511,61 @@ async function processTestExecution(job: Job) {
     );
 
     throw error;
+  }
+}
+
+/**
+ * Auto-compare: for each test in an execution, find a matching
+ * baseline and run processComparison on every captured screenshot
+ * against it. Silently does nothing if no baseline exists — that's
+ * the default until the user clicks "Set as baseline" once.
+ *
+ * Matching rule (v1, deliberately simple): baseline.name === test.name
+ * AND baseline.branch === 'main'. Per-branch baselines / repo-branch
+ * detection are future work.
+ */
+async function autoCompareExecution(
+  executionId: string,
+  tests: Array<{ id: string; name: string; projectId: string }>,
+): Promise<void> {
+  if (!tests || tests.length === 0) return;
+
+  const allScreenshots = await prisma.screenshot.findMany({
+    where: { executionId },
+  });
+  if (allScreenshots.length === 0) return;
+
+  for (const test of tests) {
+    const baseline = await prisma.baseline.findFirst({
+      where: {
+        projectId: test.projectId,
+        name: test.name,
+        branch: 'main',
+      },
+    });
+    if (!baseline) {
+      logger.debug(
+        `No baseline for test "${test.name}" — skipping auto-compare.`,
+      );
+      continue;
+    }
+
+    for (const screenshot of allScreenshots) {
+      try {
+        const result = await screenshotService.processComparison(
+          executionId,
+          screenshot.id,
+          baseline.id,
+        );
+        logger.info(
+          `Auto-compare ${screenshot.name}: ${result.status} (diff ${result.diffPercent}%)`,
+        );
+      } catch (err) {
+        logger.warn(
+          `Auto-compare failed for ${screenshot.name}: ${err instanceof Error ? err.message : err}`,
+        );
+      }
+    }
   }
 }
 

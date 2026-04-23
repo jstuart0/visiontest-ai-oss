@@ -815,6 +815,15 @@ export const baselinesApi = {
     api.get<any>(`/baselines/branch/${branch}`, { projectId }),
   promote: (data: { baselineId: string; targetBranch: string; projectId: string }) =>
     api.post<any>('/baselines/promote', data),
+  /**
+   * Promote an execution's screenshots into a baseline in one call.
+   * `replace` defaults to true — repeated clicks replace the image set
+   * so rotating a design is a single button press.
+   */
+  fromExecution: (
+    executionId: string,
+    data: { name?: string; branch?: string; replace?: boolean } = {},
+  ) => api.post<any>(`/baselines/from-execution/${executionId}`, data),
 };
 
 // =============================================================================

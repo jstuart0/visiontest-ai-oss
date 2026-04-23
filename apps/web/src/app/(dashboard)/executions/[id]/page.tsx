@@ -383,6 +383,39 @@ export default function ExecutionDetailPage({
               Compare
             </Button>
           )}
+          {/* Set-as-baseline — one-click promotion of this execution's
+              screenshots to a baseline named after the test. Replaces
+              an existing baseline with the same (name, branch) so
+              iterating on a design is a single button press. */}
+          {!isLive &&
+            execution.status === 'PASSED' &&
+            screenshots.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-blue-400 border-blue-700/40 hover:bg-blue-900/20"
+              onClick={async () => {
+                try {
+                  const res = await api.post<any>(
+                    `/baselines/from-execution/${executionId}`,
+                    {},
+                  );
+                  toast.success(
+                    res.replaced
+                      ? `Baseline "${res.name}" updated — future runs will compare to these ${screenshots.length} screenshots`
+                      : `Baseline "${res.name}" created — future runs will compare to these ${screenshots.length} screenshots`,
+                  );
+                  queryClient.invalidateQueries({ queryKey: ['baselines'] });
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to set baseline');
+                }
+              }}
+              title="Promote these screenshots to a baseline. Future runs will compare against them."
+            >
+              <ImageIcon className="w-4 h-4 mr-1" />
+              Set as baseline
+            </Button>
+          )}
           {execution.status === 'FAILED' && (
             <Button
               variant="outline"

@@ -1,13 +1,34 @@
 'use client';
 
+// Baselines list.
+//
+// A baseline is a set of approved screenshots a test compares against.
+// Create one from any PASSED execution with a single click — the
+// "Set as baseline" button on /executions/[id] and /tests/[id] does
+// the heavy lifting; this page is for browsing, searching, and
+// deleting afterwards.
+
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { baselinesApi } from '@/lib/api';
 import { useCurrentProject } from '@/hooks/useProject';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Image, Trash2, GitBranch, Calendar } from 'lucide-react';
+import {
+  Image as ImageIcon,
+  Trash2,
+  GitBranch,
+  Calendar,
+  Play,
+  ArrowRight,
+  Layers,
+  Info,
+} from 'lucide-react';
 
 export default function BaselinesPage() {
   const { project } = useCurrentProject();
@@ -25,68 +46,158 @@ export default function BaselinesPage() {
       queryClient.invalidateQueries({ queryKey: ['baselines'] });
       toast.success('Baseline deleted');
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to delete'),
+    onError: (error: any) =>
+      toast.error(error.message || 'Failed to delete'),
   });
 
-  if (!project) return <div className="p-6 text-muted-foreground">Select a project to manage baselines.</div>;
+  if (!project) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <div className="text-muted-foreground mb-4">
+          Select a project to manage baselines
+        </div>
+        <Link href="/">
+          <Button variant="outline">Go to Dashboard</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Baselines</h1>
-        <p className="text-muted-foreground">
-          Manage approved baseline screenshots for visual regression testing.
-        </p>
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Layers className="w-6 h-6" /> Baselines
+          </h1>
+          <p className="text-muted-foreground mt-1 max-w-2xl">
+            Approved screenshot sets that future runs get compared
+            against. Each test typically has one baseline per branch;
+            visual diffs open a review screen where you can approve the
+            new version or reject it.
+          </p>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />
-          ))}
-        </div>
-      ) : !baselines?.length ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Image className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No baselines yet. Run a test and approve its screenshots to create baselines.</p>
+      {/* How-to card — replaces the misleading old empty-state hint */}
+      {(!baselines || baselines.length === 0) && !isLoading && (
+        <Card className="bg-card border-border">
+          <CardContent className="py-12 flex flex-col items-center text-center gap-5">
+            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+              <ImageIcon className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <div className="space-y-1 max-w-lg">
+              <h3 className="text-foreground font-medium text-lg">
+                No baselines yet
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Create one in a single click: run a test, open the
+                execution, and press{' '}
+                <span className="font-medium text-foreground">
+                  Set as baseline
+                </span>
+                . We&apos;ll snapshot every step screenshot and promote
+                them into a new baseline. Future runs of that test will
+                compare against them automatically.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <Link href="/tests">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Play className="w-4 h-4 mr-2" /> Pick a test to run
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+              <Link href="/baselines/new">
+                <Button variant="outline">
+                  Or create manually
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {/* Running list */}
+      {isLoading ? (
         <div className="space-y-3">
-          {baselines.map((baseline: any) => (
-            <Card key={baseline.id}>
-              <CardContent className="flex items-center justify-between py-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-lg bg-muted">
-                    <Image className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{baseline.name}</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1">
-                        <GitBranch className="h-3 w-3" /> {baseline.branch || 'main'}
-                      </span>
-                      <Badge variant="outline" className="text-xs">{baseline.type || 'PROJECT'}</Badge>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> {new Date(baseline.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-red-400"
-                  onClick={() => deleteMutation.mutate(baseline.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-20 bg-muted animate-pulse rounded-lg"
+            />
           ))}
         </div>
-      )}
+      ) : baselines && baselines.length > 0 ? (
+        <>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Info className="w-3 h-3" /> Each baseline is one approved
+            screenshot set. Delete to force future runs to ignore it.
+          </div>
+          <Card className="bg-card border-border">
+            <CardContent className="p-0 divide-y divide-border">
+              {baselines.map((b: any) => {
+                const shots =
+                  typeof b.screenshots === 'string'
+                    ? JSON.parse(b.screenshots)
+                    : b.screenshots;
+                const shotCount = Array.isArray(shots) ? shots.length : 0;
+                return (
+                  <div
+                    key={b.id}
+                    className="flex items-center gap-3 px-4 py-3"
+                  >
+                    <div className="p-2 rounded-lg bg-muted flex-shrink-0">
+                      <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground truncate">
+                          {b.name}
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] font-mono"
+                        >
+                          {shotCount} frame
+                          {shotCount === 1 ? '' : 's'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                        <span className="flex items-center gap-1">
+                          <GitBranch className="w-3 h-3" />
+                          {b.branch || 'main'}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-muted/50"
+                        >
+                          {b.type || 'PROJECT'}
+                        </Badge>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(b.updatedAt || b.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-red-400"
+                      onClick={() => {
+                        if (confirm(`Delete baseline "${b.name}"?`))
+                          deleteMutation.mutate(b.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </>
+      ) : null}
     </div>
   );
 }

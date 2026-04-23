@@ -13,7 +13,7 @@ import {
   AlertTriangle,
   Clock,
   Activity,
-  Image,
+  Image as ImageIcon,
   Settings,
   History,
   List,
@@ -32,7 +32,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useCurrentProject } from '@/hooks/useProject';
-import { testsApi, visualApi, masksApi, flakyApi, type Test, type VisualComparison, type Mask, type Execution } from '@/lib/api';
+import { testsApi, visualApi, masksApi, flakyApi, baselinesApi, type Test, type VisualComparison, type Mask, type Execution } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -163,6 +163,30 @@ export default function TestDetailPage({
     },
   });
 
+  // Set-as-baseline from the latest PASSED execution.
+  // The button is hidden when no passed execution exists; this keeps
+  // the workflow single-click when it's viable and invisible otherwise.
+  const latestPassed = (test as any)?.recentExecutions?.find(
+    (e: { status: string }) => e.status === 'PASSED',
+  );
+  const setBaselineMutation = useMutation({
+    mutationFn: () => {
+      if (!latestPassed) throw new Error('No passed execution found');
+      return baselinesApi.fromExecution(latestPassed.id, {});
+    },
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ['baselines'] });
+      toast.success(
+        res.replaced
+          ? `Baseline "${res.name}" updated from the latest passing run`
+          : `Baseline "${res.name}" created from the latest passing run`,
+      );
+    },
+    onError: (error: { message: string }) => {
+      toast.error(error.message || 'Could not set baseline');
+    },
+  });
+
   const quarantineMutation = useMutation({
     mutationFn: () => {
       const isQuarantined = test?.status === 'QUARANTINED';
@@ -276,6 +300,20 @@ export default function TestDetailPage({
             <Play className="w-4 h-4 mr-2" />
             Run Test
           </Button>
+          {latestPassed && (
+            <Button
+              variant="outline"
+              onClick={() => setBaselineMutation.mutate()}
+              disabled={setBaselineMutation.isPending}
+              className="text-blue-400 border-blue-700/40 hover:bg-blue-900/20"
+              title={`Use the latest passing run (${new Date(
+                latestPassed.createdAt,
+              ).toLocaleDateString()}) as the visual baseline. Future runs will compare against it.`}
+            >
+              <ImageIcon className="w-4 h-4 mr-2" />
+              Set as baseline
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -308,7 +346,7 @@ export default function TestDetailPage({
             value="visuals"
             className="data-[state=active]:bg-accent data-[state=active]:text-foreground"
           >
-            <Image className="w-4 h-4 mr-2" />
+            <ImageIcon className="w-4 h-4 mr-2" />
             Visuals ({testVisuals.length})
           </TabsTrigger>
           <TabsTrigger
@@ -477,7 +515,7 @@ export default function TestDetailPage({
           {testVisuals.length === 0 ? (
             <Card className="bg-card border-border">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Image className="w-12 h-12 text-muted-foreground/50 mb-4" />
+                <ImageIcon className="w-12 h-12 text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground">No visual snapshots yet</p>
                 <p className="text-sm text-muted-foreground">
                   Run the test to generate visual snapshots
@@ -491,7 +529,7 @@ export default function TestDetailPage({
                   <Card className="bg-card border-border hover:border-border/80 transition-colors cursor-pointer">
                     <CardContent className="p-4">
                       <div className="aspect-video bg-muted rounded-lg mb-3 flex items-center justify-center">
-                        <Image className="w-8 h-8 text-muted-foreground/70" />
+                        <ImageIcon className="w-8 h-8 text-muted-foreground/70" />
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">

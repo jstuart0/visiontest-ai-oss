@@ -76,13 +76,17 @@ export default function VisualDetailPage({
   }, [prevComparison, nextComparison, router, approveMutation, rejectMutation]);
 
   const approveMutation = useMutation({
-    mutationFn: () => visualApi.approve(project!.id, comparisonId),
+    // Pass updateBaseline so the baseline image actually moves to match
+    // the approved screenshot — otherwise the toast lies and a repeat
+    // of the same test would flag the same "diff" again.
+    mutationFn: () =>
+      visualApi.approve(project!.id, comparisonId, { updateBaseline: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['visual', project?.id, comparisonId],
       });
       queryClient.invalidateQueries({ queryKey: ['visual', project?.id] });
-      toast.success('Changes approved - baseline updated');
+      toast.success('Changes approved — baseline updated');
     },
     onError: (error: { message: string }) => {
       toast.error(error.message || 'Failed to approve changes');
