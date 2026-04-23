@@ -50,16 +50,22 @@ export default function AiDiffSettingsPage() {
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="flex items-start justify-between">
+    <div className="max-w-[960px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">AI Visual Diff</h1>
-          <p className="text-muted-foreground">Configure AI-powered visual difference analysis</p>
+          <div className="vt-eyebrow mb-5">§ Perception · AI visual diff</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
+            How the machine <em>sees</em> difference.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            SSIM, LPIPS, DINOv2 — three lenses for comparing two images.
+            Tune the thresholds and which models are consulted.
+          </p>
         </div>
-        <Link href="/settings/ai-diff/wizard">
-          <Button variant="outline" size="sm"><Wand2 className="h-4 w-4 mr-1" /> Guided Setup</Button>
+        <Link href="/settings/ai-diff/wizard" className="vt-btn shrink-0">
+          <Wand2 className="w-4 h-4" /> Guided setup
         </Link>
-      </div>
+      </header>
 
       <Card>
         <CardHeader>

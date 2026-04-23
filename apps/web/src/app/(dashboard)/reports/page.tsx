@@ -21,12 +21,20 @@ export default function ReportsPage() {
 
   if (!project) return <div className="p-6 text-muted-foreground">Select a project to view reports.</div>;
 
+  // Bulletins — test reports are periodic bulletins, not a dashboard.
+  // Treat the page like a noticeboard with a date stamp.
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1200px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">Reports</h1>
-          <p className="text-muted-foreground">Test execution reports and analytics exports.</p>
+          <div className="vt-eyebrow mb-5">§ Bulletins · Exports</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
+            The <em>file-able</em> copy.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            Exportable reports of what was tested, what passed, what changed —
+            for the stakeholder who wants a PDF, not a dashboard.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -61,7 +69,7 @@ export default function ReportsPage() {
             </Button>
           )}
         </div>
-      </div>
+      </header>
 
       {isLoading ? (
         <div className="space-y-4">

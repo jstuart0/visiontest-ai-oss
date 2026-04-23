@@ -106,15 +106,27 @@ export default function ApiKeysPage() {
     toast.success('Copied to clipboard');
   }
 
+  // Terminal config — API keys are credentials for machines. Mono-led
+  // with a quiet, almost-terminal feel. One warning: the secret is
+  // shown once.
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">API Keys</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage API keys for programmatic access to VisionTest.ai
-          </p>
-        </div>
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-5">§ Keys · Programmatic access</div>
+        <div className="flex items-start justify-between gap-6 flex-wrap">
+          <div>
+            <h1 className="vt-display" style={{ fontSize: 'clamp(38px, 5vw, 60px)', lineHeight: 0.98 }}>
+              Talk to us over <em>HTTP</em>.
+            </h1>
+            <p
+              className="mt-4 vt-italic"
+              style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}
+            >
+              Keys are shown{' '}
+              <span style={{ color: 'var(--accent)', fontStyle: 'normal', fontFamily: 'var(--font-mono-feature)' }}>once</span>
+              {' '}when created — then stored only as a hash. Rotate freely, revoke faster.
+            </p>
+          </div>
         <Dialog open={createOpen} onOpenChange={(open) => {
           setCreateOpen(open);
           if (!open) setNewKeyVisible(null);
@@ -235,7 +247,8 @@ export default function ApiKeysPage() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
+        </div>
+      </header>
 
       {/* Keys List */}
       {isLoading ? (

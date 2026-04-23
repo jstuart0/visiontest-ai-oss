@@ -136,13 +136,19 @@ export default function VerificationProfilesPage() {
     }
   }
 
+  // Assay — a verification profile is a protocol of checks to run
+  // after the auto-fixer proposes a patch. Treat it like a lab assay.
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">Verification Profiles</h1>
-          <p className="text-muted-foreground">
-            Define what checks run after a fix is generated
+          <div className="vt-eyebrow mb-5">§ Assay · Verification profiles</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
+            What to <em>check</em> before shipping.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            A verification profile is a protocol — the sequence of tests a
+            proposed fix must pass before it&apos;s considered safe.
           </p>
         </div>
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
@@ -223,7 +229,7 @@ export default function VerificationProfilesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </header>
 
       {loading ? (
         <div className="flex justify-center py-12">

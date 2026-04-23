@@ -130,13 +130,20 @@ export default function RunnersPage() {
     }
   }
 
+  // Stagehands — runners that actually execute fix sessions. Labeled
+  // as crew, not as infrastructure.
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">Fix Runners</h1>
-          <p className="text-muted-foreground">
-            Manage runners that execute fix sessions and verifications
+          <div className="vt-eyebrow mb-5">§ Crew · Fix runners</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
+            The <em>stagehands</em>.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            Where fix sessions actually execute — your CI, a local sandbox,
+            a self-hosted runner. Jobs wait in a queue here until a runner
+            picks them up.
           </p>
         </div>
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
@@ -181,7 +188,7 @@ export default function RunnersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </header>
 
       {loading ? (
         <div className="flex justify-center py-12">

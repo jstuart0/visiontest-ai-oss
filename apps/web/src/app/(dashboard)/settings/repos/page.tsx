@@ -142,12 +142,17 @@ export default function RepoSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">Repository Connections</h1>
-          <p className="text-muted-foreground">
-            Connect repositories for autonomous bug fixing
+          <div className="vt-eyebrow mb-5">§ Archives · Repositories</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
+            Where the <em>code</em> lives.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            GitHub, GitLab, or a local checkout — the source the auto-fixer
+            reads and writes to. Paired with a Fix Runner that can execute
+            the repo&apos;s test suite in a sandbox.
           </p>
         </div>
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
@@ -237,7 +242,7 @@ export default function RepoSettingsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </header>
 
       {loading ? (
         <div className="flex justify-center py-12">

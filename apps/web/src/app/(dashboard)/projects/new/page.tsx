@@ -128,18 +128,22 @@ export default function NewProjectPage() {
     },
   });
 
+  // Founding — a new project is opening a file. Editorial, quiet.
   return (
-    <div className="max-w-3xl mx-auto animate-fade-in">
-      {/* Back Link */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground/80 transition-colors mb-6"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Dashboard
-      </Link>
-
-      <h1 className="text-2xl font-bold text-foreground mb-8">Create New Project</h1>
+    <div className="max-w-[860px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <div className="flex items-center gap-4 mb-5">
+        <Link
+          href="/"
+          className="vt-kicker inline-flex items-center gap-2"
+          style={{ color: 'var(--ink-2)' }}
+        >
+          <ArrowLeft className="w-3 h-3" /> back to dashboard
+        </Link>
+        <span className="vt-eyebrow">§ New project</span>
+      </div>
+      <h1 className="vt-display mb-8" style={{ fontSize: 'clamp(36px, 5vw, 56px)', lineHeight: 0.98 }}>
+        Open a new <em>file</em>.
+      </h1>
 
       {/* Step Indicator */}
       <div className="flex items-center justify-between mb-8 px-2">

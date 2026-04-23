@@ -139,24 +139,46 @@ export default function TeamsPage() {
     deleteMutation.mutate(teamId);
   };
 
+  // Masthead — teams are people. Treat the page like the mast of a
+  // newspaper: a soft roman headline, no icon, team count typeset as
+  // "in this edition" meta.
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Teams</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage teams and collaborate on visual testing
-          </p>
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-8 border-b-2 mb-12" style={{ borderColor: 'var(--ink-0)' }}>
+        <div className="flex items-start justify-between gap-8 flex-wrap">
+          <div className="flex-1 min-w-[280px]">
+            <div className="vt-kicker mb-4" style={{ color: 'var(--ink-2)' }}>
+              § Masthead · {teams?.length || 0} {teams?.length === 1 ? 'team' : 'teams'}
+            </div>
+            <h1
+              className="vt-display"
+              style={{ fontSize: 'clamp(44px, 6vw, 76px)', lineHeight: 0.97, fontWeight: 310 }}
+            >
+              Who runs the <em>tests</em>.
+            </h1>
+            <p
+              className="mt-4 vt-italic"
+              style={{
+                fontVariationSettings: '"opsz" 24',
+                fontSize: '17px',
+                color: 'var(--ink-1)',
+                maxWidth: '58ch',
+              }}
+            >
+              A team is a group of people who own a slice of the surface —
+              pages, flows, or user journeys. Approvals route to the team
+              that owns the surface.
+            </p>
+          </div>
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="vt-btn vt-btn--primary shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            New team
+          </button>
         </div>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Team
-        </Button>
-      </div>
+      </header>
 
       {/* Teams List */}
       {isLoading ? (

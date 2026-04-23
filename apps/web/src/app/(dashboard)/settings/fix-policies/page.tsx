@@ -133,13 +133,20 @@ export default function FixPoliciesPage() {
     }
   }
 
+  // Code of conduct — the rules the auto-fixer must follow. Framed as
+  // policy, not config; treat it like a charter with articles.
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">Fix Policies</h1>
-          <p className="text-muted-foreground">
-            Configure safety constraints for automated fixing
+          <div className="vt-eyebrow mb-5">§ Charter · Fix policies</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
+            What the <em>auto-fixer</em> may touch.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            Safety rails for automated fixing — which paths it can edit, which
+            branches it can push to, how many attempts before it hands the
+            case back to a human.
           </p>
         </div>
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
@@ -208,7 +215,7 @@ export default function FixPoliciesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </header>
 
       {loading ? (
         <div className="flex justify-center py-12">

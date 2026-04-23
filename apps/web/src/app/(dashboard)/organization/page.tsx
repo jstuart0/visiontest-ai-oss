@@ -74,12 +74,26 @@ export default function OrganizationPage() {
 
   if (!orgId) return <div className="p-6 text-muted-foreground">Select a project to view organization settings.</div>;
 
+  // Nameplate — the institutional identity page. Subtle, formal.
+  // Uses an editorial dateline + a Fraunces italic name as a plate.
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Organization</h1>
-        <p className="text-muted-foreground">Manage your organization settings and members.</p>
-      </div>
+    <div className="max-w-[860px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-8 border-b-2 mb-12" style={{ borderColor: 'var(--ink-0)' }}>
+        <div className="vt-kicker mb-4" style={{ color: 'var(--ink-2)' }}>§ Nameplate · Organization</div>
+        <h1
+          className="vt-display"
+          style={{ fontSize: 'clamp(40px, 5.5vw, 64px)', lineHeight: 0.98, fontWeight: 310 }}
+        >
+          Who we <em>are</em>.
+        </h1>
+        <p
+          className="mt-4 vt-italic"
+          style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '56ch' }}
+        >
+          The institution that owns the projects, the baselines, and the
+          credentials. Billing lives here too — quietly.
+        </p>
+      </header>
 
       {/* Org Settings */}
       <Card>

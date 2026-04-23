@@ -234,13 +234,19 @@ export default function AIProvidersPage() {
 
   const selectedModelInfo = models.find(m => m.id === model);
 
+  // Engine room — pluggable LLM brains. Headline treats providers as
+  // a retainer of minds, not a list of services.
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">AI Providers</h1>
-          <p className="text-muted-foreground">
-            Configure LLM providers for failure analysis and fix generation
+          <div className="vt-eyebrow mb-5">§ Settings · AI providers</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
+            The <em>brains</em> on retainer.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            Which models read the failure, write the fix, interpret the story.
+            OpenAI, Anthropic, Gemini, a local Ollama — all pluggable.
           </p>
         </div>
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
@@ -387,7 +393,7 @@ export default function AIProvidersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </header>
 
       {/* Provider List */}
       {loading ? (

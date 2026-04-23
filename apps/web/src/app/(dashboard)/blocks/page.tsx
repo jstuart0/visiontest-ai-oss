@@ -71,12 +71,20 @@ export default function BlocksPage() {
 
   if (!project) return <div className="p-6 text-muted-foreground">Select a project to manage blocks.</div>;
 
+  // Erector set — blocks snap together to build workflows. Headline
+  // treats the page as a shelf of named parts, not a directory.
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">Task Blocks</h1>
-          <p className="text-muted-foreground">Reusable building blocks for workflow automation.</p>
+          <div className="vt-eyebrow mb-5">§ Blocks · Reusable task pieces</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
+            Snap-together <em>tasks</em>.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            The building blocks of your workflows — little named pieces of
+            logic that chain together to do real work.
+          </p>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
@@ -131,7 +139,7 @@ export default function BlocksPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </header>
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

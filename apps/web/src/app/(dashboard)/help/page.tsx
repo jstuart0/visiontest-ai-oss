@@ -276,20 +276,29 @@ export default function HelpPage() {
   const [expandedAction, setExpandedAction] = useState<string | null>(null);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-12">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <BookOpen className="w-8 h-8" />
-          Test Script Reference
+    <div className="max-w-[960px] mx-auto px-6 md:px-12 py-10 pb-16 vt-reveal">
+      {/* Tome masthead — the help page is a bound reference, so it
+          opens like a chapter of a book: Roman numeral, long title,
+          italic sub-head. */}
+      <header className="pb-8 border-b-2 mb-14" style={{ borderColor: 'var(--ink-0)' }}>
+        <div className="vt-kicker mb-4" style={{ color: 'var(--ink-2)' }}>
+          Chapter I · Authoring tests
+        </div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(44px, 6vw, 76px)', lineHeight: 0.97, fontWeight: 310 }}>
+          The <em>manual</em>.
         </h1>
-        <p className="text-muted-foreground mt-2">
-          Learn how to write tests using natural language or YAML scripts
+        <p
+          className="mt-5 vt-italic"
+          style={{ fontVariationSettings: '"opsz" 24', fontSize: '19px', color: 'var(--ink-1)', maxWidth: '56ch' }}
+        >
+          Two vocabularies for writing tests: plain English sentences, or
+          YAML for the programmer&apos;s convenience. Both compile to the
+          same step array. This is the reference to both.
         </p>
-      </div>
+      </header>
 
       {/* Quick Start */}
-      <Card className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border-blue-800/50">
+      <Card className="vt-panel" style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)' }}>
         <CardHeader>
           <CardTitle className="text-foreground">Quick Start</CardTitle>
           <CardDescription className="text-muted-foreground">

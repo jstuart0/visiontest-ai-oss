@@ -165,7 +165,7 @@ export default function FlakyPage() {
         style={{ borderColor: 'var(--rule)' }}
       >
         <MetaCell label="Quarantined" value={quarantinedCount.toString()} hint="Isolated from main pipeline" />
-        <MetaCell label="Avg flakiness" value={`${avgFlakyScore}%`} hint="Across all flickering tests" tone={avgFlakyScore > 60 ? 'warn' : 'default'} />
+        <MetaCell label="Avg flakiness" value={`${avgFlakyScore}%`} hint="Across all flickering tests" tone={avgFlakyScore > 60 ? 'warn' : undefined} />
         <MetaCell label="Detection" value="automatic" hint="Every run feeds the score" />
       </div>
 

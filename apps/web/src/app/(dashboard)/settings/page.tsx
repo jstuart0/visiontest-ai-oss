@@ -166,12 +166,24 @@ export default function SettingsPage() {
     );
   }
 
+  // Workbench — tools grouped by purpose. The tabs are the shelves:
+  // project / automation / notifications / integrations / api. No
+  // metric hero; the page is utilitarian on purpose.
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage your project and account settings</p>
-      </div>
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-5">§ Workbench · Settings</div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(38px, 5vw, 60px)', lineHeight: 0.98 }}>
+          The <em>tools</em> behind the work.
+        </h1>
+        <p
+          className="mt-4 vt-italic"
+          style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '58ch' }}
+        >
+          Project defaults, automation, notifications, integrations, API
+          keys. Change carefully.
+        </p>
+      </header>
 
       <Tabs defaultValue="project" className="space-y-6">
         <TabsList className="bg-card border border-border">

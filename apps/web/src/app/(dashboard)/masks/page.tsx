@@ -62,17 +62,21 @@ export default function MasksPage() {
     setShowEditor(true);
   };
 
+  // Occlusions — masks are what you block out of the frame. Clinical
+  // language; no masks-as-Halloween imagery.
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Ignore Masks</h1>
-          <p className="text-muted-foreground mt-1">
-            Define regions to ignore during visual comparison
-          </p>
-        </div>
-      </div>
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-5">§ Occlusions · Ignore masks</div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
+          What to <em>not</em> photograph.
+        </h1>
+        <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+          A rectangle on a screenshot that says &ldquo;ignore this region.&rdquo;
+          For timestamps, user avatars, random IDs — the pixels that change for
+          reasons that aren&apos;t bugs.
+        </p>
+      </header>
 
       {/* Info Card */}
       <Card className="bg-card border-border">

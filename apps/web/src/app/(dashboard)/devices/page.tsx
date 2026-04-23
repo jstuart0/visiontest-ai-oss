@@ -161,24 +161,29 @@ export default function DevicesPage() {
     }
   );
 
+  // Hardware bench — mobile emulation profiles. Headline treats the
+  // list as a cabinet of devices on a workbench.
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Device Profiles</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage device profiles for mobile and web testing
+          <div className="vt-eyebrow mb-5">§ Bench · Device profiles</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
+            The <em>hardware</em> shelf.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            Screen sizes, pixel ratios, user-agent strings. Each profile is a
+            physical-device stand-in for what the browser pretends to be.
           </p>
         </div>
         <Button
           onClick={() => setCreateOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="vt-btn vt-btn--primary shrink-0"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          New Profile
+          <Plus className="w-4 h-4" />
+          New profile
         </Button>
-      </div>
+      </header>
 
       {/* Connected Devices Banner */}
       {availableDevices.length > 0 && (

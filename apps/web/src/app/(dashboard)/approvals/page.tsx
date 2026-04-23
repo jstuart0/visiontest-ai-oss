@@ -55,12 +55,21 @@ export default function ApprovalsPage() {
 
   if (!project) return <div className="p-6 text-muted-foreground">Select a project to view approvals.</div>;
 
+  // Tribunal — decisions, not a feed. Escalations and rules live here;
+  // the surface mirrors the /visual review room in spirit but focuses on
+  // the routing itself (who approves what).
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Approvals</h1>
-        <p className="text-muted-foreground">Review and approve visual changes that need attention.</p>
-      </div>
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-5">§ Tribunal · Approval routing</div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
+          Who decides <em>what</em>.
+        </h1>
+        <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+          Escalations, rules, and the queue of changes awaiting a human verdict.
+          The review itself happens in the room next door.
+        </p>
+      </header>
 
       {/* Stats */}
       {stats && (

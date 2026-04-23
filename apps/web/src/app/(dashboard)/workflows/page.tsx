@@ -93,12 +93,21 @@ export default function WorkflowsPage() {
     );
   }
 
+  // Orchestra — workflows chain blocks together. Use a musical metaphor
+  // for the headline: a workflow is a scored sequence.
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1200px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Workflows</h1>
-          <p className="text-muted-foreground mt-1">Compose test workflows from reusable task blocks</p>
+          <div className="vt-eyebrow mb-5">§ Orchestra · Workflows</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
+            The <em>score</em>.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            A workflow is an arrangement — blocks played in sequence, with
+            conditions that branch and loops that repeat. Schedule it, trigger
+            it from a webhook, run it on demand.
+          </p>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
@@ -151,7 +160,7 @@ export default function WorkflowsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </header>
 
       {isLoading ? (
         <div className="grid gap-4">

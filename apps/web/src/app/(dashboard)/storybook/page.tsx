@@ -97,29 +97,45 @@ export default function StorybookPage() {
     grouped.get(group)!.push(story);
   }
 
+  // Component gallery — stories grouped by component. Emphasise
+  // component COUNT as the Fraunces numeral; stories count reads as
+  // sub-meta. No "Stats" label — the headline is the stat.
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Storybook Components</h1>
-          <p className="text-muted-foreground">
-            {config?.lastSyncAt
-              ? `Last synced ${new Date(config.lastSyncAt).toLocaleString()} - ${config.lastSyncStoryCount || 0} stories`
-              : 'Not synced yet'}
-          </p>
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-5">§ Gallery · Storybook</div>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 items-end">
+          <div>
+            <h1 className="vt-display" style={{ fontSize: 'clamp(38px, 5vw, 60px)', lineHeight: 0.98 }}>
+              Your components, <em>on stage</em>.
+            </h1>
+            <p
+              className="mt-4 vt-italic"
+              style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '62ch' }}
+            >
+              Every story synced from your Storybook instance becomes a
+              fixture VisionTest can photograph. Hover, click, convert to
+              a test.{' '}
+              <span className="vt-mono text-[13px]" style={{ color: 'var(--ink-2)' }}>
+                {config?.lastSyncAt
+                  ? `Last sync: ${new Date(config.lastSyncAt).toLocaleString()}`
+                  : 'Not synced yet.'}
+              </span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link href="/settings/storybook" className="vt-btn">
+              <Settings className="w-4 h-4" /> Configure
+            </Link>
+            {config?.storybookUrl && (
+              <button type="button" onClick={handleSync} disabled={syncing} className="vt-btn vt-btn--primary">
+                {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Sync now
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/settings/storybook">
-            <Button variant="outline" size="sm"><Settings className="h-4 w-4 mr-1" /> Configure</Button>
-          </Link>
-          {config?.storybookUrl && (
-            <Button onClick={handleSync} disabled={syncing}>
-              {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-              Sync Now
-            </Button>
-          )}
-        </div>
-      </div>
+      </header>
 
       {config?.lastSyncError && (
         <div className="p-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10 text-sm text-red-800 dark:text-red-400">

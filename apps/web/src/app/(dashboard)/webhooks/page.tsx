@@ -148,24 +148,30 @@ export default function WebhooksPage() {
     );
   }
 
+  // Terminal config — webhooks are wiring. Mono-led, spare. Headline
+  // references the physical metaphor: wires into your pipeline.
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Webhooks</h1>
-          <p className="text-muted-foreground mt-1">
-            Integrate with CI/CD pipelines and notification systems
-          </p>
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-5">§ Wiring · Webhooks</div>
+        <div className="flex items-start justify-between gap-6 flex-wrap">
+          <div>
+            <h1 className="vt-display" style={{ fontSize: 'clamp(38px, 5vw, 60px)', lineHeight: 0.98 }}>
+              Wire us into your <em>pipeline</em>.
+            </h1>
+            <p
+              className="mt-4 vt-italic"
+              style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}
+            >
+              Every failed test, every approved change, every scheduled run
+              — we POST a signed JSON payload to any URL you point at.
+            </p>
+          </div>
+          <button onClick={() => setCreateOpen(true)} className="vt-btn vt-btn--primary shrink-0">
+            <Plus className="w-4 h-4" /> Add webhook
+          </button>
         </div>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Webhook
-        </Button>
-      </div>
+      </header>
 
       {/* Secret display after creation */}
       {newSecret && (

@@ -68,17 +68,25 @@ export default function StorybookSettingsPage() {
   --static-dir ./storybook-static \\
   --upload --fail-on-breaking`;
 
+  // Wiring — Storybook integration is a connection, not a feature.
+  // Clear, quiet, mono-adjacent.
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="flex items-start justify-between">
+    <div className="max-w-[960px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">Storybook Integration</h1>
-          <p className="text-muted-foreground">Connect your Storybook to auto-discover components and create visual regression tests</p>
+          <div className="vt-eyebrow mb-5">§ Wiring · Storybook</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
+            Point us at your <em>Storybook</em>.
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '58ch' }}>
+            One URL. We enumerate your stories, sync them on a schedule, and
+            convert each one into a visual-regression fixture.
+          </p>
         </div>
-        <Link href="/settings/storybook/wizard">
-          <Button variant="outline" size="sm"><Wand2 className="h-4 w-4 mr-1" /> Guided Setup</Button>
+        <Link href="/settings/storybook/wizard" className="vt-btn shrink-0">
+          <Wand2 className="h-4 w-4" /> Guided setup
         </Link>
-      </div>
+      </header>
 
       <Card>
         <CardHeader>

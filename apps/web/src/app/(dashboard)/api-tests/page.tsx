@@ -114,20 +114,27 @@ export default function ApiTestsPage() {
 
   const filtered = tests.filter(t => !search || t.name.toLowerCase().includes(search.toLowerCase()) || t.urlTemplate.toLowerCase().includes(search.toLowerCase()));
 
+  // Contract room — API tests are what the contract should return.
+  // Kept quiet and mono-adjacent since it's technical surface.
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1200px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold">API Tests</h1>
-          <p className="text-muted-foreground">REST and GraphQL test definitions</p>
+          <div className="vt-eyebrow mb-5">§ Contracts · API tests</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
+            Does it <em>still</em> return what you asked for?
+          </h1>
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '62ch' }}>
+            REST and GraphQL assertions for the endpoints your tests depend on.
+            Run them alongside visual tests to catch breakage above and below
+            the UI.
+          </p>
         </div>
-        <Link href="/api-tests/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New API Test
-          </Button>
+        <Link href="/api-tests/new" className="vt-btn vt-btn--primary shrink-0">
+          <Plus className="w-4 h-4" />
+          New API test
         </Link>
-      </div>
+      </header>
 
       {/* Stats */}
       {stats && (
