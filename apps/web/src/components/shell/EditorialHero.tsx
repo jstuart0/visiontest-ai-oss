@@ -1,30 +1,29 @@
 'use client';
 
-// EditorialHero — the shared masthead that every dashboard page opens
-// with. Accepts an optional back-link (for detail pages), an eyebrow
-// kicker, a Fraunces display headline (React node so you can embed an
-// <em>), an italic lede, and a right-aligned action slot. Keeps the
-// redesign consistent without re-copying the boilerplate on every page.
+// EditorialHero — repurposed as the Blueprint sheet masthead.
+// Each page opens with: sheet number + revision stamp + title + lede.
+// Kept the old component name so callers don't break.
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
 interface Back {
-  href?: string;            // explicit href, or omit for router.back()
-  label?: string;           // short, lowercase — "back", "all tests"
+  href?: string;
+  label?: string;
 }
 
 export interface EditorialHeroProps {
-  eyebrow?: string;                         // "§ Runs · History"
-  title: React.ReactNode;                   // full Fraunces heading
-  lead?: React.ReactNode;                   // italic serif sub-line
-  back?: Back;                              // optional back affordance
-  actions?: React.ReactNode;                // right-side action area
-  /** Max width of the page container (the editorial "column"). */
+  eyebrow?: string;           // e.g. "SHT · 03 · RUNS"
+  title: React.ReactNode;
+  lead?: React.ReactNode;
+  back?: Back;
+  actions?: React.ReactNode;
   width?: 'narrow' | 'wide' | 'fluid';
-  /** Children render INSIDE the max-width container but under the header. */
   children?: React.ReactNode;
+  /** Optional section number to show in the title-block style. */
+  sheet?: string;             // "03 OF 14"
+  /** Optional revision stamp on the right of the masthead. */
+  revision?: React.ReactNode; // "REV · 02 · 2026.04.23"
 }
 
 export function EditorialHero({
@@ -35,18 +34,20 @@ export function EditorialHero({
   actions,
   width = 'wide',
   children,
+  sheet,
+  revision,
 }: EditorialHeroProps) {
   const router = useRouter();
   const max =
     width === 'narrow' ? 'max-w-[860px]' :
     width === 'fluid' ? 'max-w-none' :
-    'max-w-[1320px]';
+    'max-w-[1440px]';
 
   return (
     <div className={`${max} mx-auto px-6 md:px-12 py-10 vt-reveal`}>
-      <header className="pb-7 border-b" style={{ borderColor: 'var(--rule)' }}>
-        {(back || eyebrow) && (
-          <div className="flex items-center gap-4 mb-5 flex-wrap">
+      <header className="pb-7" style={{ borderBottom: '1px solid var(--rule-strong)' }}>
+        {(back || eyebrow || sheet || revision) && (
+          <div className="flex items-center gap-4 mb-6 flex-wrap">
             {back && (
               <button
                 type="button"
@@ -56,16 +57,34 @@ export function EditorialHero({
                 onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
               >
-                <ArrowLeft className="w-3 h-3" />
-                {back.label || 'back'}
+                <ArrowLeft className="w-3 h-3" strokeWidth={1.5} />
+                {back.label || 'BACK'}
               </button>
             )}
-            {eyebrow && (
+            {sheet && (
               <span
-                className="vt-kicker"
-                style={{ color: back ? 'var(--brass)' : 'var(--accent)' }}
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.24em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                  fontVariantNumeric: 'tabular-nums',
+                  paddingRight: '16px',
+                  borderRight: '1px solid var(--rule)',
+                }}
               >
+                SHT · {sheet}
+              </span>
+            )}
+            {eyebrow && (
+              <span className="vt-kicker" style={{ color: 'var(--accent)' }}>
                 {eyebrow}
+              </span>
+            )}
+            {revision && (
+              <span className="ml-auto">
+                <span className="vt-rev-stamp">{revision}</span>
               </span>
             )}
           </div>
@@ -75,21 +94,24 @@ export function EditorialHero({
             <h1
               className="vt-display"
               style={{
-                fontSize: 'clamp(36px, 5.5vw, 72px)',
+                fontSize: 'clamp(36px, 5.5vw, 68px)',
                 lineHeight: 0.98,
-                letterSpacing: '-0.028em',
+                letterSpacing: '-0.01em',
+                color: 'var(--ink-0)',
+                textTransform: 'lowercase',
               }}
             >
               {title}
             </h1>
             {lead && (
               <p
-                className="mt-4 vt-italic"
+                className="mt-4"
                 style={{
-                  fontVariationSettings: '"opsz" 24',
-                  fontSize: '17px',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '15px',
                   color: 'var(--ink-1)',
-                  maxWidth: '62ch',
+                  maxWidth: '64ch',
+                  lineHeight: 1.5,
                 }}
               >
                 {lead}
