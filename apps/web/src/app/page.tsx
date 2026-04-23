@@ -14,6 +14,9 @@ import {
   Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const features = [
   {
@@ -57,6 +60,8 @@ const features = [
 export default function LandingPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [smokeUrl, setSmokeUrl] = useState('');
+  const [smokePending, setSmokePending] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -72,6 +77,43 @@ export default function LandingPage() {
       window.location.href = '/dashboard';
     }
   }, [checked, isAuthenticated]);
+
+  const startSmokeExplore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!smokeUrl.trim()) return;
+    setSmokePending(true);
+    try {
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+      const res = await fetch(`${apiBase}/anon/smoke-explore`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startUrl: smokeUrl }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const code = err?.error?.code;
+        if (code === 'ANONYMOUS_DISABLED') {
+          toast.error(
+            'This deployment disabled the anonymous sandbox. Sign up to try VisionTest.',
+          );
+        } else {
+          toast.error(err?.error?.message || 'Scan failed to queue');
+        }
+        setSmokePending(false);
+        return;
+      }
+      const body = await res.json();
+      const executionId = body?.data?.executionId;
+      if (executionId) {
+        window.location.href = `/runs/${executionId}`;
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Scan failed to queue');
+      setSmokePending(false);
+    }
+  };
 
   if (!checked || isAuthenticated) {
     return null;
@@ -117,10 +159,47 @@ export default function LandingPage() {
             VisionTest.ai automatically detects unintended UI changes through visual regression
             testing. Compare screenshots, get AI insights, and ship with confidence.
           </p>
+
+          {/* Smoke Explore — Phase 4 anonymous evaluator flow. */}
+          <form
+            onSubmit={startSmokeExplore}
+            className="mx-auto mb-6 max-w-xl flex gap-2"
+          >
+            <Input
+              type="url"
+              value={smokeUrl}
+              onChange={(e) => setSmokeUrl(e.target.value)}
+              placeholder="https://your-site.com"
+              className="h-11 bg-card border-border text-foreground"
+              required
+            />
+            <Button
+              type="submit"
+              size="lg"
+              disabled={smokePending}
+              className="h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
+            >
+              {smokePending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Starting…
+                </>
+              ) : (
+                <>
+                  Try it in 60s
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </form>
+          <p className="text-xs text-muted-foreground mb-10">
+            No account needed. We&apos;ll run a 1-page read-only probe
+            and let you keep going for 24 hours without signing up.
+          </p>
+
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link href="/register">
               <Button size="lg" className="h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white">
-                Start Testing Free
+                Create free account
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </Link>
@@ -130,7 +209,7 @@ export default function LandingPage() {
                 variant="outline"
                 className="h-11 px-6 border-border text-muted-foreground hover:bg-accent"
               >
-                View Demo
+                Sign in
               </Button>
             </Link>
           </div>

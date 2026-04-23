@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { Header } from '@/components/layout/Header';
+import { CommandPalette } from '@/components/CommandPalette';
 import { useAuthStore } from '@/stores/auth.store';
 import { Loader2, FlaskConical } from 'lucide-react';
 
@@ -67,6 +68,7 @@ export default function DashboardLayout({
           </div>
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

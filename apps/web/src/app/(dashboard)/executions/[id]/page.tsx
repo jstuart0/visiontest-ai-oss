@@ -28,6 +28,8 @@ import { Progress } from '@/components/ui/progress';
 import { useCurrentProject } from '@/hooks/useProject';
 import { api, getAuthToken } from '@/lib/api';
 import { ScreenshotGallery, type GalleryScreenshot, type GalleryStep } from '@/components/screenshot-gallery';
+import { FilmStrip } from '@/components/execution/FilmStrip';
+import { GoalEvalCard } from '@/components/execution/GoalEvalCard';
 import { VideoPlayer } from '@/components/video-player';
 import { LiveBrowserViewer } from '@/components/live-browser-viewer';
 
@@ -52,9 +54,21 @@ interface Execution {
   result: unknown;
   errorMessage: string | null;
   createdAt: string;
-  test?: { id: string; name: string; steps: unknown[] };
+  test?: { id: string; name: string; steps: unknown[]; goal?: string | null };
   screenshots?: { id: string; stepNumber: number; url: string; name: string }[];
   videos?: { id: string; url: string; format?: string }[];
+  goalAchieved?: boolean | null;
+  goalReasoning?: string | null;
+  goalChecks?: Array<{
+    kind: string;
+    selector?: string;
+    value?: string;
+    urlOp?: string;
+    source: string;
+    passed: boolean;
+    error?: string;
+    actual?: string;
+  }> | null;
 }
 
 interface StreamEvent {
@@ -411,6 +425,30 @@ export default function ExecutionDetailPage({
             <Progress value={progress} className="h-2" />
           </CardContent>
         </Card>
+      )}
+
+      {/* Goal evaluation (Phase 1a) */}
+      {(execution.goalAchieved !== null && execution.goalAchieved !== undefined) && (
+        <GoalEvalCard
+          achieved={execution.goalAchieved}
+          reasoning={execution.goalReasoning}
+          checks={execution.goalChecks}
+          goal={execution.test?.goal}
+        />
+      )}
+
+      {/* Film-strip timeline (Phase 3) — horizontal frames */}
+      {!isLive && screenshots.length > 0 && (
+        <FilmStrip
+          frames={steps.map((s, i) => ({
+            stepIndex: i,
+            screenshotUrl:
+              screenshots.find((sc) => sc.stepNumber === i)?.url || null,
+            status: s.status,
+          }))}
+          selectedStep={selectedScreenshotStep ?? 0}
+          onSelect={setSelectedScreenshotStep}
+        />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -21,6 +21,11 @@ api:
       cpu: "500m"
   env:
     corsOrigin: ""  # Set to your frontend URL, e.g., https://visiontest.yourdomain.com
+    # Anonymous sandbox — see plan §6 Sandbox lifecycle.
+    # Helm installs are longer-lived and usually multi-user, so we
+    # default this OFF. Flip to "true" for public demo / community
+    # instances that want the "try in 60 seconds" evaluator flow.
+    allowAnonymousSessions: "false"
 
 # Web Frontend
 web:

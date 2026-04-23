@@ -155,12 +155,19 @@ export default function TestsPage() {
             Manage your visual regression tests
           </p>
         </div>
-        <Link href="/tests/new">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-            <Plus className="w-4 h-4 mr-2" />
-            New Test
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/scan/new">
+            <Button variant="outline">
+              Scan project
+            </Button>
+          </Link>
+          <Link href="/tests/new">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              New Test
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
