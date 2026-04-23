@@ -17,6 +17,32 @@ spec:
       labels:
         app: visiontest-api
     spec:
+      initContainers:
+        - name: migrate
+          image: ghcr.io/visiontest-ai/visiontest-api:latest
+          imagePullPolicy: Always
+          workingDir: /app/packages/database
+          command: ["npx", "prisma", "migrate", "deploy"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: visiontest-secrets
+                  key: database-url
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       containers:
         - name: api
           image: ghcr.io/visiontest-ai/visiontest-api:latest
