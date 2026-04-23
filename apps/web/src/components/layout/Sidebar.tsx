@@ -28,6 +28,8 @@ import {
   Wrench,
   Globe,
   BookOpen,
+  KeyRound,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -36,6 +38,9 @@ import { useState } from 'react';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Tests', href: '/tests', icon: FlaskConical },
+  { name: 'Features', href: '/features', icon: Layers },
+  { name: 'Templates', href: '/templates', icon: Sparkles },
+  { name: 'Credentials', href: '/credentials', icon: KeyRound },
   { name: 'Executions', href: '/executions', icon: Play },
   { name: 'API Tests', href: '/api-tests', icon: Globe },
   { name: 'Devices', href: '/devices', icon: Smartphone },

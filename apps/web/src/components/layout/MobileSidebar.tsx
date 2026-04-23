@@ -17,6 +17,8 @@ import {
   GitBranch,
   Key,
   BarChart3,
+  KeyRound,
+  Sparkles,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,6 +27,9 @@ import { Button } from '@/components/ui/button';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Tests', href: '/tests', icon: FlaskConical },
+  { name: 'Features', href: '/features', icon: Layers },
+  { name: 'Templates', href: '/templates', icon: Sparkles },
+  { name: 'Credentials', href: '/credentials', icon: KeyRound },
   { name: 'Executions', href: '/executions', icon: Play },
   { name: 'Devices', href: '/devices', icon: Smartphone },
   { name: 'Visual Regression', href: '/visual', icon: Image },

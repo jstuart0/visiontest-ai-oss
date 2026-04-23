@@ -16,6 +16,9 @@ import {
   RefreshCw,
   FileText,
   Home,
+  Layers,
+  Sparkles,
+  KeyRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -80,6 +83,24 @@ export function CommandPalette() {
         label: 'All tests',
         icon: <FileText className="w-4 h-4" />,
         run: () => router.push('/tests'),
+      },
+      {
+        key: 'features',
+        label: 'Features (scenario groups)',
+        icon: <Layers className="w-4 h-4" />,
+        run: () => router.push('/features'),
+      },
+      {
+        key: 'templates',
+        label: 'Template gallery',
+        icon: <Sparkles className="w-4 h-4" />,
+        run: () => router.push('/templates'),
+      },
+      {
+        key: 'credentials',
+        label: 'Credentials',
+        icon: <KeyRound className="w-4 h-4" />,
+        run: () => router.push('/credentials'),
       },
       {
         key: 'rerun',

@@ -443,7 +443,7 @@ export default function ExecutionDetailPage({
           frames={steps.map((s, i) => ({
             stepIndex: i,
             screenshotUrl:
-              screenshots.find((sc) => sc.stepNumber === i)?.url || null,
+              screenshots.find((sc) => sc.stepIndex === i)?.url || null,
             status: s.status,
           }))}
           selectedStep={selectedScreenshotStep ?? 0}

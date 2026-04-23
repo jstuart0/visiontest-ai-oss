@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -35,7 +35,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useCurrentProject } from '@/hooks/useProject';
-import { api, type Platform } from '@/lib/api';
+import { api, featuresApi, type Platform } from '@/lib/api';
 import { DeviceSelector } from '@/components/devices/DeviceSelector';
 import { TouchGestureRecorder } from '@/components/devices/TouchGestureRecorder';
 import { StepEditor } from '@/components/step-editor';
@@ -198,8 +198,15 @@ const YAML_EXAMPLE = `- navigate: https://example.com
 
 export default function NewTestPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { project } = useCurrentProject();
+
+  // Deep-link params:
+  //   ?template=<slug>  → pre-fill from the picked template
+  //   ?featureId=<id>   → auto-link the new test to a Feature scenario group
+  const templateSlug = searchParams.get('template');
+  const presetFeatureId = searchParams.get('featureId');
 
   const [activeTab, setActiveTab] = useState<'story' | 'record' | 'script'>(
     'story',
@@ -257,6 +264,32 @@ export default function NewTestPage() {
     queryKey: ['templates'],
     queryFn: async () => api.get('/templates'),
   });
+
+  // Fetch the Feature label when we're adding a scenario via
+  // ?featureId=<id>. Lets us show a breadcrumb-style badge so the user
+  // knows which Feature the new test will belong to.
+  const { data: presetFeature } = useQuery({
+    queryKey: ['feature', presetFeatureId],
+    queryFn: () => featuresApi.get(presetFeatureId!),
+    enabled: !!presetFeatureId,
+  });
+
+  // Pre-fill from ?template=<slug> deep link (used by the /templates
+  // gallery's "Use template" button). Only fires once on first load,
+  // and only if the user hasn't started typing.
+  const templateApplied = useRef(false);
+  useEffect(() => {
+    if (templateApplied.current) return;
+    if (!templateSlug || !templateData?.templates) return;
+    const t = templateData.templates.find((x) => x.slug === templateSlug);
+    if (!t) return;
+    if (story.trim() || goal.trim() || name.trim()) return; // don't stomp
+    setStory(t.storyText);
+    if (t.goalText) setGoal(t.goalText);
+    setName(t.title);
+    templateApplied.current = true;
+    toast.success(`Template "${t.title}" loaded — edit the tokens and run`);
+  }, [templateSlug, templateData, story, goal, name]);
 
   // ---------------------------------------------------------------------
   // Debounced live preview for the Story tab.
@@ -320,6 +353,7 @@ export default function NewTestPage() {
         story,
         goal: goal || undefined,
         baseUrl: baseUrl || undefined,
+        featureId: presetFeatureId || undefined,
       });
     },
     onSuccess: (res: any) => {
@@ -437,6 +471,24 @@ export default function NewTestPage() {
           <p className="text-muted-foreground mt-1">
             Describe the journey in plain English, or script it manually.
           </p>
+          {presetFeature && (
+            <div className="mt-2 inline-flex items-center gap-2 text-xs bg-blue-900/20 border border-blue-800/50 text-blue-300 rounded-md px-2.5 py-1">
+              <span className="text-muted-foreground">Adding to feature:</span>
+              <span className="font-medium">{presetFeature.name}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete('featureId');
+                  router.replace(url.pathname + url.search);
+                }}
+                className="text-blue-300/60 hover:text-blue-300 ml-1"
+                title="Remove feature link"
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
