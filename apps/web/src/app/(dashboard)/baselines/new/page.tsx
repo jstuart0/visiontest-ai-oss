@@ -100,25 +100,29 @@ export default function NewBaselinePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push('/baselines')}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Layers className="w-6 h-6" /> New baseline
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Pick an execution; we&apos;ll promote its screenshots.
-          </p>
+    <div className="max-w-[1000px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
+      <header className="pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
+        <div className="flex items-center gap-4 mb-5">
+          <button
+            type="button"
+            onClick={() => router.push('/baselines')}
+            className="vt-kicker inline-flex items-center gap-2 transition-colors"
+            style={{ color: 'var(--ink-2)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
+          >
+            <ArrowLeft className="w-3 h-3" /> back to baselines
+          </button>
+          <span className="vt-eyebrow">§ New reference print</span>
         </div>
-      </div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 56px)', lineHeight: 0.98 }}>
+          Promote an <em>execution</em>.
+        </h1>
+        <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '56ch' }}>
+          Pick a run; we&apos;ll promote its screenshots. Future tests with
+          the same name will compare against these.
+        </p>
+      </header>
 
       <div className="border border-blue-800/50 bg-blue-900/10 rounded-md p-3 flex items-start gap-2 text-sm">
         <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />

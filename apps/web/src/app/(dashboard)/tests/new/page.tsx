@@ -462,42 +462,75 @@ export default function NewTestPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push('/tests')}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">New test</h1>
-          <p className="text-muted-foreground mt-1">
-            Describe the journey in plain English, or script it manually.
-          </p>
-          {presetFeature && (
-            <div className="mt-2 inline-flex items-center gap-2 text-xs bg-blue-900/20 border border-blue-800/50 text-blue-300 rounded-md px-2.5 py-1">
-              <span className="text-muted-foreground">Adding to feature:</span>
-              <span className="font-medium">{presetFeature.name}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  const url = new URL(window.location.href);
-                  url.searchParams.delete('featureId');
-                  router.replace(url.pathname + url.search);
-                }}
-                className="text-blue-300/60 hover:text-blue-300 ml-1"
-                title="Remove feature link"
-              >
-                ×
-              </button>
-            </div>
-          )}
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      {/* ── Editorial hero — replaces the back-button + small-heading chrome ── */}
+      <header className="mb-10 pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            type="button"
+            onClick={() => router.push('/tests')}
+            className="vt-kicker inline-flex items-center gap-2 transition-colors"
+            style={{ color: 'var(--ink-2)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
+          >
+            <ArrowLeft className="w-3 h-3" /> back to tests
+          </button>
+          <span className="vt-eyebrow">§ Author a test</span>
         </div>
-      </div>
+        <h1
+          className="vt-display"
+          style={{
+            fontSize: 'clamp(44px, 6vw, 84px)',
+            lineHeight: 0.96,
+          }}
+        >
+          Describe the <em>journey</em>.<br />
+          We&apos;ll write the test.
+        </h1>
+        <p
+          className="mt-5 vt-italic"
+          style={{
+            fontVariationSettings: '"opsz" 24',
+            fontSize: '19px',
+            color: 'var(--ink-1)',
+            maxWidth: '60ch',
+          }}
+        >
+          Prose on the left. A live preview on the right. A goal at the bottom.
+          Every sentence gets a confidence badge before a single pixel is
+          captured.
+        </p>
+        {presetFeature && (
+          <div
+            className="mt-6 inline-flex items-center gap-3 px-3 py-1.5 text-xs"
+            style={{
+              background: 'var(--accent-soft)',
+              border: '1px solid var(--accent)',
+              color: 'var(--accent)',
+              fontFamily: 'var(--font-mono-feature)',
+              letterSpacing: '0.08em',
+            }}
+          >
+            <span style={{ color: 'var(--ink-2)' }}>binding to feature</span>
+            <span style={{ color: 'var(--ink-0)', fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
+              {presetFeature.name}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('featureId');
+                router.replace(url.pathname + url.search);
+              }}
+              style={{ color: 'var(--ink-2)' }}
+              title="Remove feature link"
+            >
+              ×
+            </button>
+          </div>
+        )}
+      </header>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Test Details — always visible */}

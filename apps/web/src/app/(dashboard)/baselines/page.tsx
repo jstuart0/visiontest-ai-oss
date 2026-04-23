@@ -64,20 +64,18 @@ export default function BaselinesPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Layers className="w-6 h-6" /> Baselines
-          </h1>
-          <p className="text-muted-foreground mt-1 max-w-2xl">
-            Approved screenshot sets that future runs get compared
-            against. Each test typically has one baseline per branch;
-            visual diffs open a review screen where you can approve the
-            new version or reject it.
-          </p>
-        </div>
-      </div>
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
+      <header className="pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-5">§ Baselines · Photographic record</div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(40px, 6vw, 68px)', lineHeight: 0.97 }}>
+          The <em>reference</em> print.
+        </h1>
+        <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '62ch' }}>
+          Approved screenshot sets that future runs get compared against.
+          One baseline per test, per branch. Visual diffs open a review
+          screen where you approve or reject the new version.
+        </p>
+      </header>
 
       {/* How-to card — replaces the misleading old empty-state hint */}
       {(!baselines || baselines.length === 0) && !isLoading && (

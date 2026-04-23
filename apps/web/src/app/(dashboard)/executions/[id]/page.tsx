@@ -317,30 +317,123 @@ export default function ExecutionDetailPage({
     : 0;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/executions')}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">
-              {execution.test?.name || 'Execution'}
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
+      {/* ── Editorial run header ────────────────────────────────── */}
+      <header className="mb-10 pb-7 border-b" style={{ borderColor: 'var(--rule)' }}>
+        <div className="flex items-center gap-4 mb-5">
+          <button
+            type="button"
+            onClick={() => router.push('/executions')}
+            className="vt-kicker inline-flex items-center gap-2 transition-colors"
+            style={{ color: 'var(--ink-2)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
+          >
+            <ArrowLeft className="w-3 h-3" /> back to runs
+          </button>
+          <span className="vt-kicker" style={{ color: 'var(--brass)' }}>
+            § Run · {new Date(execution.createdAt).toLocaleDateString()}
+            {' '}
+            {new Date(execution.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+
+        <div className="flex items-start justify-between gap-8 flex-wrap">
+          <div className="flex-1 min-w-[280px]">
+            <h1
+              className="vt-display"
+              style={{
+                fontSize: 'clamp(38px, 5vw, 68px)',
+                lineHeight: 0.98,
+                letterSpacing: '-0.028em',
+              }}
+            >
+              {(() => {
+                const name = execution.test?.name || 'Execution';
+                const parts = name.split(' ');
+                if (parts.length < 2) return name;
+                return (
+                  <>
+                    {parts.slice(0, -1).join(' ')}{' '}
+                    <em>{parts.slice(-1)}</em>
+                  </>
+                );
+              })()}
             </h1>
-            <Badge className={`${config.color} text-white`}>
-              {config.label}
-            </Badge>
+            <div
+              className="mt-4 vt-mono text-[12px] tracking-[0.08em]"
+              style={{ color: 'var(--ink-2)' }}
+            >
+              <span style={{ color: 'var(--ink-1)' }}>
+                {execution.id.slice(-8)}
+              </span>
+              {' · '}
+              {execution.duration
+                ? `${(execution.duration / 1000).toFixed(2)}s`
+                : 'in flight'}
+              {' · '}
+              {execution.test?.id && (
+                <Link
+                  href={`/tests/${execution.test.id}`}
+                  className="hover:text-[color:var(--accent)] transition-colors"
+                >
+                  open spec
+                </Link>
+              )}
+            </div>
+            <div className="mt-5 flex items-center gap-3">
+              {(() => {
+                const cls =
+                  execution.status === 'PASSED'
+                    ? 'vt-chip vt-chip--pass'
+                    : execution.status === 'FAILED'
+                    ? 'vt-chip vt-chip--fail'
+                    : execution.status === 'RUNNING' || execution.status === 'QUEUED' || execution.status === 'PENDING'
+                    ? 'vt-chip vt-chip--accent'
+                    : 'vt-chip';
+                return (
+                  <span className={cls}>
+                    <span className="vt-dot" />
+                    {config.label}
+                  </span>
+                );
+              })()}
+              {isLive && (
+                <span
+                  className="vt-chip vt-chip--accent vt-breathe"
+                  style={{ letterSpacing: '0.24em' }}
+                >
+                  LIVE
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-start">
             {isLive && (
-              <Badge className="bg-blue-500 text-white animate-pulse">
-                🔴 LIVE
-              </Badge>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  api.post(`/executions/${executionId}/stop`).then(() => {
+                    toast.success('Execution stopped');
+                    queryClient.invalidateQueries({ queryKey: ['execution', executionId] });
+                  }).catch(() => toast.error('Failed to stop'));
+                }}
+              >
+                <Square className="h-3 w-3 mr-1" /> Stop
+              </Button>
             )}
           </div>
-          <p className="text-muted-foreground text-sm">
-            ID: {execution.id}
-          </p>
         </div>
+      </header>
+      <div className="flex items-center gap-4">
+        {/* legacy spacer — keeps pre-existing JSX structure below stable */}
+        <div style={{ display: 'none' }}>
+          <Button variant="ghost" size="icon" onClick={() => router.push('/executions')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        </div>
+        <div className="flex-1"></div>
         <div className="flex items-center gap-2">
           {isLive && (
             <Button

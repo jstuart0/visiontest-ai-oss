@@ -172,14 +172,15 @@ export default function CredentialsPage() {
     credentials?.filter((c) => c.projectId === null) ?? [];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between gap-4">
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
+      <header className="pb-6 border-b flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <KeyRound className="w-6 h-6" /> Credentials
+          <div className="vt-eyebrow mb-5">§ Credentials · Encrypted at rest</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(40px, 6vw, 68px)', lineHeight: 0.97 }}>
+            Store once. <em>Reference everywhere.</em>
           </h1>
-          <p className="text-muted-foreground mt-1 max-w-2xl">
-            Encrypted at rest (AES-256-GCM). Referenced by stories via{' '}
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            AES-256-GCM encrypted. Referenced by stories via{' '}
             <code className="text-xs bg-muted px-1 py-0.5 rounded">
               {'{{creds.<key>}}'}
             </code>{' '}
@@ -416,7 +417,7 @@ export default function CredentialsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </header>
 
       {isLoading ? (
         <div className="flex items-center gap-2 text-muted-foreground py-8">

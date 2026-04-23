@@ -92,16 +92,17 @@ export default function FeaturesPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
+      <header className="pb-6 border-b flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Layers className="w-6 h-6" /> Features
+          <div className="vt-eyebrow mb-5">§ Features · Scenario groups</div>
+          <h1 className="vt-display" style={{ fontSize: 'clamp(40px, 6vw, 68px)', lineHeight: 0.97 }}>
+            Group <em>related</em> scenarios.
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Group related scenarios under a shared setup. Each scenario is a
-            full story + goal that inherits the feature&apos;s base URL,
-            credentials, and setup steps.
+          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+            One Feature, many scenarios, shared setup. Perfect for "login"
+            with a happy path, a wrong-password path, a lockout path — all
+            sharing the same setup prose.
           </p>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -198,7 +199,7 @@ export default function FeaturesPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </header>
 
       {/* Content */}
       {isLoading ? (

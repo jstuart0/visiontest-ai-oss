@@ -113,18 +113,24 @@ export default function FeatureDetailPage() {
   const scenarios = feature.tests ?? [];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push('/features')}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1">
+    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
+      {/* Editorial header */}
+      <header className="pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
+        <div className="flex items-center gap-4 mb-5">
+          <button
+            type="button"
+            onClick={() => router.push('/features')}
+            className="vt-kicker inline-flex items-center gap-2 transition-colors"
+            style={{ color: 'var(--ink-2)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
+          >
+            <ArrowLeft className="w-3 h-3" /> all features
+          </button>
+          <span className="vt-kicker" style={{ color: 'var(--brass)' }}>§ Feature · {scenarios.length} scenario{scenarios.length === 1 ? '' : 's'}</span>
+        </div>
+        <div className="flex items-start justify-between gap-6 flex-wrap">
+          <div className="flex-1 min-w-[280px]">
           {editing ? (
             <Input
               value={draft.name}
@@ -132,63 +138,62 @@ export default function FeatureDetailPage() {
               className="bg-muted border-border text-foreground text-xl font-bold"
             />
           ) : (
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Layers className="w-6 h-6" /> {feature.name}
+            <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
+              {feature.name}
             </h1>
           )}
           {!editing && feature.description && (
-            <p className="text-muted-foreground mt-1">
+            <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '58ch' }}>
               {feature.description}
             </p>
           )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+          {!editing ? (
+            <>
+              <button type="button" onClick={startEdit} className="vt-btn">
+                <Edit3 className="w-4 h-4" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (scenarios.length > 0) {
+                    toast.error(
+                      `Delete ${scenarios.length} scenario${scenarios.length === 1 ? '' : 's'} first, or unassign them from this feature.`,
+                    );
+                    return;
+                  }
+                  if (confirm('Delete this feature?')) deleteMutation.mutate();
+                }}
+                className="vt-btn"
+                style={{ color: 'var(--fail)', borderColor: 'color-mix(in oklab, var(--fail) 40%, var(--rule))' }}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={() => setEditing(false)} className="vt-btn vt-btn--ghost">
+                <X className="w-4 h-4" /> Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => updateMutation.mutate()}
+                disabled={!draft.name.trim() || updateMutation.isPending}
+                className="vt-btn vt-btn--primary"
+              >
+                {updateMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                Save
+              </button>
+            </>
+          )}
+          </div>
         </div>
-        {!editing ? (
-          <>
-            <Button variant="outline" size="sm" onClick={startEdit}>
-              <Edit3 className="w-4 h-4 mr-1" /> Edit
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (scenarios.length > 0) {
-                  toast.error(
-                    `Delete ${scenarios.length} scenario${scenarios.length === 1 ? '' : 's'} first, or unassign them from this feature.`,
-                  );
-                  return;
-                }
-                if (confirm('Delete this feature?')) deleteMutation.mutate();
-              }}
-              className="text-red-400 hover:text-red-300 hover:bg-red-900/20 border-red-900/40"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditing(false)}
-            >
-              <X className="w-4 h-4 mr-1" /> Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => updateMutation.mutate()}
-              disabled={!draft.name.trim() || updateMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {updateMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-1" />
-              )}{' '}
-              Save
-            </Button>
-          </>
-        )}
-      </div>
+      </header>
 
       {/* Shared setup card */}
       <Card className="bg-card border-border">

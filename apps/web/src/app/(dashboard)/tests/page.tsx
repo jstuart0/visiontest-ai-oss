@@ -146,29 +146,42 @@ export default function TestsPage() {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Tests</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your visual regression tests
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/scan/new">
-            <Button variant="outline">
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
+      {/* Editorial masthead */}
+      <header className="pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
+        <div className="flex items-start justify-between gap-6 flex-wrap">
+          <div>
+            <div className="vt-eyebrow mb-5">§ Specimens · Tests</div>
+            <h1
+              className="vt-display"
+              style={{ fontSize: 'clamp(44px, 6vw, 76px)', lineHeight: 0.97 }}
+            >
+              Your <em>tests</em>, in order of interest.
+            </h1>
+            <p
+              className="mt-4 vt-italic"
+              style={{
+                fontVariationSettings: '"opsz" 24',
+                fontSize: '17px',
+                color: 'var(--ink-1)',
+                maxWidth: '58ch',
+              }}
+            >
+              Each one is a journey you wrote in plain English. Click to open,
+              edit, run, or promote its screenshots as the new baseline.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link href="/scan/new" className="vt-btn">
               Scan project
-            </Button>
-          </Link>
-          <Link href="/tests/new">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              New Test
-            </Button>
-          </Link>
+            </Link>
+            <Link href="/tests/new" className="vt-btn vt-btn--primary">
+              <Plus className="w-4 h-4" />
+              New test
+            </Link>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Filters */}
       <div className="flex items-center gap-4 flex-wrap">

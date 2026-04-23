@@ -101,48 +101,67 @@ export default function ScanResultPage() {
   const failed = data.nodes.filter((n) => n.status === 'fail');
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-foreground">
-            Scan result
-          </h1>
-          <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-            <Badge
-              variant="outline"
-              className={
-                stillRunning
-                  ? 'bg-blue-900/30 text-blue-300 border-blue-700/50'
-                  : data.status === 'FAILED'
-                  ? 'bg-red-900/30 text-red-300 border-red-700/50'
-                  : 'bg-emerald-900/30 text-emerald-300 border-emerald-700/50'
-              }
-            >
-              {data.status}
-            </Badge>
-            {data.summary && (
-              <>
-                <span>{data.summary.pagesVisited} pages</span>
-                <span>•</span>
-                <span>{data.summary.interactionsTried} interactions</span>
-              </>
-            )}
-          </div>
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
+      {/* Editorial scan header */}
+      <header className="pb-7 border-b" style={{ borderColor: 'var(--rule)' }}>
+        <div className="flex items-center gap-4 mb-5">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="vt-kicker inline-flex items-center gap-2 transition-colors"
+            style={{ color: 'var(--ink-2)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
+          >
+            <ArrowLeft className="w-3 h-3" /> back
+          </button>
+          <span className="vt-kicker" style={{ color: 'var(--brass)' }}>
+            § Exploration · {data.executionId.slice(-8)}
+          </span>
         </div>
-        {stillRunning && (
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <Loader2 className="w-4 h-4 mr-1 animate-spin" /> Refresh
-          </Button>
-        )}
-      </div>
+        <div className="flex items-start justify-between gap-8 flex-wrap">
+          <div className="flex-1 min-w-[280px]">
+            <h1
+              className="vt-display"
+              style={{ fontSize: 'clamp(40px, 5vw, 68px)', lineHeight: 0.98 }}
+            >
+              Scan <em>result</em>
+            </h1>
+            <div className="mt-5 flex items-center gap-3 flex-wrap">
+              <span
+                className={
+                  stillRunning
+                    ? 'vt-chip vt-chip--accent'
+                    : data.status === 'FAILED'
+                    ? 'vt-chip vt-chip--fail'
+                    : 'vt-chip vt-chip--pass'
+                }
+              >
+                <span className="vt-dot" />
+                {data.status}
+              </span>
+              {data.summary && (
+                <span
+                  className="vt-mono text-[11.5px] tracking-[0.12em]"
+                  style={{ color: 'var(--ink-1)' }}
+                >
+                  {data.summary.pagesVisited} pages · {data.summary.interactionsTried} interactions
+                </span>
+              )}
+            </div>
+          </div>
+          {stillRunning && (
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="vt-btn"
+            >
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Refresh
+            </button>
+          )}
+        </div>
+      </header>
 
       {data.summary && (
         <div className="grid grid-cols-4 gap-3">

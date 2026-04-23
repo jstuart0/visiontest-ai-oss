@@ -85,17 +85,17 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Sparkles className="w-6 h-6" /> Templates
+    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
+      <header className="pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
+        <div className="vt-eyebrow mb-5">§ Templates · Story scaffolds</div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(40px, 6vw, 68px)', lineHeight: 0.97 }}>
+          Start from a <em>template</em>.
         </h1>
-        <p className="text-muted-foreground mt-1 max-w-2xl">
-          One-click story scaffolds for common journeys. Pick one,
-          substitute the tokens ({`{{baseUrl}}`}, {`{{password}}`}), and
-          run against your app.
+        <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '62ch' }}>
+          One-click scaffolds for common journeys. Pick one, substitute the
+          tokens ({`{{baseUrl}}`}, {`{{password}}`}), run against your app.
         </p>
-      </div>
+      </header>
 
       {/* Filter row */}
       <div className="flex items-center gap-3 flex-wrap">

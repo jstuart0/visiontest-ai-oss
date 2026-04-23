@@ -78,26 +78,29 @@ export default function NewScanPage() {
     (safetyMode !== 'sandbox' || resetHookUrl.trim().length > 0);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Scan project
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Point at a URL. We crawl, click safe elements, flag the broken
-            ones. Run against staging or a sandbox — not production.
-          </p>
+    <div className="max-w-[860px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
+      <header className="pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
+        <div className="flex items-center gap-4 mb-5">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="vt-kicker inline-flex items-center gap-2 transition-colors"
+            style={{ color: 'var(--ink-2)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
+          >
+            <ArrowLeft className="w-3 h-3" /> back
+          </button>
+          <span className="vt-eyebrow">§ Exploration · Start</span>
         </div>
-      </div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(38px, 5vw, 60px)', lineHeight: 0.98 }}>
+          Point it at a <em>URL</em>.
+        </h1>
+        <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
+          We crawl, click safe elements, flag the broken ones. Run against
+          staging or a sandbox — never production.
+        </p>
+      </header>
 
       <Card className="bg-card border-border">
         <CardHeader>
