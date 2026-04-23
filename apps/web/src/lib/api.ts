@@ -860,6 +860,88 @@ export const smartSelectApi = {
     api.get<any>('/smart-select/stats', { projectId }),
 };
 
+// =============================================================================
+// FEATURES (scenario grouping)
+// =============================================================================
+
+export interface Feature {
+  id: string;
+  projectId: string;
+  name: string;
+  description: string | null;
+  sharedSetup: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { tests: number };
+  tests?: Array<{ id: string; name: string; status: string; goal: string | null }>;
+}
+
+export const featuresApi = {
+  list: (projectId: string) =>
+    api.get<{ features: Feature[] }>('/features', { projectId }).then((r) => r.features),
+  get: (id: string) => api.get<Feature>(`/features/${id}`),
+  create: (data: { projectId: string; name: string; description?: string; sharedSetup?: string }) =>
+    api.post<Feature>('/features', data),
+  update: (id: string, data: { name?: string; description?: string | null; sharedSetup?: string | null }) =>
+    api.patch<Feature>(`/features/${id}`, data),
+  delete: (id: string) => api.delete(`/features/${id}`),
+};
+
+// =============================================================================
+// CREDENTIALS (encrypted blobs, env-scoped)
+// =============================================================================
+
+export interface Credential {
+  id: string;
+  orgId: string;
+  projectId: string | null;
+  key: string;
+  environment: string | null;
+  allowEnvironmentFallback: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const credentialsApi = {
+  list: (orgId: string, projectId?: string) =>
+    api.get<{ credentials: Credential[] }>('/credentials', {
+      orgId,
+      ...(projectId ? { projectId } : {}),
+    }).then((r) => r.credentials),
+  create: (data: {
+    orgId: string;
+    projectId?: string;
+    key: string;
+    environment?: string;
+    blob: Record<string, string>;
+    allowEnvironmentFallback?: boolean;
+  }) => api.post<Credential>('/credentials', data),
+  rotate: (id: string, data: { blob?: Record<string, string>; allowEnvironmentFallback?: boolean }) =>
+    api.patch<Credential>(`/credentials/${id}`, data),
+  delete: (id: string) => api.delete(`/credentials/${id}`),
+};
+
+// =============================================================================
+// TEMPLATES (story scaffolds)
+// =============================================================================
+
+export interface Template {
+  slug: string;
+  title: string;
+  description: string;
+  storyText: string;
+  goalText: string | null;
+  source: string;
+  usageCount: number;
+}
+
+export const templatesApi = {
+  list: () => api.get<{ templates: Template[] }>('/templates').then((r) => r.templates),
+  pick: (slug: string, projectId?: string) =>
+    api.post(`/templates/${slug}/pick`, projectId ? { projectId } : {}),
+};
+
 // Export auth token getter for SSE connections
 export function getAuthToken(): string | null {
   if (typeof window !== 'undefined') {

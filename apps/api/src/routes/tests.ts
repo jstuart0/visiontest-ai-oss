@@ -848,6 +848,7 @@ router.post('/parse', authenticate, mutationLimiter, async (req: Request, res: R
 const storySchema = z.object({
   projectId: z.string().cuid(),
   suiteId: z.string().cuid().optional(),
+  featureId: z.string().cuid().optional(),
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   story: z.string().min(1).max(50000),
@@ -910,10 +911,22 @@ router.post('/story', authenticate, mutationLimiter, async (req: Request, res: R
       }
     }
 
+    // Validate featureId belongs to this project when provided.
+    if (body.featureId) {
+      const feature = await prisma.feature.findUnique({
+        where: { id: body.featureId },
+        select: { projectId: true },
+      });
+      if (!feature || feature.projectId !== body.projectId) {
+        throw BadRequestError('featureId does not belong to this project');
+      }
+    }
+
     const test = await prisma.test.create({
       data: {
         projectId: body.projectId,
         suiteId: body.suiteId,
+        featureId: body.featureId,
         name: body.name,
         description: body.description,
         steps: JSON.stringify(steps),
