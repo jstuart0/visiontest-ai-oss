@@ -1,13 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { MobileSidebar } from '@/components/layout/MobileSidebar';
-import { Header } from '@/components/layout/Header';
-import { CommandPalette } from '@/components/CommandPalette';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { AppShell } from '@/components/shell/AppShell';
 import { useAuthStore } from '@/stores/auth.store';
-import { Loader2, FlaskConical } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -15,9 +12,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const { isAuthenticated, isLoading, hydrate } = useAuthStore();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     hydrate();
@@ -29,46 +24,21 @@ export default function DashboardLayout({
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
-
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <FlaskConical className="w-6 h-6 text-white" />
-          </div>
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--bg-0)' }}
+      >
+        <div className="flex items-center gap-3 vt-mono text-xs tracking-[0.24em] uppercase" style={{ color: 'var(--ink-2)' }}>
+          <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--accent)' }} />
+          Developing…
         </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
 
-  return (
-    <div className="flex h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <Sidebar />
-
-      {/* Mobile Sidebar */}
-      <MobileSidebar open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1200px] px-4 py-6 lg:px-8">
-            {children}
-          </div>
-        </main>
-      </div>
-      <CommandPalette />
-    </div>
-  );
+  return <AppShell>{children}</AppShell>;
 }

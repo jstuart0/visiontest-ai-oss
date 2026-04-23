@@ -1,287 +1,439 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 /* ============================================================================
-   Design Tokens — Tailwind v4 Theme
+   VisionTest.ai — Darkroom / Editorial design system
+   ---------------------------------------------------------------------------
+   Two themes sharing the same structure, components, and typography trio.
+     data-theme="darkroom"  — default, dark, warm amber on patinated black
+     data-theme="editorial" — light, bone paper with cadmium-red accent
+   The Shadcn variable names (--background, --foreground, …) are preserved
+   so existing components pick up the new palette automatically.  Extra
+   tokens for decorative motifs (grain, brass, phosphor) and typographic
+   intent (--font-display, --font-body, --font-mono) are additive.
    ============================================================================ */
+
+@custom-variant dark (&:is([data-theme="darkroom"] *, .dark *));
 
 @theme inline {
-  /* Core colors */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  /* Shadcn color surfaces — map through to our tokens */
+  --color-background: var(--bg-0);
+  --color-foreground: var(--ink-0);
+  --color-card: var(--bg-1);
+  --color-card-foreground: var(--ink-0);
+  --color-popover: var(--bg-1);
+  --color-popover-foreground: var(--ink-0);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--bg-0);
+  --color-secondary: var(--bg-2);
+  --color-secondary-foreground: var(--ink-0);
+  --color-muted: var(--bg-2);
+  --color-muted-foreground: var(--ink-1);
+  --color-accent: var(--bg-2);
+  --color-accent-foreground: var(--ink-0);
+  --color-destructive: var(--fail);
+  --color-destructive-foreground: var(--bg-0);
+  --color-border: var(--rule);
+  --color-input: var(--rule);
+  --color-ring: var(--accent);
+  --color-success: var(--pass);
+  --color-success-foreground: var(--bg-0);
+  --color-warning: var(--warn);
+  --color-warning-foreground: var(--bg-0);
 
-  /* Semantic status colors */
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
+  /* Charts — brass, phosphor, blood, amber, ink */
+  --color-chart-1: var(--accent);
+  --color-chart-2: var(--pass);
+  --color-chart-3: var(--fail);
+  --color-chart-4: var(--warn);
+  --color-chart-5: var(--brass);
 
-  /* Charts */
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-
-  /* Sidebar */
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  /* Sidebar (legacy; we no longer use a sidebar but existing code references these) */
+  --color-sidebar: var(--bg-1);
+  --color-sidebar-foreground: var(--ink-0);
+  --color-sidebar-primary: var(--accent);
+  --color-sidebar-primary-foreground: var(--bg-0);
+  --color-sidebar-accent: var(--bg-2);
+  --color-sidebar-accent-foreground: var(--ink-0);
+  --color-sidebar-border: var(--rule);
+  --color-sidebar-ring: var(--accent);
 
   /* Typography */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-display), ui-serif, Georgia, serif;
+  --font-mono: var(--font-mono-feature), ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* Border radius */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  /* Radii — both themes favor sharp edges with a tiny softening on inputs */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
+  --radius-4xl: 4px;
 }
 
 /* ============================================================================
-   Light Mode (Default)
+   THEME · DARKROOM (default, dark)
+   Deep patinated black, safelight amber, aged brass, phosphor green.
    ============================================================================ */
 
-:root {
-  --radius: 0.5rem;
+:root,
+[data-theme="darkroom"] {
+  color-scheme: dark;
 
-  /* Surfaces */
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  /* Surfaces — from void outward */
+  --bg-0: #0B0907;            /* page base */
+  --bg-1: #141110;            /* cards / panels */
+  --bg-2: #1E1A17;            /* inset / hover */
+  --bg-3: #272320;            /* inputs / raised */
 
-  /* Brand */
-  --primary: oklch(0.55 0.22 264);
-  --primary-foreground: oklch(0.985 0 0);
+  /* Ink */
+  --ink-0: #ECE4D0;           /* primary text */
+  --ink-1: #B5AA90;           /* secondary */
+  --ink-2: #726751;           /* mute */
+  --ink-3: #44402F;           /* ghost */
 
-  /* Neutrals */
-  --secondary: oklch(0.965 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.48 0 0);
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  /* Rules & dividers */
+  --rule: rgba(212, 182, 110, 0.16);
+  --rule-soft: rgba(212, 182, 110, 0.08);
 
-  /* Feedback */
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.52 0.17 142);
-  --success-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.75 0.18 55);
-  --warning-foreground: oklch(0.205 0 0);
+  /* Signature accent — darkroom safelight */
+  --accent: #FF4B1F;
+  --accent-2: #FF7A4F;
+  --accent-soft: rgba(255, 75, 31, 0.14);
+  --accent-glow: 0 0 24px -4px rgba(255, 75, 31, 0.55);
 
-  /* Borders & inputs */
-  --border: oklch(0.905 0 0);
-  --input: oklch(0.905 0 0);
-  --ring: oklch(0.55 0.22 264);
+  /* Data & metadata — aged brass */
+  --brass: #D4B66E;
+  --brass-soft: rgba(212, 182, 110, 0.12);
 
-  /* Charts */
-  --chart-1: oklch(0.55 0.22 264);
-  --chart-2: oklch(0.52 0.17 142);
-  --chart-3: oklch(0.577 0.245 27);
-  --chart-4: oklch(0.75 0.18 55);
-  --chart-5: oklch(0.58 0.22 300);
+  /* Status */
+  --pass: #9CDF85;            /* phosphor green */
+  --pass-soft: rgba(156, 223, 133, 0.10);
+  --fail: #F45A6B;            /* kodak red */
+  --fail-soft: rgba(244, 90, 107, 0.10);
+  --warn: #F0B74B;
+  --warn-soft: rgba(240, 183, 75, 0.10);
 
-  /* Sidebar */
-  --sidebar: oklch(0.98 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.55 0.22 264);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.96 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.905 0 0);
-  --sidebar-ring: oklch(0.55 0.22 264);
+  /* Atmosphere */
+  --grain-opacity: 0.12;
+  --shadow-1: 0 1px 0 0 var(--rule), 0 16px 32px -16px rgba(0, 0, 0, 0.6);
+  --shadow-2: 0 24px 48px -24px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--rule);
+
+  /* Motion */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --dur-quick: 0.18s;
+  --dur-reveal: 0.42s;
 }
 
 /* ============================================================================
-   Dark Mode
+   THEME · EDITORIAL (light)
+   Bone paper, cadmium-red accent, aged gold for data. Same structure.
    ============================================================================ */
 
-.dark {
-  /* Surfaces */
-  --background: oklch(0.12 0.005 260);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.16 0.005 260);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.16 0.005 260);
-  --popover-foreground: oklch(0.97 0 0);
+[data-theme="editorial"] {
+  color-scheme: light;
 
-  /* Brand */
-  --primary: oklch(0.62 0.22 264);
-  --primary-foreground: oklch(0.985 0 0);
+  --bg-0: #F6F2E8;
+  --bg-1: #FBF7EC;
+  --bg-2: #EEE7D2;
+  --bg-3: #E4DCC0;
 
-  /* Neutrals */
-  --secondary: oklch(0.22 0.005 260);
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.22 0.005 260);
-  --muted-foreground: oklch(0.63 0 0);
-  --accent: oklch(0.22 0.005 260);
-  --accent-foreground: oklch(0.97 0 0);
+  --ink-0: #13100A;
+  --ink-1: #4B4636;
+  --ink-2: #887E66;
+  --ink-3: #B6AC8A;
 
-  /* Feedback */
-  --destructive: oklch(0.63 0.22 25);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.6 0.19 142);
-  --success-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.8 0.17 65);
-  --warning-foreground: oklch(0.145 0 0);
+  --rule: #C9C0A4;
+  --rule-soft: #DDD4B8;
 
-  /* Borders & inputs */
-  --border: oklch(0.26 0.005 260);
-  --input: oklch(0.26 0.005 260);
-  --ring: oklch(0.62 0.22 264);
+  --accent: #C1272D;           /* cadmium */
+  --accent-2: #8B1A1F;
+  --accent-soft: rgba(193, 39, 45, 0.08);
+  --accent-glow: none;
 
-  /* Charts */
-  --chart-1: oklch(0.62 0.22 264);
-  --chart-2: oklch(0.6 0.19 142);
-  --chart-3: oklch(0.63 0.22 25);
-  --chart-4: oklch(0.8 0.17 65);
-  --chart-5: oklch(0.68 0.22 300);
+  --brass: #B88926;            /* aged gold for italic flourishes */
+  --brass-soft: rgba(184, 137, 38, 0.10);
 
-  /* Sidebar */
-  --sidebar: oklch(0.14 0.005 260);
-  --sidebar-foreground: oklch(0.97 0 0);
-  --sidebar-primary: oklch(0.62 0.22 264);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.22 0.005 260);
-  --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(0.26 0.005 260);
-  --sidebar-ring: oklch(0.62 0.22 264);
+  --pass: #2F6B3D;
+  --pass-soft: rgba(47, 107, 61, 0.08);
+  --fail: #A01B2F;
+  --fail-soft: rgba(160, 27, 47, 0.08);
+  --warn: #B88926;
+  --warn-soft: rgba(184, 137, 38, 0.10);
+
+  --grain-opacity: 0;
+  --shadow-1: 0 1px 0 0 var(--rule-soft);
+  --shadow-2: 0 2px 0 0 var(--ink-0);
+
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --dur-quick: 0.14s;
+  --dur-reveal: 0.38s;
 }
 
 /* ============================================================================
-   Base Styles
+   Base styles + shared atmosphere
    ============================================================================ */
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--rule);
+    outline-color: color-mix(in oklab, var(--accent) 50%, transparent);
+  }
+  html {
+    font-feature-settings: "ss01", "cv02", "calt";
+    text-rendering: optimizeLegibility;
   }
   body {
-    @apply bg-background text-foreground;
+    background: var(--bg-0);
+    color: var(--ink-0);
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+    position: relative;
   }
+
+  /* Shared film-grain overlay. Only the darkroom theme shows it (via
+     --grain-opacity). Editorial theme sets opacity to 0 so the same DOM
+     does nothing — no theme-specific HTML needed. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+    animation: vt-grain 1.2s steps(6) infinite;
+  }
+  @keyframes vt-grain {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-2%, 3%); }
+    40% { transform: translate(1%, -2%); }
+    60% { transform: translate(-1%, 1%); }
+    80% { transform: translate(2%, -3%); }
+  }
+
+  ::selection { background: var(--accent); color: var(--bg-0); }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+    font-weight: 380;
+    letter-spacing: -0.022em;
+    color: var(--ink-0);
+  }
+  h1 em, h2 em, h3 em { font-style: italic; color: var(--accent); font-weight: 340; }
 }
 
 /* ============================================================================
-   Animations
+   Typographic utilities — used across pages
    ============================================================================ */
 
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+.vt-eyebrow {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.vt-eyebrow::before {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 1px;
+  background: currentColor;
 }
 
-@keyframes slide-in-right {
-  from { opacity: 0; transform: translateX(8px); }
-  to { opacity: 1; transform: translateX(0); }
+.vt-kicker {
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-2);
 }
 
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
+.vt-display {
+  font-family: var(--font-display), serif;
+  font-variation-settings: "opsz" 144;
+  font-weight: 300;
+  line-height: 0.94;
+  letter-spacing: -0.035em;
 }
 
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+.vt-italic {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-variation-settings: "opsz" 72;
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
+.vt-mono {
+  font-family: var(--font-mono), monospace;
+  font-feature-settings: "zero", "ss01";
 }
 
-.animate-slide-in-right {
-  animation: slide-in-right 0.3s ease-out;
-}
+.vt-rule { height: 1px; background: var(--rule); }
+.vt-rule--strong { height: 1px; background: var(--ink-0); }
+.vt-rule--dashed { border-top: 1px dashed var(--rule); height: 0; }
 
-.animate-scale-in {
-  animation: scale-in 0.2s ease-out;
+/* Hairline divider with a small ornament in the middle (for section breaks). */
+.vt-ornament {
+  display: flex; align-items: center; gap: 18px;
+  color: var(--brass);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 16px;
 }
-
-.animate-pulse-soft {
-  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.vt-ornament::before, .vt-ornament::after {
+  content: ""; flex: 1; height: 1px; background: var(--rule);
 }
-
-/* Staggered children animation */
-.stagger-children > * {
-  animation: fade-in 0.3s ease-out both;
-}
-
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
 
 /* ============================================================================
-   Custom Scrollbar
+   Atoms — pills, chips, frames (shared primitives)
    ============================================================================ */
 
-.dark ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+.vt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-1);
+  background: var(--bg-1);
+  border-radius: 2px;
+}
+.vt-chip--pass   { color: var(--pass); border-color: color-mix(in oklab, var(--pass) 40%, var(--rule)); background: var(--pass-soft); }
+.vt-chip--fail   { color: var(--fail); border-color: color-mix(in oklab, var(--fail) 40%, var(--rule)); background: var(--fail-soft); }
+.vt-chip--warn   { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 40%, var(--rule)); background: var(--warn-soft); }
+.vt-chip--accent { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, var(--rule)); background: var(--accent-soft); }
+
+.vt-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+  box-shadow: 0 0 12px 0 currentColor;
 }
 
-.dark ::-webkit-scrollbar-track {
+.vt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: 1px solid var(--rule);
   background: transparent;
+  color: var(--ink-0);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur-quick) var(--ease-out), background var(--dur-quick), border-color var(--dur-quick), color var(--dur-quick);
 }
-
-.dark ::-webkit-scrollbar-thumb {
-  background: oklch(0.3 0 0);
-  border-radius: 4px;
+.vt-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.vt-btn--primary {
+  background: var(--accent);
+  color: var(--bg-0);
+  border-color: var(--accent);
+  box-shadow: var(--accent-glow);
 }
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.35 0 0);
+.vt-btn--primary:hover {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  color: var(--bg-0);
 }
+.vt-btn--ghost { border-color: transparent; color: var(--ink-1); }
+.vt-btn--ghost:hover { background: var(--bg-2); color: var(--ink-0); }
 
-/* Light mode scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
+.vt-input {
+  width: 100%;
   background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--ink-3);
+  padding: 14px 2px;
+  font-family: var(--font-mono), monospace;
+  font-size: 16px;
+  color: var(--ink-0);
+  transition: border-color var(--dur-quick) var(--ease-out);
+}
+.vt-input::placeholder { color: var(--ink-2); font-style: italic; font-family: var(--font-display); }
+.vt-input:focus { outline: none; border-color: var(--accent); }
+
+.vt-panel {
+  background: var(--bg-1);
+  border: 1px solid var(--rule);
+  padding: 40px 44px;
+  position: relative;
+}
+.vt-panel--inset { background: var(--bg-2); }
+
+/* Editorial pattern — 2-col reading layout for long-form pages */
+.vt-editorial {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+  gap: 72px;
+}
+@media (max-width: 960px) { .vt-editorial { grid-template-columns: 1fr; gap: 36px; } }
+
+/* ============================================================================
+   Animations — restrained, purposeful
+   ============================================================================ */
+
+@keyframes vt-breathe {
+  0%, 100% { opacity: 1; filter: saturate(1); }
+  50% { opacity: 0.62; filter: saturate(0.75); }
 }
 
-::-webkit-scrollbar-thumb {
-  background: oklch(0.85 0 0);
-  border-radius: 4px;
+@keyframes vt-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.8 0 0);
+@keyframes vt-slide-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
+
+.vt-reveal  { animation: vt-reveal var(--dur-reveal) var(--ease-out) both; }
+.vt-breathe { animation: vt-breathe 2.6s ease-in-out infinite; }
+
+.vt-stagger > * { animation: vt-reveal var(--dur-reveal) var(--ease-out) both; }
+.vt-stagger > *:nth-child(1) { animation-delay: 40ms; }
+.vt-stagger > *:nth-child(2) { animation-delay: 120ms; }
+.vt-stagger > *:nth-child(3) { animation-delay: 200ms; }
+.vt-stagger > *:nth-child(4) { animation-delay: 280ms; }
+.vt-stagger > *:nth-child(5) { animation-delay: 360ms; }
+.vt-stagger > *:nth-child(6) { animation-delay: 440ms; }
+
+/* Back-compat animation names used by old pages during the migration */
+.animate-fade-in { animation: vt-reveal var(--dur-reveal) var(--ease-out) both; }
+.animate-slide-in-right { animation: vt-slide-in var(--dur-reveal) var(--ease-out) both; }
+.animate-scale-in { animation: vt-reveal var(--dur-reveal) var(--ease-out) both; }
+.animate-pulse-soft { animation: vt-breathe 2.6s ease-in-out infinite; }
+.stagger-children > * { animation: vt-reveal var(--dur-reveal) var(--ease-out) both; }
+.stagger-children > *:nth-child(1) { animation-delay: 40ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 280ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 360ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 440ms; }
+
+/* ============================================================================
+   Scrollbars — restrained to match the surface
+   ============================================================================ */
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--rule); border: 2px solid var(--bg-0); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brass); }
