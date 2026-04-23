@@ -1,53 +1,49 @@
 'use client';
 
-// Feature detail — one feature + its scenarios.
+// Feature detail — subsystem schematic.
 //
-// UX: the shared setup is read-only prose up top so it's visible on
-// every scenario edit. Scenarios list inline with last-run status
-// chips. "Add scenario" jumps to the story editor pre-populated with
-// the featureId query param so the resulting test auto-links back.
+// Title-block header (part, area, creation, tests mapped) then three
+// numbered sections: §01 mapped tests (ruled list with scenario links),
+// §02 risk map (shared setup + description — the prose every scenario
+// inherits), §03 history (created/updated stamps). Editing actions
+// stay intact; the edit surface slides into §02.
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowLeft,
   Plus,
   Trash2,
-  CheckCircle2,
-  XCircle,
-  Clock,
   Loader2,
   Edit3,
   Save,
   X,
-  Target,
-  Layers,
+  ArrowRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { featuresApi } from '@/lib/api';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 
-const STATUS_META: Record<
-  string,
-  { icon: React.ElementType; color: string; label: string }
-> = {
-  ACTIVE: { icon: Clock, color: 'text-muted-foreground', label: 'Active' },
-  PASSED: { icon: CheckCircle2, color: 'text-emerald-400', label: 'Passed' },
-  FAILED: { icon: XCircle, color: 'text-red-400', label: 'Failed' },
-  DISABLED: { icon: Clock, color: 'text-muted-foreground', label: 'Disabled' },
-  ARCHIVED: { icon: Clock, color: 'text-muted-foreground', label: 'Archived' },
+const STATUS_META: Record<string, { label: string; chipClass: string }> = {
+  ACTIVE:   { label: 'ACTIVE',   chipClass: 'vt-chip' },
+  PASSED:   { label: 'PASSED',   chipClass: 'vt-chip vt-chip--pass' },
+  FAILED:   { label: 'FAILED',   chipClass: 'vt-chip vt-chip--fail' },
+  DISABLED: { label: 'DISABLED', chipClass: 'vt-chip' },
+  ARCHIVED: { label: 'ARCHIVED', chipClass: 'vt-chip' },
 };
+
+function impactArea(desc: string | null, name: string): string {
+  const src = (desc || name || '').trim();
+  if (!src) return 'GENERAL';
+  const first = src.split(/[\s,.—–-]+/).filter(Boolean)[0] || 'GENERAL';
+  return first.slice(0, 12).toUpperCase();
+}
+
+function isoDate(iso: string): string {
+  return new Date(iso).toISOString().slice(0, 10).replace(/-/g, '.');
+}
 
 export default function FeatureDetailPage() {
   const params = useParams();
@@ -55,11 +51,7 @@ export default function FeatureDetailPage() {
   const queryClient = useQueryClient();
   const featureId = params.id as string;
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState({
-    name: '',
-    description: '',
-    sharedSetup: '',
-  });
+  const [draft, setDraft] = useState({ name: '', description: '', sharedSetup: '' });
 
   const { data: feature, isLoading } = useQuery({
     queryKey: ['feature', featureId],
@@ -104,77 +96,105 @@ export default function FeatureDetailPage() {
 
   if (isLoading || !feature) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground py-8">
-        <Loader2 className="w-5 h-5 animate-spin" /> Loading…
-      </div>
+      <VtStage width="wide">
+        <div
+          className="p-12 text-center mt-16"
+          style={{
+            border: '1px dashed var(--rule)',
+            background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+          }}
+        >
+          <div
+            className="inline-flex items-center gap-3"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              letterSpacing: '0.24em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
+            LOADING SUBSYSTEM
+          </div>
+        </div>
+      </VtStage>
     );
   }
 
   const scenarios = feature.tests ?? [];
+  const part = `F-${String(featureId.slice(-3).padStart(3, '0')).toUpperCase()}`;
+  const area = impactArea(feature.description, feature.name);
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
   return (
-    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
-      {/* Editorial header */}
-      <header className="pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
-        <div className="flex items-center gap-4 mb-5">
-          <button
-            type="button"
-            onClick={() => router.push('/features')}
-            className="vt-kicker inline-flex items-center gap-2 transition-colors"
-            style={{ color: 'var(--ink-2)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
-          >
-            <ArrowLeft className="w-3 h-3" /> all features
-          </button>
-          <span className="vt-kicker" style={{ color: 'var(--brass)' }}>§ Feature · {scenarios.length} scenario{scenarios.length === 1 ? '' : 's'}</span>
-        </div>
-        <div className="flex items-start justify-between gap-6 flex-wrap">
-          <div className="flex-1 min-w-[280px]">
-          {editing ? (
-            <Input
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet="03 / 14"
+        eyebrow={`§ 03 · SUBSYSTEM · ${part}`}
+        revision={<>REV · 02 · {today}</>}
+        back={{ href: '/features', label: 'ALL SUBSYSTEMS' }}
+        title={
+          editing ? (
+            <input
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="bg-muted border-border text-foreground text-xl font-bold"
+              className="vt-input"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(32px, 4.5vw, 56px)',
+                textTransform: 'lowercase',
+                padding: '4px 10px',
+                width: '100%',
+              }}
             />
           ) : (
-            <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
-              {feature.name}
-            </h1>
-          )}
-          {!editing && feature.description && (
-            <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '58ch' }}>
-              {feature.description}
-            </p>
-          )}
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-          {!editing ? (
+            <>{feature.name}</>
+          )
+        }
+        lead={
+          !editing && feature.description
+            ? feature.description
+            : 'Subsystem schematic. Scenarios mapped to this feature inherit the shared setup prose and are listed below.'
+        }
+        actions={
+          !editing ? (
             <>
               <button type="button" onClick={startEdit} className="vt-btn">
-                <Edit3 className="w-4 h-4" /> Edit
+                <Edit3 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                EDIT
               </button>
               <button
                 type="button"
                 onClick={() => {
                   if (scenarios.length > 0) {
                     toast.error(
-                      `Delete ${scenarios.length} scenario${scenarios.length === 1 ? '' : 's'} first, or unassign them from this feature.`,
+                      `Unassign or delete ${scenarios.length} scenario${scenarios.length === 1 ? '' : 's'} first.`,
                     );
                     return;
                   }
                   if (confirm('Delete this feature?')) deleteMutation.mutate();
                 }}
                 className="vt-btn"
-                style={{ color: 'var(--fail)', borderColor: 'color-mix(in oklab, var(--fail) 40%, var(--rule))' }}
+                style={{
+                  color: 'var(--fail)',
+                  borderColor: 'color-mix(in oklab, var(--fail) 40%, var(--rule))',
+                }}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                DELETE
               </button>
             </>
           ) : (
             <>
-              <button type="button" onClick={() => setEditing(false)} className="vt-btn vt-btn--ghost">
-                <X className="w-4 h-4" /> Cancel
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="vt-btn vt-btn--ghost"
+              >
+                <X className="w-3.5 h-3.5" strokeWidth={1.5} />
+                CANCEL
               </button>
               <button
                 type="button"
@@ -183,125 +203,479 @@ export default function FeatureDetailPage() {
                 className="vt-btn vt-btn--primary"
               >
                 {updateMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
                 ) : (
-                  <Save className="w-4 h-4" />
+                  <Save className="w-3.5 h-3.5" strokeWidth={1.5} />
                 )}
-                Save
+                SAVE
               </button>
             </>
-          )}
+          )
+        }
+      >
+        {/* Title-block — feature metadata */}
+        <div className="vt-title-block">
+          <div className="span3">
+            <span className="k">FEATURE</span>
+            <span className="v big">{feature.name}</span>
+          </div>
+          <div className="span2">
+            <span className="k">PART</span>
+            <span className="v" style={{ color: 'var(--accent)' }}>{part}</span>
+          </div>
+          <div>
+            <span className="k">REV</span>
+            <span className="v" style={{ color: 'var(--accent)' }}>02</span>
+          </div>
+          <div className="span2">
+            <span className="k">IMPACT AREA</span>
+            <span className="v">{area}</span>
+          </div>
+          <div className="span2">
+            <span className="k">CREATED</span>
+            <span className="v">{isoDate(feature.createdAt)}</span>
+          </div>
+          <div>
+            <span className="k">TESTS</span>
+            <span className="v">{String(scenarios.length).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">UPDATED</span>
+            <span className="v">{isoDate(feature.updatedAt)}</span>
           </div>
         </div>
-      </header>
 
-      {/* Shared setup card */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Target className="w-4 h-4" /> Shared setup
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {editing ? (
-            <>
-              <Textarea
-                value={draft.description}
-                onChange={(e) =>
-                  setDraft({ ...draft, description: e.target.value })
-                }
-                placeholder="Description — what this feature covers"
-                className="bg-muted border-border font-normal min-h-[60px]"
-              />
-              <Textarea
-                value={draft.sharedSetup}
-                onChange={(e) =>
-                  setDraft({ ...draft, sharedSetup: e.target.value })
-                }
-                placeholder="Shared setup — prose prepended to every scenario"
-                className="bg-muted border-border font-mono min-h-[120px]"
-              />
-            </>
-          ) : feature.sharedSetup ? (
-            <pre className="font-mono text-sm text-foreground bg-muted/50 rounded px-3 py-2 whitespace-pre-wrap">
-              {feature.sharedSetup}
-            </pre>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">
-              No shared setup defined. Click Edit to add prose that will be
-              prepended to every scenario&apos;s story before parsing.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        {/* §01 — mapped tests */}
+        <section aria-labelledby="mapped-head">
+          <div className="vt-section-head">
+            <span className="num">§ 01</span>
+            <span className="ttl" id="mapped-head">mapped tests</span>
+            <span className="rule" />
+            <span className="stamp">
+              {scenarios.length === 0 ? 'NONE MAPPED' : `${scenarios.length} LINKED`}
+            </span>
+          </div>
 
-      {/* Scenarios */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-foreground">
-            Scenarios ({scenarios.length})
-          </h2>
-          <Link
-            href={`/tests/new?featureId=${feature.id}`}
-            className="inline-flex"
-          >
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Plus className="w-4 h-4 mr-1" /> Add scenario
-            </Button>
-          </Link>
-        </div>
-        {scenarios.length === 0 ? (
-          <Card className="bg-card border-dashed border-border">
-            <CardContent className="py-8 flex flex-col items-center text-center gap-3">
-              <div className="text-sm text-muted-foreground max-w-md">
-                No scenarios yet. Each scenario is a full story + goal that
-                inherits this feature&apos;s setup. Good first ones: happy
-                path, wrong input, locked/error state.
+          <div className="flex justify-end mb-4">
+            <Link
+              href={`/tests/new?featureId=${feature.id}`}
+              className="vt-btn vt-btn--primary"
+            >
+              <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+              MAP SCENARIO
+            </Link>
+          </div>
+
+          {scenarios.length === 0 ? (
+            <div
+              className="p-10 text-center"
+              style={{
+                border: '1px dashed var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+              }}
+            >
+              <div
+                className="vt-kicker"
+                style={{ color: 'var(--ink-2)', justifyContent: 'center' }}
+              >
+                NO SCENARIOS FILED
               </div>
-              <Link href={`/tests/new?featureId=${feature.id}`}>
-                <Button size="sm" variant="outline">
-                  <Plus className="w-4 h-4 mr-1" /> Add the first scenario
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {scenarios.map((s, i) => {
-              const meta = STATUS_META[s.status] ?? STATUS_META.ACTIVE;
-              const Icon = meta.icon;
-              return (
+              <p
+                className="mt-4 mx-auto"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '14.5px',
+                  maxWidth: '54ch',
+                  color: 'var(--ink-1)',
+                  lineHeight: 1.55,
+                }}
+              >
+                Each scenario is a full story + goal that inherits this
+                subsystem&apos;s setup. Good first entries: happy path, wrong
+                input, locked/error state.
+              </p>
+              <div className="mt-6 flex justify-center">
                 <Link
-                  key={s.id}
-                  href={`/tests/${s.id}`}
-                  className="block"
+                  href={`/tests/new?featureId=${feature.id}`}
+                  className="vt-btn"
                 >
-                  <Card className="bg-card border-border hover:border-muted-foreground transition-colors">
-                    <CardContent className="py-3 flex items-center gap-3">
-                      <div className="text-muted-foreground text-xs tabular-nums w-6">
-                        {i + 1}.
-                      </div>
-                      <Icon className={`w-4 h-4 ${meta.color} flex-shrink-0`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-foreground font-medium truncate">
-                          {s.name}
-                        </div>
-                        {s.goal && (
-                          <div className="text-xs text-muted-foreground italic truncate mt-0.5">
-                            goal: {s.goal}
-                          </div>
-                        )}
-                      </div>
-                      <Badge variant="outline" className="text-[10px]">
-                        {meta.label}
-                      </Badge>
-                    </CardContent>
-                  </Card>
+                  <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  ADD FIRST SCENARIO
                 </Link>
-              );
-            })}
+              </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              <div
+                className="grid grid-cols-[70px_70px_1fr_130px_40px] gap-0"
+                style={{
+                  borderBottom: '1px solid var(--rule-strong)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '9.5px',
+                  letterSpacing: '0.24em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                {['REF', 'NO.', 'SCENARIO', 'STATUS', ''].map((h, i) => (
+                  <div
+                    key={i}
+                    className="py-3 px-4"
+                    style={{ borderRight: i < 4 ? '1px solid var(--rule)' : 'none' }}
+                  >
+                    {h}
+                  </div>
+                ))}
+              </div>
+              {scenarios.map((s, i) => {
+                const meta = STATUS_META[s.status] ?? STATUS_META.ACTIVE;
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/tests/${s.id}`}
+                    className="grid grid-cols-[70px_70px_1fr_130px_40px] gap-0 group"
+                    style={{
+                      borderBottom:
+                        i < scenarios.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                      textDecoration: 'none',
+                      transition: 'background var(--dur-quick) var(--ease-out)',
+                      animation: `vt-reveal var(--dur-reveal) ${(i + 1) * 30}ms var(--ease-out) both`,
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        'color-mix(in oklab, var(--bg-2) 35%, transparent)')
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <div
+                      className="py-4 px-4"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '10.5px',
+                        letterSpacing: '0.14em',
+                        color: 'var(--accent)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      S-{String(i + 1).padStart(2, '0')}
+                    </div>
+                    <div
+                      className="py-4 px-4"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        color: 'var(--ink-2)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </div>
+                    <div
+                      className="py-4 px-4 min-w-0"
+                      style={{ borderRight: '1px solid var(--rule-soft)' }}
+                    >
+                      <div
+                        className="truncate"
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: '15px',
+                          color: 'var(--ink-0)',
+                          textTransform: 'lowercase',
+                        }}
+                      >
+                        {s.name}
+                      </div>
+                      {s.goal && (
+                        <div
+                          className="truncate mt-1"
+                          style={{
+                            fontFamily: 'var(--font-body)',
+                            fontSize: '12.5px',
+                            color: 'var(--ink-2)',
+                            fontStyle: 'italic',
+                          }}
+                        >
+                          goal · {s.goal}
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      className="py-4 px-4 flex items-center"
+                      style={{ borderRight: '1px solid var(--rule-soft)' }}
+                    >
+                      <span
+                        className={meta.chipClass}
+                        style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                      >
+                        {meta.label}
+                      </span>
+                    </div>
+                    <div className="py-4 px-4 flex items-center justify-end">
+                      <ArrowRight
+                        className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1"
+                        strokeWidth={1.5}
+                        style={{ color: 'var(--ink-2)' }}
+                      />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* §02 — risk map (shared setup + description) */}
+        <section aria-labelledby="risk-head">
+          <div className="vt-section-head">
+            <span className="num">§ 02</span>
+            <span className="ttl" id="risk-head">risk map · shared setup</span>
+            <span className="rule" />
+            <span className="stamp">
+              {feature.sharedSetup ? 'PROSE ON FILE' : 'UNDEFINED'}
+            </span>
           </div>
-        )}
+
+          <div
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              padding: '24px 28px',
+            }}
+          >
+            {editing ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10px',
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-2)',
+                      display: 'block',
+                    }}
+                  >
+                    DESCRIPTION
+                  </label>
+                  <textarea
+                    value={draft.description}
+                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                    placeholder="What this subsystem covers"
+                    className="vt-input"
+                    style={{ minHeight: '64px', resize: 'vertical' }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10px',
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-2)',
+                      display: 'block',
+                    }}
+                  >
+                    SHARED SETUP · PROSE
+                  </label>
+                  <textarea
+                    value={draft.sharedSetup}
+                    onChange={(e) => setDraft({ ...draft, sharedSetup: e.target.value })}
+                    placeholder="navigate /login, wait for input[type=password]"
+                    className="vt-input"
+                    style={{ minHeight: '140px', resize: 'vertical' }}
+                  />
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10px',
+                      letterSpacing: '0.08em',
+                      color: 'var(--ink-2)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    PREPENDED TO EVERY SCENARIO BEFORE PARSING
+                  </p>
+                </div>
+              </div>
+            ) : feature.sharedSetup ? (
+              <>
+                <div
+                  className="mb-3"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '9.5px',
+                    letterSpacing: '0.24em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                    paddingBottom: '10px',
+                    borderBottom: '1px solid var(--rule)',
+                  }}
+                >
+                  PROSE · APPLIED TO ALL {scenarios.length} SCENARIO
+                  {scenarios.length === 1 ? '' : 'S'}
+                </div>
+                <pre
+                  className="m-0 whitespace-pre-wrap"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '13px',
+                    lineHeight: 1.65,
+                    color: 'var(--ink-0)',
+                    letterSpacing: '0.01em',
+                  }}
+                >
+                  {feature.sharedSetup}
+                </pre>
+              </>
+            ) : (
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '14.5px',
+                  color: 'var(--ink-2)',
+                  fontStyle: 'italic',
+                  lineHeight: 1.55,
+                }}
+              >
+                No shared setup on file. Click Edit to add prose that will be
+                prepended to every mapped scenario&apos;s story before parsing.
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* §03 — history */}
+        <section aria-labelledby="history-head">
+          <div className="vt-section-head">
+            <span className="num">§ 03</span>
+            <span className="ttl" id="history-head">history</span>
+            <span className="rule" />
+            <span className="stamp">2 ENTRIES</span>
+          </div>
+          <div
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+            }}
+          >
+            <HistoryRow
+              ref_="H-01"
+              stamp={isoDate(feature.createdAt)}
+              event="Feature drafted"
+              note="Initial schematic committed to project roster."
+              last={false}
+            />
+            <HistoryRow
+              ref_="H-02"
+              stamp={isoDate(feature.updatedAt)}
+              event="Last revision"
+              note={
+                feature.updatedAt === feature.createdAt
+                  ? 'Unchanged since draft.'
+                  : 'Metadata or shared setup updated.'
+              }
+              last={true}
+            />
+          </div>
+        </section>
+
+        <footer
+          className="pt-6 flex justify-between gap-4 flex-wrap"
+          style={{
+            borderTop: '1px solid var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          <span>SHEET 03 · SUBSYSTEM · {part}</span>
+          <span>AREA · {area}</span>
+          <span>SCENARIOS · {String(scenarios.length).padStart(2, '0')}</span>
+        </footer>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+function HistoryRow({
+  ref_,
+  stamp,
+  event,
+  note,
+  last,
+}: {
+  ref_: string;
+  stamp: string;
+  event: string;
+  note: string;
+  last: boolean;
+}) {
+  return (
+    <div
+      className="grid grid-cols-[90px_140px_1fr] gap-0"
+      style={{
+        borderBottom: last ? 'none' : '1px solid var(--rule-soft)',
+      }}
+    >
+      <div
+        className="py-3 px-4"
+        style={{
+          borderRight: '1px solid var(--rule-soft)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10.5px',
+          letterSpacing: '0.16em',
+          color: 'var(--accent)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {ref_}
+      </div>
+      <div
+        className="py-3 px-4"
+        style={{
+          borderRight: '1px solid var(--rule-soft)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10.5px',
+          letterSpacing: '0.1em',
+          color: 'var(--ink-2)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {stamp}
+      </div>
+      <div className="py-3 px-4">
+        <div
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '14px',
+            color: 'var(--ink-0)',
+            textTransform: 'lowercase',
+          }}
+        >
+          {event}
+        </div>
+        <div
+          className="mt-1"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '12.5px',
+            color: 'var(--ink-2)',
+            lineHeight: 1.4,
+          }}
+        >
+          {note}
+        </div>
       </div>
     </div>
   );

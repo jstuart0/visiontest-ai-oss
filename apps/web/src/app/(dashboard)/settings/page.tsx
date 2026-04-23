@@ -3,53 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
-  Building2,
-  Bell,
-  Key,
-  Globe,
   Save,
   Trash2,
-  AlertTriangle,
-  Info,
-  Wrench,
-  GitBranch,
-  Shield,
-  CheckSquare,
-  Server,
-  ChevronRight,
-  Brain,
-  Eye,
-  BookOpen,
+  ArrowRight,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { useCurrentProject } from '@/hooks/useProject';
 import { projectsApi, apiKeysApi, ApiKeyData } from '@/lib/api';
 import { useProjectStore } from '@/stores/project.store';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
@@ -73,7 +37,6 @@ export default function SettingsPage() {
 
   const [deleteConfirm, setDeleteConfirm] = useState('');
 
-  // Sync project settings when project loads
   useEffect(() => {
     if (project) {
       setProjectSettings({
@@ -87,13 +50,11 @@ export default function SettingsPage() {
     }
   }, [project]);
 
-  // API Keys query
   const { data: apiKeys } = useQuery({
     queryKey: ['api-keys'],
     queryFn: () => apiKeysApi.list(),
   });
 
-  // Project update mutation
   const updateProjectMutation = useMutation({
     mutationFn: (data: { name: string; description: string }) =>
       projectsApi.update(project!.id, data),
@@ -105,7 +66,6 @@ export default function SettingsPage() {
     onError: (error: any) => toast.error(error.message || 'Failed to save'),
   });
 
-  // Notification save mutation
   const saveNotificationsMutation = useMutation({
     mutationFn: (notifs: typeof notifications) =>
       projectsApi.update(project!.id, {
@@ -118,7 +78,6 @@ export default function SettingsPage() {
     onError: (error: any) => toast.error(error.message || 'Failed to save'),
   });
 
-  // Project delete mutation
   const deleteProjectMutation = useMutation({
     mutationFn: () => projectsApi.delete(project!.id),
     onSuccess: () => {
@@ -130,15 +89,12 @@ export default function SettingsPage() {
     onError: (error: any) => toast.error(error.message || 'Failed to delete project'),
   });
 
-  // API Key create mutation
   const [newKeyName, setNewKeyName] = useState('');
   const [newKeyScopes, setNewKeyScopes] = useState<string[]>(['read']);
   const [newKeyVisible, setNewKeyVisible] = useState<string | null>(null);
 
   const createKeyMutation = useMutation({
-    mutationFn: () => {
-      return apiKeysApi.create({ name: newKeyName, scopes: newKeyScopes });
-    },
+    mutationFn: () => apiKeysApi.create({ name: newKeyName, scopes: newKeyScopes }),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['api-keys'] });
       setNewKeyVisible(data.key || data.rawKey);
@@ -148,7 +104,6 @@ export default function SettingsPage() {
     onError: (error: any) => toast.error(error.message || 'Failed to create API key'),
   });
 
-  // API Key revoke mutation
   const revokeKeyMutation = useMutation({
     mutationFn: (id: string) => apiKeysApi.revoke(id),
     onSuccess: () => {
@@ -160,307 +115,659 @@ export default function SettingsPage() {
 
   if (!project) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Select a project first</p>
-      </div>
+      <VtStage width="narrow">
+        <div className="vt-kicker mb-3" style={{ color: 'var(--accent)' }}>§ NO PROJECT</div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 56px)' }}>
+          pick a project first.
+        </h1>
+      </VtStage>
     );
   }
 
-  // Workbench — tools grouped by purpose. The tabs are the shelves:
-  // project / automation / notifications / integrations / api. No
-  // metric hero; the page is utilitarian on purpose.
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+
+  const subpages = [
+    { href: '/settings/ai-providers', part: 'S-01', name: 'ai providers', desc: 'LLM brains on retainer — Anthropic, OpenAI, Gemini, OpenRouter, local.' },
+    { href: '/settings/ai-diff', part: 'S-02', name: 'ai visual diff', desc: 'SSIM, LPIPS, DINOv2 thresholds and VLM pipeline depth.' },
+    { href: '/settings/storybook', part: 'S-03', name: 'storybook', desc: 'Point at a Storybook URL. Stories become visual-regression fixtures.' },
+    { href: '/settings/repos', part: 'S-04', name: 'repositories', desc: 'Git remotes the auto-fixer reads and writes to.' },
+    { href: '/settings/fix-policies', part: 'S-05', name: 'fix policies', desc: 'Charter for the auto-fixer — paths, limits, approval rules.' },
+    { href: '/settings/verification-profiles', part: 'S-06', name: 'verification profiles', desc: 'Assay protocols run against every proposed fix.' },
+    { href: '/settings/runners', part: 'S-07', name: 'fix runners', desc: 'Stagehands that actually execute fix sessions in a sandbox.' },
+  ];
+
   return (
-    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
-        <div className="vt-eyebrow mb-5">§ Workbench · Settings</div>
-        <h1 className="vt-display" style={{ fontSize: 'clamp(38px, 5vw, 60px)', lineHeight: 0.98 }}>
-          The <em>tools</em> behind the work.
-        </h1>
-        <p
-          className="mt-4 vt-italic"
-          style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '58ch' }}
-        >
-          Project defaults, automation, notifications, integrations, API
-          keys. Change carefully.
-        </p>
-      </header>
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet={`07 / 14`}
+        eyebrow={`§ 07 · WORKBENCH`}
+        revision={<>REV · 02 · {isoDate}</>}
+        title={<>workbench <em>—</em> settings.</>}
+        lead="The drawer of tools behind every drawing set. Project defaults, automation wiring, notifications, API keys. Change carefully."
+      >
+        {/* ── §01 · Project plate ─────────────────────────────────── */}
+        <section aria-labelledby="project-head">
+          <div className="vt-section-head">
+            <span className="num">§ 01</span>
+            <span className="ttl" id="project-head">project plate</span>
+            <span className="rule" />
+            <span className="stamp">PROJECT · {(project.slug || 'VT').toUpperCase()}</span>
+          </div>
 
-      <Tabs defaultValue="project" className="space-y-6">
-        <TabsList className="bg-card border border-border">
-          <TabsTrigger value="project"><Building2 className="w-4 h-4 mr-2" />Project</TabsTrigger>
-          <TabsTrigger value="automation"><Wrench className="w-4 h-4 mr-2" />Automation</TabsTrigger>
-          <TabsTrigger value="notifications"><Bell className="w-4 h-4 mr-2" />Notifications</TabsTrigger>
-          <TabsTrigger value="integrations"><Globe className="w-4 h-4 mr-2" />Integrations</TabsTrigger>
-          <TabsTrigger value="api"><Key className="w-4 h-4 mr-2" />API Keys</TabsTrigger>
-        </TabsList>
-
-        {/* Project Settings */}
-        <TabsContent value="project" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Settings</CardTitle>
-              <CardDescription>Configure your project details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Project Name</Label>
-                  <Input
-                    id="name"
-                    value={projectSettings.name}
-                    onChange={(e) => setProjectSettings((s) => ({ ...s, name: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
+          <div style={{ border: '1px solid var(--rule-strong)', background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <FieldCell label="PROJECT NAME" borderRight borderBottom>
+                <input
+                  className="vt-input"
+                  value={projectSettings.name}
+                  onChange={(e) => setProjectSettings((s) => ({ ...s, name: e.target.value }))}
+                />
+              </FieldCell>
+              <FieldCell label="DESCRIPTION" borderBottom>
+                <input
+                  className="vt-input"
                   value={projectSettings.description}
                   onChange={(e) => setProjectSettings((s) => ({ ...s, description: e.target.value }))}
                 />
-              </div>
-              <Button
-                onClick={() => updateProjectMutation.mutate(projectSettings)}
+              </FieldCell>
+            </div>
+            <div className="px-6 py-4 flex items-center gap-3" style={{ background: 'color-mix(in oklab, var(--bg-2) 25%, transparent)' }}>
+              <button
+                type="button"
+                className="vt-btn vt-btn--primary"
                 disabled={updateProjectMutation.isPending}
+                onClick={() => updateProjectMutation.mutate(projectSettings)}
               >
-                <Save className="w-4 h-4 mr-2" />
-                {updateProjectMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="border-red-900/50">
-            <CardHeader>
-              <CardTitle className="text-red-400">Danger Zone</CardTitle>
-              <CardDescription>Irreversible actions for this project</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                This will permanently delete the project and all its tests, executions, baselines, and comparisons.
-              </p>
-              <div className="space-y-2">
-                <Label>Type <strong>{project.name}</strong> to confirm:</Label>
-                <Input
-                  value={deleteConfirm}
-                  onChange={(e) => setDeleteConfirm(e.target.value)}
-                  placeholder={project.name}
-                />
-              </div>
-              <Button
-                variant="destructive"
-                disabled={deleteConfirm !== project.name || deleteProjectMutation.isPending}
-                onClick={() => deleteProjectMutation.mutate()}
+                <Save className="w-3.5 h-3.5" strokeWidth={1.5} />
+                {updateProjectMutation.isPending ? 'SAVING' : 'SAVE'}
+              </button>
+              <button
+                type="button"
+                className="vt-btn"
+                onClick={() =>
+                  setProjectSettings({ name: project.name || '', description: project.description || '' })
+                }
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {deleteProjectMutation.isPending ? 'Deleting...' : 'Delete Project'}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                RESET
+              </button>
+            </div>
+          </div>
+        </section>
 
-        {/* Automation (Fixes) */}
-        <TabsContent value="automation" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Autonomous Bug Fixing</CardTitle>
-              <CardDescription>Configure repository connections, fix policies, verification profiles, and runners</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {[
-                { href: '/settings/ai-providers', icon: Brain, title: 'AI Providers', desc: 'Configure LLM providers for analysis and fix generation (Anthropic, OpenAI, Gemini, OpenRouter, Local)', wizard: '' },
-                { href: '/settings/ai-diff', icon: Eye, title: 'AI Visual Diff', desc: 'Configure AI-powered visual difference analysis pipeline (SSIM, LPIPS, DINOv2, VLM)', wizard: '/settings/ai-diff/wizard' },
-                { href: '/settings/storybook', icon: BookOpen, title: 'Storybook Integration', desc: 'Connect Storybook for automatic component-level visual regression tests', wizard: '/settings/storybook/wizard' },
-                { href: '/settings/repos', icon: GitBranch, title: 'Repository Connections', desc: 'Link Git repositories for code investigation and fix generation', wizard: '' },
-                { href: '/settings/fix-policies', icon: Shield, title: 'Fix Policies', desc: 'Safety constraints for automated fixing', wizard: '' },
-                { href: '/settings/verification-profiles', icon: CheckSquare, title: 'Verification Profiles', desc: 'Define what checks run after a fix is generated', wizard: '' },
-                { href: '/settings/runners', icon: Server, title: 'Fix Runners', desc: 'Manage runners that execute fix sessions', wizard: '' },
-              ].map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+        {/* ── §02 · Parts catalog — subpages ──────────────────────── */}
+        <section aria-labelledby="subpages-head">
+          <div className="vt-section-head">
+            <span className="num">§ 02</span>
+            <span className="ttl" id="subpages-head">parts catalog</span>
+            <span className="rule" />
+            <span className="stamp">{subpages.length} PLATES · INDEX</span>
+          </div>
+
+          <div style={{ border: '1px solid var(--rule-strong)', background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)' }}>
+            {subpages.map((p, i) => (
+              <Link
+                key={p.href}
+                href={p.href}
+                className="grid grid-cols-[90px_220px_1fr_40px] gap-0 group"
+                style={{
+                  borderBottom: i < subpages.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                  textDecoration: 'none',
+                  transition: 'background var(--dur-quick) var(--ease-out)',
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background =
+                    'color-mix(in oklab, var(--bg-2) 35%, transparent)')
+                }
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <div
+                  className="py-4 px-4"
+                  style={{
+                    borderRight: '1px solid var(--rule-soft)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    letterSpacing: '0.18em',
+                    color: 'var(--accent)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
                 >
-                  <item.icon className="h-5 w-5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <div className="font-medium text-sm flex items-center gap-2">
-                      {item.title}
-                      {item.wizard && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Guided Setup</Badge>}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{item.desc}</div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </a>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notifications */}
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Choose how you want to be notified</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Email on Failure</Label>
-                  <p className="text-sm text-muted-foreground">Get emailed when tests fail</p>
+                  {p.part}
                 </div>
-                <Switch
-                  checked={notifications.emailOnFailure}
-                  onCheckedChange={(checked) => setNotifications((n) => ({ ...n, emailOnFailure: checked }))}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Email on Approval Needed</Label>
-                  <p className="text-sm text-muted-foreground">Get emailed when visual changes need review</p>
+                <div
+                  className="py-4 px-4"
+                  style={{
+                    borderRight: '1px solid var(--rule-soft)',
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '16px',
+                    color: 'var(--ink-0)',
+                    textTransform: 'lowercase',
+                  }}
+                >
+                  {p.name}
                 </div>
-                <Switch
-                  checked={notifications.emailOnApproval}
-                  onCheckedChange={(checked) => setNotifications((n) => ({ ...n, emailOnApproval: checked }))}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Slack on Failure</Label>
-                  <p className="text-sm text-muted-foreground">Post to Slack when tests fail</p>
+                <div
+                  className="py-4 px-4"
+                  style={{
+                    borderRight: '1px solid var(--rule-soft)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '13.5px',
+                    color: 'var(--ink-1)',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {p.desc}
                 </div>
-                <Switch
-                  checked={notifications.slackOnFailure}
-                  onCheckedChange={(checked) => setNotifications((n) => ({ ...n, slackOnFailure: checked }))}
-                />
-              </div>
-              {(notifications.slackOnFailure || notifications.slackOnApproval) && (
-                <div className="space-y-2">
-                  <Label>Slack Webhook URL</Label>
-                  <Input
-                    value={notifications.slackWebhookUrl}
-                    onChange={(e) => setNotifications((n) => ({ ...n, slackWebhookUrl: e.target.value }))}
-                    placeholder="https://hooks.slack.com/services/..."
+                <div className="py-4 px-4 flex items-center justify-center">
+                  <ArrowRight
+                    className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1"
+                    strokeWidth={1.5}
+                    style={{ color: 'var(--ink-2)' }}
                   />
                 </div>
-              )}
-              <Button
-                onClick={() => saveNotificationsMutation.mutate(notifications)}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ── §03 · Notifications ─────────────────────────────────── */}
+        <section aria-labelledby="notif-head">
+          <div className="vt-section-head">
+            <span className="num">§ 03</span>
+            <span className="ttl" id="notif-head">notifications · signals</span>
+            <span className="rule" />
+            <span className="stamp">DISPATCH CHANNELS</span>
+          </div>
+
+          <div style={{ border: '1px solid var(--rule-strong)', background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)' }}>
+            <ToggleRow
+              label="EMAIL · ON FAILURE"
+              desc="Emailed when a run fails."
+              checked={notifications.emailOnFailure}
+              onChange={(v) => setNotifications((n) => ({ ...n, emailOnFailure: v }))}
+            />
+            <ToggleRow
+              label="EMAIL · ON APPROVAL"
+              desc="Emailed when a visual change awaits review."
+              checked={notifications.emailOnApproval}
+              onChange={(v) => setNotifications((n) => ({ ...n, emailOnApproval: v }))}
+            />
+            <ToggleRow
+              label="SLACK · ON FAILURE"
+              desc="Post to Slack when tests fail."
+              checked={notifications.slackOnFailure}
+              onChange={(v) => setNotifications((n) => ({ ...n, slackOnFailure: v }))}
+            />
+            <ToggleRow
+              label="SLACK · ON APPROVAL"
+              desc="Post to Slack when a visual change awaits review."
+              checked={notifications.slackOnApproval}
+              onChange={(v) => setNotifications((n) => ({ ...n, slackOnApproval: v }))}
+              last={!(notifications.slackOnFailure || notifications.slackOnApproval)}
+            />
+            {(notifications.slackOnFailure || notifications.slackOnApproval) && (
+              <FieldCell label="SLACK WEBHOOK URL" last>
+                <input
+                  className="vt-input"
+                  value={notifications.slackWebhookUrl}
+                  onChange={(e) => setNotifications((n) => ({ ...n, slackWebhookUrl: e.target.value }))}
+                  placeholder="https://hooks.slack.com/services/..."
+                />
+              </FieldCell>
+            )}
+            <div className="px-6 py-4 flex items-center gap-3" style={{ background: 'color-mix(in oklab, var(--bg-2) 25%, transparent)' }}>
+              <button
+                type="button"
+                className="vt-btn vt-btn--primary"
                 disabled={saveNotificationsMutation.isPending}
+                onClick={() => saveNotificationsMutation.mutate(notifications)}
               >
-                <Save className="w-4 h-4 mr-2" />
-                {saveNotificationsMutation.isPending ? 'Saving...' : 'Save Preferences'}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <Save className="w-3.5 h-3.5" strokeWidth={1.5} />
+                {saveNotificationsMutation.isPending ? 'SAVING' : 'SAVE'}
+              </button>
+            </div>
+          </div>
+        </section>
 
-        {/* Integrations */}
-        <TabsContent value="integrations" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>CI/CD Integrations</CardTitle>
-              <CardDescription>Connect VisionTest.ai to your development workflow</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-6 rounded-lg border border-border bg-muted/30 text-center">
-                <Info className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">Coming Soon</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  GitHub, GitLab, and Slack integrations are under development.
-                  Use API keys and webhooks for CI/CD integration in the meantime.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {/* ── §04 · Integrations ─────────────────────────────────── */}
+        <section aria-labelledby="integrations-head">
+          <div className="vt-section-head">
+            <span className="num">§ 04</span>
+            <span className="ttl" id="integrations-head">integrations</span>
+            <span className="rule" />
+            <span className="stamp">CI/CD · PENDING</span>
+          </div>
 
-        {/* API Keys */}
-        <TabsContent value="api" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>API Keys</CardTitle>
-              <CardDescription>Manage API keys for programmatic access</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* New key creation */}
-              <div className="flex gap-2">
-                <Input
+          <div
+            className="p-10 text-center"
+            style={{
+              border: '1px dashed var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+            }}
+          >
+            <div className="vt-kicker" style={{ color: 'var(--ink-2)', justifyContent: 'center' }}>
+              UNDER DRAFT
+            </div>
+            <h3
+              className="mt-3"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(22px, 2.4vw, 32px)',
+                color: 'var(--ink-0)',
+              }}
+            >
+              github, gitlab, slack integrations pending.
+            </h3>
+            <p
+              className="mt-3 mx-auto"
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '14px',
+                maxWidth: '52ch',
+                color: 'var(--ink-1)',
+                lineHeight: 1.5,
+              }}
+            >
+              Use API keys and webhooks (§ 05) for CI/CD integration in the
+              meantime.
+            </p>
+          </div>
+        </section>
+
+        {/* ── §05 · API keys ─────────────────────────────────────── */}
+        <section aria-labelledby="keys-head">
+          <div className="vt-section-head">
+            <span className="num">§ 05</span>
+            <span className="ttl" id="keys-head">api keys · credentials</span>
+            <span className="rule" />
+            <span className="stamp">{(apiKeys?.length ?? 0).toString().padStart(2, '0')} ON FILE</span>
+          </div>
+
+          <div style={{ border: '1px solid var(--rule-strong)', background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)' }}>
+            {/* create row */}
+            <div
+              className="grid grid-cols-[1fr_180px_160px] gap-0"
+              style={{ borderBottom: '1px solid var(--rule-soft)' }}
+            >
+              <FieldCell label="NAME" borderRight>
+                <input
+                  className="vt-input"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
-                  placeholder="Key name (e.g. CI Pipeline)"
-                  className="flex-1"
+                  placeholder="e.g. CI Pipeline"
                 />
-                <Select value={newKeyScopes.join(',')} onValueChange={(v) => setNewKeyScopes(v.split(','))}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="read">Read</SelectItem>
-                    <SelectItem value="read,write">Read+Write</SelectItem>
-                    <SelectItem value="read,write,execute">Full</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={() => createKeyMutation.mutate()}
-                  disabled={!newKeyName || createKeyMutation.isPending}
+              </FieldCell>
+              <FieldCell label="SCOPE" borderRight>
+                <select
+                  className="vt-input"
+                  value={newKeyScopes.join(',')}
+                  onChange={(e) => setNewKeyScopes(e.target.value.split(','))}
                 >
-                  <Key className="w-4 h-4 mr-2" /> Generate
-                </Button>
+                  <option value="read">READ</option>
+                  <option value="read,write">READ + WRITE</option>
+                  <option value="read,write,execute">FULL</option>
+                </select>
+              </FieldCell>
+              <div className="p-4 flex items-center">
+                <button
+                  type="button"
+                  className="vt-btn vt-btn--primary w-full"
+                  disabled={!newKeyName || createKeyMutation.isPending}
+                  onClick={() => createKeyMutation.mutate()}
+                >
+                  {createKeyMutation.isPending ? 'GENERATING' : 'GENERATE'}
+                </button>
               </div>
+            </div>
 
-              {/* Newly created key display */}
-              {newKeyVisible && (
-                <div className="p-4 rounded-lg border border-green-600/50 bg-green-950/20">
-                  <p className="text-sm font-medium text-green-400 mb-2">New API Key (copy now -- it won't be shown again):</p>
-                  <code className="text-sm font-mono text-green-300 break-all select-all">{newKeyVisible}</code>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => {
-                      navigator.clipboard.writeText(newKeyVisible);
-                      toast.success('Copied to clipboard');
-                    }}
-                  >
-                    Copy
-                  </Button>
+            {newKeyVisible && (
+              <div
+                className="p-4"
+                style={{
+                  borderBottom: '1px solid var(--rule-soft)',
+                  background: 'var(--accent-soft)',
+                }}
+              >
+                <div
+                  className="vt-kicker mb-2"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  NEW KEY · COPY NOW · NOT SHOWN AGAIN
                 </div>
-              )}
+                <code
+                  className="vt-mono block select-all break-all"
+                  style={{ fontSize: '12.5px', color: 'var(--ink-0)' }}
+                >
+                  {newKeyVisible}
+                </code>
+                <button
+                  type="button"
+                  className="vt-btn mt-3"
+                  onClick={() => {
+                    navigator.clipboard.writeText(newKeyVisible);
+                    toast.success('Copied to clipboard');
+                  }}
+                >
+                  COPY
+                </button>
+              </div>
+            )}
 
-              {/* Existing keys */}
-              {apiKeys && apiKeys.length > 0 ? (
-                <div className="space-y-2">
-                  {apiKeys.map((key: ApiKeyData) => (
-                    <div key={key.id} className={`flex items-center justify-between p-3 rounded-lg border ${key.revokedAt ? 'opacity-50' : ''}`}>
-                      <div>
-                        <p className="font-medium text-sm">{key.name}</p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {key.keyPrefix}... &middot; {key.scopes?.join(', ')}
-                          {key.lastUsedAt && ` &middot; Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`}
-                        </p>
-                      </div>
-                      {!key.revokedAt && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-400"
-                          onClick={() => revokeKeyMutation.mutate(key.id)}
-                        >
-                          Revoke
-                        </Button>
-                      )}
-                      {key.revokedAt && <Badge variant="secondary">Revoked</Badge>}
+            {/* existing keys */}
+            {apiKeys && apiKeys.length > 0 ? (
+              <>
+                <div
+                  className="grid grid-cols-[1fr_200px_140px_120px] gap-0"
+                  style={{
+                    borderBottom: '1px solid var(--rule-strong)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '9.5px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                  }}
+                >
+                  {['NAME', 'KEY · PREFIX', 'SCOPES', 'ACTION'].map((h, i) => (
+                    <div
+                      key={h}
+                      className="py-3 px-4"
+                      style={{ borderRight: i < 3 ? '1px solid var(--rule)' : 'none' }}
+                    >
+                      {h}
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No API keys yet.</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                {apiKeys.map((key: ApiKeyData, i: number) => (
+                  <div
+                    key={key.id}
+                    className="grid grid-cols-[1fr_200px_140px_120px] gap-0"
+                    style={{
+                      borderBottom: i < apiKeys.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                      opacity: key.revokedAt ? 0.4 : 1,
+                    }}
+                  >
+                    <div
+                      className="py-3 px-4"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '13px',
+                        color: 'var(--ink-0)',
+                      }}
+                    >
+                      {key.name}
+                      {key.lastUsedAt && (
+                        <div
+                          className="mt-1"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '9.5px',
+                            letterSpacing: '0.12em',
+                            color: 'var(--ink-2)',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          LAST · {new Date(key.lastUsedAt).toISOString().slice(0, 10).replace(/-/g, '.')}
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      className="py-3 px-4 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '11.5px',
+                        color: 'var(--ink-1)',
+                      }}
+                    >
+                      {key.keyPrefix}…
+                    </div>
+                    <div
+                      className="py-3 px-4"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '10px',
+                        letterSpacing: '0.12em',
+                        color: 'var(--ink-1)',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {key.scopes?.join(' · ')}
+                    </div>
+                    <div className="py-3 px-4 flex items-center justify-end">
+                      {!key.revokedAt ? (
+                        <button
+                          type="button"
+                          className="vt-btn vt-btn--ghost"
+                          style={{ color: 'var(--fail)', padding: '6px 12px', fontSize: '10px' }}
+                          onClick={() => revokeKeyMutation.mutate(key.id)}
+                        >
+                          REVOKE
+                        </button>
+                      ) : (
+                        <span className="vt-chip" style={{ color: 'var(--ink-2)', fontSize: '9.5px' }}>
+                          REVOKED
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div
+                className="p-8 text-center"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                  borderTop: '1px dashed var(--rule)',
+                }}
+              >
+                — NO KEYS ON FILE —
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── §06 · Danger zone ──────────────────────────────────── */}
+        <section aria-labelledby="danger-head">
+          <div className="vt-section-head">
+            <span className="num">§ 06</span>
+            <span className="ttl" id="danger-head">demolition · irreversible</span>
+            <span className="rule" />
+            <span className="stamp" style={{ color: 'var(--fail)' }}>DANGER</span>
+          </div>
+
+          <div
+            style={{
+              border: '1px solid var(--fail)',
+              background: 'var(--fail-soft)',
+            }}
+          >
+            <div
+              className="px-6 py-4"
+              style={{
+                borderBottom: '1px solid color-mix(in oklab, var(--fail) 40%, transparent)',
+                fontFamily: 'var(--font-body)',
+                fontSize: '13.5px',
+                color: 'var(--ink-1)',
+                lineHeight: 1.5,
+              }}
+            >
+              Permanently deletes the project and every test, run, baseline, and
+              comparison attached to it. No undo.
+            </div>
+            <FieldCell
+              label={<>TYPE <span style={{ color: 'var(--fail)' }}>{project.name}</span> TO CONFIRM</>}
+              borderBottom
+            >
+              <input
+                className="vt-input"
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder={project.name}
+              />
+            </FieldCell>
+            <div className="px-6 py-4">
+              <button
+                type="button"
+                className="vt-btn"
+                style={{
+                  borderColor: 'var(--fail)',
+                  color: 'var(--fail)',
+                }}
+                disabled={deleteConfirm !== project.name || deleteProjectMutation.isPending}
+                onClick={() => deleteProjectMutation.mutate()}
+              >
+                <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                {deleteProjectMutation.isPending ? 'DELETING' : 'DELETE PROJECT'}
+              </button>
+            </div>
+          </div>
+        </section>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+/* ─────────────────────────────────────────────────────── primitives ── */
+
+function FieldCell({
+  label,
+  children,
+  borderRight,
+  borderBottom,
+  last,
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+  borderRight?: boolean;
+  borderBottom?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <div
+      className="p-4"
+      style={{
+        borderRight: borderRight ? '1px solid var(--rule-soft)' : undefined,
+        borderBottom: borderBottom || !last ? '1px solid var(--rule-soft)' : undefined,
+      }}
+    >
+      <div
+        className="mb-2"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9.5px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ToggleRow({
+  label,
+  desc,
+  checked,
+  onChange,
+  last,
+}: {
+  label: string;
+  desc: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  last?: boolean;
+}) {
+  return (
+    <div
+      className="grid grid-cols-[1fr_220px] gap-0 items-center"
+      style={{ borderBottom: last ? 'none' : '1px solid var(--rule-soft)' }}
+    >
+      <div className="p-4" style={{ borderRight: '1px solid var(--rule-soft)' }}>
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10.5px',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-0)',
+          }}
+        >
+          {label}
+        </div>
+        <div
+          className="mt-1"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '13px',
+            color: 'var(--ink-2)',
+            lineHeight: 1.5,
+          }}
+        >
+          {desc}
+        </div>
+      </div>
+      <div className="p-4">
+        <SegmentedToggle checked={checked} onChange={onChange} />
+      </div>
+    </div>
+  );
+}
+
+function SegmentedToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div
+      className="grid grid-cols-2"
+      style={{ border: '1px solid var(--rule)' }}
+      role="group"
+    >
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        className="vt-mono"
+        style={{
+          padding: '8px 0',
+          background: !checked ? 'var(--bg-2)' : 'transparent',
+          color: !checked ? 'var(--ink-0)' : 'var(--ink-2)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          borderRight: '1px solid var(--rule)',
+          cursor: 'pointer',
+        }}
+      >
+        OFF
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        className="vt-mono"
+        style={{
+          padding: '8px 0',
+          background: checked ? 'var(--accent)' : 'transparent',
+          color: checked ? 'var(--bg-0)' : 'var(--ink-2)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+        }}
+      >
+        ON
+      </button>
     </div>
   );
 }

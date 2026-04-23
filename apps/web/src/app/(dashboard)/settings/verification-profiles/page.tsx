@@ -3,34 +3,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useCurrentProject } from '@/hooks/useProject';
-import {
-  CheckSquare,
-  Plus,
-  Trash2,
-  Loader2,
-  Star,
-  Terminal,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Plus, Trash2, Loader2, Star, Terminal } from 'lucide-react';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 import {
   Dialog,
   DialogContent,
@@ -67,11 +42,12 @@ export default function VerificationProfilesPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
 
-  // Form
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [preset, setPreset] = useState('balanced');
-  const [commandsText, setCommandsText] = useState('npm run lint\nnpx tsc --noEmit\nnpm test -- --related');
+  const [commandsText, setCommandsText] = useState(
+    'npm run lint\nnpx tsc --noEmit\nnpm test -- --related'
+  );
   const [maxRuntime, setMaxRuntime] = useState('300');
   const [failurePolicy, setFailurePolicy] = useState('fail_closed');
   const [isDefault, setIsDefault] = useState(false);
@@ -84,7 +60,10 @@ export default function VerificationProfilesPage() {
     if (!currentProject?.id) return;
     setLoading(true);
     try {
-      const data = await api.get<VerificationProfileData[]>('/fix-policies/verification-profiles', { projectId: currentProject.id });
+      const data = await api.get<VerificationProfileData[]>(
+        '/fix-policies/verification-profiles',
+        { projectId: currentProject.id }
+      );
       setProfiles(data || []);
     } catch (error) {
       console.error('Failed to load profiles:', error);
@@ -98,12 +77,15 @@ export default function VerificationProfilesPage() {
     if (!currentProject?.id || !name) return;
     setAddLoading(true);
     try {
-      const commands = commandsText.split('\n').filter(Boolean).map((line, i) => ({
-        name: `Step ${i + 1}`,
-        command: line.trim(),
-        timeout: 60,
-        required: true,
-      }));
+      const commands = commandsText
+        .split('\n')
+        .filter(Boolean)
+        .map((line, i) => ({
+          name: `Step ${i + 1}`,
+          command: line.trim(),
+          timeout: 60,
+          required: true,
+        }));
 
       await api.post('/fix-policies/verification-profiles', {
         projectId: currentProject.id,
@@ -136,167 +118,491 @@ export default function VerificationProfilesPage() {
     }
   }
 
-  // Assay — a verification profile is a protocol of checks to run
-  // after the auto-fixer proposes a patch. Treat it like a lab assay.
-  return (
-    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
-        <div>
-          <div className="vt-eyebrow mb-5">§ Assay · Verification profiles</div>
-          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
-            What to <em>check</em> before shipping.
-          </h1>
-          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
-            A verification profile is a protocol — the sequence of tests a
-            proposed fix must pass before it&apos;s considered safe.
-          </p>
-        </div>
-        <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Profile
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create Verification Profile</DialogTitle>
-              <DialogDescription>
-                Define commands that verify a fix before it can be approved.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Default verification" />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional description" />
-              </div>
-              <div>
-                <Label>Preset</Label>
-                <Select value={preset} onValueChange={setPreset}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fast">Fast</SelectItem>
-                    <SelectItem value="balanced">Balanced</SelectItem>
-                    <SelectItem value="strict">Strict</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">{presetDescriptions[preset]}</p>
-              </div>
-              <div>
-                <Label>Commands (one per line)</Label>
-                <Textarea
-                  value={commandsText}
-                  onChange={(e) => setCommandsText(e.target.value)}
-                  className="font-mono text-sm min-h-[100px]"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Max Runtime (seconds)</Label>
-                  <Input type="number" value={maxRuntime} onChange={(e) => setMaxRuntime(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Failure Policy</Label>
-                  <Select value={failurePolicy} onValueChange={setFailurePolicy}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fail_closed">Fail Closed</SelectItem>
-                      <SelectItem value="fail_open">Fail Open</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <Label>Set as Default</Label>
-                <Switch checked={isDefault} onCheckedChange={setIsDefault} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
-              <Button onClick={handleAdd} disabled={addLoading || !name}>
-                {addLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Create
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </header>
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : profiles.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <CheckSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No verification profiles</h3>
-            <p className="text-muted-foreground mt-1">
-              Create a profile to define how fixes are verified before approval.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {profiles.map((profile) => (
-            <Card key={profile.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckSquare className="h-5 w-5" />
-                    <CardTitle className="text-base">{profile.name}</CardTitle>
-                    {profile.isDefault && (
-                      <Badge variant="outline" className="text-yellow-600">
-                        <Star className="h-3 w-3 mr-1" /> Default
-                      </Badge>
-                    )}
-                  </div>
-                  <Badge variant="outline">{profile.preset}</Badge>
+  return (
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet="07.F / 14"
+        eyebrow="§ 07.F · ASSAY"
+        back={{ href: '/settings', label: 'BACK · WORKBENCH' }}
+        revision={<>REV · 02 · {isoDate}</>}
+        title={<>what to <em>check</em> before shipping.</>}
+        lead="A verification profile is a protocol — the sequence of tests a proposed fix must pass before it’s considered safe."
+        actions={
+          <Dialog open={showAdd} onOpenChange={setShowAdd}>
+            <DialogTrigger asChild>
+              <button className="vt-btn vt-btn--primary">
+                <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+                ADD PROFILE
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Create Verification Profile</DialogTitle>
+                <DialogDescription>Define commands that verify a fix before it can be approved.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Field label="NAME">
+                  <input
+                    className="vt-input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Default verification"
+                  />
+                </Field>
+                <Field label="DESCRIPTION">
+                  <input
+                    className="vt-input"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Optional description"
+                  />
+                </Field>
+                <Field label="PRESET">
+                  <select className="vt-input" value={preset} onChange={(e) => setPreset(e.target.value)}>
+                    <option value="fast">Fast</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="strict">Strict</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                  <p
+                    className="mt-2"
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '12px',
+                      color: 'var(--ink-2)',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {presetDescriptions[preset]}
+                  </p>
+                </Field>
+                <Field label="COMMANDS · ONE PER LINE">
+                  <textarea
+                    className="vt-input"
+                    value={commandsText}
+                    onChange={(e) => setCommandsText(e.target.value)}
+                    style={{ minHeight: '100px', fontFamily: 'var(--font-mono)', fontSize: '12.5px' }}
+                  />
+                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="MAX RUNTIME · SEC">
+                    <input
+                      className="vt-input"
+                      type="number"
+                      value={maxRuntime}
+                      onChange={(e) => setMaxRuntime(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="FAILURE POLICY">
+                    <select
+                      className="vt-input"
+                      value={failurePolicy}
+                      onChange={(e) => setFailurePolicy(e.target.value)}
+                    >
+                      <option value="fail_closed">Fail Closed</option>
+                      <option value="fail_open">Fail Open</option>
+                    </select>
+                  </Field>
                 </div>
-                {profile.description && (
-                  <CardDescription>{profile.description}</CardDescription>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 mb-4">
-                  {profile.commands.map((cmd, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <Terminal className="h-3 w-3 text-muted-foreground" />
-                      <code className="font-mono text-xs bg-muted px-2 py-1 rounded">{cmd.command}</code>
-                      {cmd.required && (
-                        <Badge variant="outline" className="text-xs">required</Badge>
+                <div
+                  className="flex items-center justify-between p-3"
+                  style={{ border: '1px solid var(--rule)' }}
+                >
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10.5px',
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-0)',
+                    }}
+                  >
+                    SET AS DEFAULT
+                  </div>
+                  <SegmentedToggle checked={isDefault} onChange={setIsDefault} />
+                </div>
+              </div>
+              <DialogFooter>
+                <button className="vt-btn" onClick={() => setShowAdd(false)}>CANCEL</button>
+                <button className="vt-btn vt-btn--primary" onClick={handleAdd} disabled={addLoading || !name}>
+                  {addLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  CREATE
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        }
+      >
+        <section aria-labelledby="profiles-head">
+          <div className="vt-section-head">
+            <span className="num">§ 01</span>
+            <span className="ttl" id="profiles-head">protocols on file</span>
+            <span className="rule" />
+            <span className="stamp">{profiles.length.toString().padStart(2, '0')} PROFILES</span>
+          </div>
+
+          {loading ? (
+            <LoadingFrame />
+          ) : profiles.length === 0 ? (
+            <EmptyFrame
+              title="no verification profiles."
+              body="Create a profile to define how fixes are verified before approval."
+            />
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              <div
+                className="grid grid-cols-[90px_1fr_140px_100px] gap-0"
+                style={{
+                  borderBottom: '1px solid var(--rule-strong)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '9.5px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                {['CODE', 'PROFILE · NAME', 'PRESET', 'RULES'].map((h, i) => (
+                  <div
+                    key={h}
+                    className="py-3 px-4"
+                    style={{ borderRight: i < 3 ? '1px solid var(--rule)' : 'none' }}
+                  >
+                    {h}
+                  </div>
+                ))}
+              </div>
+
+              {profiles.map((profile, i) => (
+                <div
+                  key={profile.id}
+                  style={{
+                    borderBottom: i < profiles.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                  }}
+                >
+                  <div className="grid grid-cols-[90px_1fr_140px_100px] gap-0 items-center">
+                    <div
+                      className="py-4 px-4"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        letterSpacing: '0.18em',
+                        color: 'var(--accent)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      VP-{String(i + 1).padStart(2, '0')}
+                    </div>
+                    <div
+                      className="py-4 px-4"
+                      style={{ borderRight: '1px solid var(--rule-soft)' }}
+                    >
+                      <div
+                        className="flex items-center gap-2 flex-wrap"
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: '16px',
+                          color: 'var(--ink-0)',
+                          textTransform: 'lowercase',
+                        }}
+                      >
+                        {profile.name}
+                        {profile.isDefault && (
+                          <span
+                            className="vt-rev-stamp"
+                            style={{ fontSize: '9px', padding: '2px 6px' }}
+                          >
+                            <Star className="w-2.5 h-2.5" strokeWidth={1.5} /> DEFAULT
+                          </span>
+                        )}
+                      </div>
+                      {profile.description && (
+                        <p
+                          className="mt-2"
+                          style={{
+                            fontFamily: 'var(--font-body)',
+                            fontSize: '13.5px',
+                            color: 'var(--ink-1)',
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {profile.description}
+                        </p>
                       )}
                     </div>
-                  ))}
+                    <div
+                      className="py-4 px-4"
+                      style={{ borderRight: '1px solid var(--rule-soft)' }}
+                    >
+                      <span className="vt-chip" style={{ fontSize: '9.5px' }}>
+                        {profile.preset}
+                      </span>
+                    </div>
+                    <div
+                      className="py-4 px-4"
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '22px',
+                        color: 'var(--ink-0)',
+                        fontVariantNumeric: 'tabular-nums',
+                        textTransform: 'lowercase',
+                        letterSpacing: '-0.01em',
+                      }}
+                    >
+                      {String(profile.commands.length).padStart(2, '0')}
+                    </div>
+                  </div>
+
+                  {/* commands strip */}
+                  <div
+                    className="px-4 py-3"
+                    style={{
+                      borderTop: '1px solid var(--rule-soft)',
+                      background: 'color-mix(in oklab, var(--bg-2) 20%, transparent)',
+                    }}
+                  >
+                    <div
+                      className="mb-2"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '9px',
+                        letterSpacing: '0.22em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-2)',
+                      }}
+                    >
+                      PROTOCOL · STEPS
+                    </div>
+                    <div className="space-y-1">
+                      {profile.commands.map((cmd, ci) => (
+                        <div key={ci} className="flex items-center gap-2 flex-wrap">
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '9.5px',
+                              letterSpacing: '0.18em',
+                              color: 'var(--ink-2)',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {String(ci + 1).padStart(2, '0')}
+                          </span>
+                          <Terminal className="w-3 h-3" style={{ color: 'var(--ink-2)' }} />
+                          <code
+                            className="vt-mono px-2 py-1"
+                            style={{
+                              fontSize: '11.5px',
+                              color: 'var(--ink-0)',
+                              background: 'color-mix(in oklab, var(--bg-2) 45%, transparent)',
+                              border: '1px solid var(--rule-soft)',
+                            }}
+                          >
+                            {cmd.command}
+                          </code>
+                          {cmd.required && (
+                            <span className="vt-chip" style={{ fontSize: '9px', padding: '2px 6px' }}>
+                              REQUIRED
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div
+                    className="grid grid-cols-3 gap-0"
+                    style={{
+                      borderTop: '1px solid var(--rule-soft)',
+                    }}
+                  >
+                    <DimCell k="MAX RUNTIME" v={`${profile.maxRuntimeSeconds}s`} />
+                    <DimCell k="FAILURE" v={profile.failurePolicy.replace('_', ' ')} />
+                    <DimCell k="TARGETING" v={profile.targetingStrategy} last />
+                  </div>
+
+                  <div
+                    className="px-4 py-3 flex items-center gap-2"
+                    style={{ borderTop: '1px solid var(--rule-soft)' }}
+                  >
+                    <button
+                      className="vt-btn vt-btn--ghost"
+                      style={{ padding: '6px 12px', fontSize: '10px', color: 'var(--fail)' }}
+                      onClick={() => handleDelete(profile.id)}
+                    >
+                      <Trash2 className="w-3 h-3" /> DELETE
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                  <span>Max runtime: {profile.maxRuntimeSeconds}s</span>
-                  <span>Failure: {profile.failurePolicy.replace('_', ' ')}</span>
-                  <span>Targeting: {profile.targetingStrategy}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive"
-                  onClick={() => handleDelete(profile.id)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              ))}
+            </div>
+          )}
+        </section>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div
+        className="mb-2"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9.5px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function DimCell({ k, v, last }: { k: string; v: string; last?: boolean }) {
+  return (
+    <div
+      className="py-3 px-4"
+      style={{ borderRight: last ? 'none' : '1px solid var(--rule-soft)' }}
+    >
+      <div
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+          marginBottom: '4px',
+        }}
+      >
+        {k}
+      </div>
+      <div
+        className="vt-mono"
+        style={{
+          fontSize: '12.5px',
+          color: 'var(--ink-0)',
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {v}
+      </div>
+    </div>
+  );
+}
+
+function SegmentedToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="grid grid-cols-2" style={{ border: '1px solid var(--rule)' }}>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        style={{
+          padding: '6px 14px',
+          background: !checked ? 'var(--bg-2)' : 'transparent',
+          color: !checked ? 'var(--ink-0)' : 'var(--ink-2)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          borderRight: '1px solid var(--rule)',
+          cursor: 'pointer',
+        }}
+      >
+        OFF
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        style={{
+          padding: '6px 14px',
+          background: checked ? 'var(--accent)' : 'transparent',
+          color: checked ? 'var(--bg-0)' : 'var(--ink-2)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+        }}
+      >
+        ON
+      </button>
+    </div>
+  );
+}
+
+function LoadingFrame() {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: 'var(--ink-2)' }} />
+      <div
+        className="mt-3"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        LOADING
+      </div>
+    </div>
+  );
+}
+
+function EmptyFrame({ title, body }: { title: string; body: string }) {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <div className="vt-kicker" style={{ color: 'var(--ink-2)', justifyContent: 'center' }}>
+        PLATE EMPTY
+      </div>
+      <h3
+        className="mt-3"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(22px, 2.4vw, 32px)',
+          color: 'var(--ink-0)',
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        className="mt-3 mx-auto"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          maxWidth: '52ch',
+          color: 'var(--ink-1)',
+          lineHeight: 1.5,
+        }}
+      >
+        {body}
+      </p>
     </div>
   );
 }

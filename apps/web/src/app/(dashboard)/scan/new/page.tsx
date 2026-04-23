@@ -1,31 +1,35 @@
 'use client';
 
+// Scan · New — commission a survey of a site.
+//
+// Sheet-style layout. Each input sits in a ruled cell with dimension
+// annotations (DEPTH: ⊢ 3 ⊣ MAX). Safety mode is a 3-part segmented
+// switch. The destructive and sandbox cells reveal secondary fields
+// inline. All mutation logic and handlers are preserved unchanged.
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-  ArrowLeft,
   Compass,
   Loader2,
-  Shield,
   AlertTriangle,
   Info,
+  ArrowRight,
 } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { useCurrentProject } from '@/hooks/useProject';
-import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { useCurrentProject } from '@/hooks/useProject';
+import { api, credentialsApi, type Credential } from '@/lib/api';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 
 type SafetyMode = 'read-only' | 'allow-destructive' | 'sandbox';
+
+const SAFETY_DETAIL: Record<SafetyMode, { label: string; desc: string; stamp: string }> = {
+  'read-only':         { label: 'read-only',         desc: 'Skip destructive elements — delete, submit, pay, log-out. Default.', stamp: 'SAFE' },
+  'allow-destructive': { label: 'allow-destructive', desc: 'Click everything. Requires explicit acknowledgement.', stamp: 'WARN' },
+  'sandbox':           { label: 'sandbox',           desc: 'Click everything, but call a reset hook before each run.', stamp: 'SANDBOX' },
+};
 
 export default function NewScanPage() {
   const router = useRouter();
@@ -37,8 +41,14 @@ export default function NewScanPage() {
   const [safetyMode, setSafetyMode] = useState<SafetyMode>('read-only');
   const [stubWrites, setStubWrites] = useState(false);
   const [resetHookUrl, setResetHookUrl] = useState('');
-  const [acknowledgedDestructive, setAcknowledgedDestructive] =
-    useState(false);
+  const [acknowledgedDestructive, setAcknowledgedDestructive] = useState(false);
+  const [credentialId, setCredentialId] = useState<string>('');
+
+  const { data: credentials } = useQuery({
+    queryKey: ['credentials', project?.orgId, project?.id],
+    queryFn: () => credentialsApi.list(project!.orgId!, project!.id),
+    enabled: !!project?.orgId,
+  });
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -63,12 +73,12 @@ export default function NewScanPage() {
 
   if (!project) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <div className="text-muted-foreground mb-4">Select a project first</div>
-        <Link href="/">
-          <Button variant="outline">Dashboard</Button>
-        </Link>
-      </div>
+      <VtStage width="narrow">
+        <div className="vt-kicker mb-3" style={{ color: 'var(--accent)' }}>§ no project</div>
+        <h1 className="vt-display mb-6" style={{ fontSize: 'clamp(40px, 6vw, 72px)' }}>
+          Pick a <em>project</em> before commissioning a scan.
+        </h1>
+      </VtStage>
     );
   }
 
@@ -77,214 +87,488 @@ export default function NewScanPage() {
     (safetyMode !== 'allow-destructive' || acknowledgedDestructive) &&
     (safetyMode !== 'sandbox' || resetHookUrl.trim().length > 0);
 
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+  const creds = (credentials || []) as Credential[];
+
   return (
-    <div className="max-w-[860px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
-      <header className="pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
-        <div className="flex items-center gap-4 mb-5">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="vt-kicker inline-flex items-center gap-2 transition-colors"
-            style={{ color: 'var(--ink-2)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
-          >
-            <ArrowLeft className="w-3 h-3" /> back
-          </button>
-          <span className="vt-eyebrow">§ Exploration · Start</span>
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet="07 / 14"
+        eyebrow="§ 07 · SURVEY COMMISSION"
+        revision={<>REV · 01 · {today}</>}
+        back={{ label: 'BACK' }}
+        title={
+          <>
+            commission a <em>survey</em>
+          </>
+        }
+        lead={
+          'Point the crawler at a URL. It will click safe elements, flag broken ones, and file the results as a coverage map. Run against staging or a sandbox — never production.'
+        }
+      >
+        {/* Title-block */}
+        <div className="vt-title-block">
+          <div className="span3">
+            <span className="k">PROJECT</span>
+            <span className="v big">{project.name}</span>
+          </div>
+          <div className="span2">
+            <span className="k">SHEET ID</span>
+            <span className="v">VT-SCAN-{(project.slug || project.id.slice(-6)).toUpperCase()}</span>
+          </div>
+          <div>
+            <span className="k">REV</span>
+            <span className="v" style={{ color: 'var(--accent)' }}>01</span>
+          </div>
+          <div className="span2">
+            <span className="k">DRAWN</span>
+            <span className="v">{today}</span>
+          </div>
+          <div className="span2">
+            <span className="k">SCOPE</span>
+            <span className="v">DEPTH · {maxPages} PAGES</span>
+          </div>
+          <div className="span2">
+            <span className="k">SAFETY</span>
+            <span
+              className="v"
+              style={{
+                color:
+                  safetyMode === 'read-only'
+                    ? 'var(--pass)'
+                    : safetyMode === 'sandbox'
+                    ? 'var(--accent)'
+                    : 'var(--warn)',
+              }}
+            >
+              {SAFETY_DETAIL[safetyMode].stamp}
+            </span>
+          </div>
         </div>
-        <h1 className="vt-display" style={{ fontSize: 'clamp(38px, 5vw, 60px)', lineHeight: 0.98 }}>
-          Point it at a <em>URL</em>.
-        </h1>
-        <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
-          We crawl, click safe elements, flag the broken ones. Run against
-          staging or a sandbox — never production.
-        </p>
-      </header>
 
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Compass className="w-5 h-5" /> Where to scan
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Start URL <span className="text-red-400">*</span>
-            </label>
-            <Input
-              value={startUrl}
-              onChange={(e) => setStartUrl(e.target.value)}
-              placeholder="https://staging.example.com"
-              className="bg-muted border-border text-foreground"
-            />
+        {/* §01 — target */}
+        <section>
+          <div className="vt-section-head">
+            <span className="num">§ 01</span>
+            <span className="ttl">survey target</span>
+            <span className="rule" />
+            <span className="stamp">ENTRY POINT + LIMITS</span>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">
-                Max pages
-              </label>
-              <Input
-                type="number"
-                min={1}
-                max={200}
-                value={maxPages}
-                onChange={(e) =>
-                  setMaxPages(Math.max(1, parseInt(e.target.value || '1')))
-                }
-                className="bg-muted border-border text-foreground"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">
-                Max clicks per page
-              </label>
-              <Input
-                type="number"
-                min={1}
-                max={100}
-                value={maxClicks}
-                onChange={(e) =>
-                  setMaxClicks(Math.max(1, parseInt(e.target.value || '1')))
-                }
-                className="bg-muted border-border text-foreground"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" /> Safety
-          </CardTitle>
-          <CardDescription>
-            Default is read-only — destructive elements (delete, submit,
-            pay, log out) are skipped and surfaced with their reason.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="grid grid-cols-3 gap-2">
-              {(['read-only', 'allow-destructive', 'sandbox'] as SafetyMode[]).map(
-                (m) => (
+          <div
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              padding: '24px 28px',
+            }}
+            className="space-y-6"
+          >
+            <FormCell label="START URL" required>
+              <input
+                value={startUrl}
+                onChange={(e) => setStartUrl(e.target.value)}
+                placeholder="https://staging.example.com"
+                className="vt-input"
+                style={{ height: '44px' }}
+              />
+            </FormCell>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormCell
+                label="MAX PAGES"
+                annotation={`⊢ ${maxPages} ⊣ / 200`}
+              >
+                <input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={maxPages}
+                  onChange={(e) =>
+                    setMaxPages(Math.max(1, parseInt(e.target.value || '1')))
+                  }
+                  className="vt-input"
+                  style={{ height: '44px' }}
+                />
+              </FormCell>
+              <FormCell
+                label="MAX CLICKS / PAGE"
+                annotation={`⊢ ${maxClicks} ⊣ / 100`}
+              >
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={maxClicks}
+                  onChange={(e) =>
+                    setMaxClicks(Math.max(1, parseInt(e.target.value || '1')))
+                  }
+                  className="vt-input"
+                  style={{ height: '44px' }}
+                />
+              </FormCell>
+            </div>
+
+            {creds.length > 0 && (
+              <FormCell
+                label="CREDENTIAL"
+                annotation="OPTIONAL · APPLIED TO CRAWLER SESSION"
+              >
+                <select
+                  value={credentialId}
+                  onChange={(e) => setCredentialId(e.target.value)}
+                  className="vt-input"
+                  style={{ height: '44px' }}
+                >
+                  <option value="">— none —</option>
+                  {creds.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.key} · v{c.version}
+                      {c.environment ? ` · ${c.environment}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </FormCell>
+            )}
+          </div>
+        </section>
+
+        {/* §02 — safety */}
+        <section>
+          <div className="vt-section-head">
+            <span className="num">§ 02</span>
+            <span className="ttl">safety mode</span>
+            <span className="rule" />
+            <span className="stamp">
+              CURRENT · {SAFETY_DETAIL[safetyMode].stamp}
+            </span>
+          </div>
+
+          <div
+            className="grid grid-cols-1 md:grid-cols-3 gap-0"
+            style={{ border: '1px solid var(--rule-strong)' }}
+          >
+            {(['read-only', 'allow-destructive', 'sandbox'] as SafetyMode[]).map(
+              (m, i) => {
+                const active = safetyMode === m;
+                const meta = SAFETY_DETAIL[m];
+                return (
                   <button
                     key={m}
                     type="button"
                     onClick={() => {
                       setSafetyMode(m);
-                      if (m !== 'allow-destructive')
-                        setAcknowledgedDestructive(false);
+                      if (m !== 'allow-destructive') setAcknowledgedDestructive(false);
                     }}
-                    className={`border rounded-md px-3 py-2 text-sm text-left ${
-                      safetyMode === m
-                        ? 'bg-accent border-accent'
-                        : 'bg-muted border-border hover:bg-accent/50'
-                    }`}
+                    className="text-left"
+                    style={{
+                      padding: '22px 22px 20px',
+                      borderRight:
+                        i < 2 ? '1px solid var(--rule-soft)' : 'none',
+                      borderBottom:
+                        i === 0
+                          ? '1px solid var(--rule-soft)'
+                          : 'none',
+                      background: active
+                        ? 'var(--accent-soft)'
+                        : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'background var(--dur-quick) var(--ease-out)',
+                    }}
                   >
-                    <div className="font-medium capitalize">
-                      {m.replace('-', ' ')}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '11px',
+                          letterSpacing: '0.22em',
+                          textTransform: 'uppercase',
+                          color: active ? 'var(--accent)' : 'var(--ink-2)',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        M-{String(i + 1).padStart(2, '0')}
+                      </span>
+                      {active && (
+                        <span
+                          className="vt-rev-stamp"
+                          style={{ fontSize: '8.5px', padding: '2px 6px' }}
+                        >
+                          SELECTED
+                        </span>
+                      )}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {m === 'read-only' &&
-                        'Default. Skip destructive.'}
-                      {m === 'allow-destructive' &&
-                        'Click everything. Requires acknowledgement.'}
-                      {m === 'sandbox' &&
-                        'Click everything. Reset backend before each run.'}
+                    <div
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '18px',
+                        color: 'var(--ink-0)',
+                        textTransform: 'lowercase',
+                        lineHeight: 1.15,
+                      }}
+                    >
+                      {meta.label}
+                    </div>
+                    <div
+                      className="mt-2"
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '12.5px',
+                        color: 'var(--ink-2)',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {meta.desc}
                     </div>
                   </button>
-                ),
-              )}
-            </div>
+                );
+              },
+            )}
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={stubWrites}
-              onChange={(e) => setStubWrites(e.target.checked)}
-            />
-            <span>
-              Stub network writes (intercept DELETE/POST/PUT/PATCH with
-              synthetic 200)
-            </span>
-          </label>
-
-          {safetyMode === 'sandbox' && (
-            <div className="space-y-2 p-3 border border-border rounded-md bg-muted/40">
-              <label className="text-sm font-medium text-muted-foreground">
-                Reset hook URL <span className="text-red-400">*</span>
-              </label>
-              <Input
-                value={resetHookUrl}
-                onChange={(e) => setResetHookUrl(e.target.value)}
-                placeholder="https://staging.example.com/__reset"
-                className="bg-muted border-border text-foreground"
+          {/* Extra controls by mode */}
+          <div className="mt-6 space-y-4">
+            <label
+              className="flex items-start gap-3 cursor-pointer"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10.5px',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-1)',
+                lineHeight: 1.5,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={stubWrites}
+                onChange={(e) => setStubWrites(e.target.checked)}
+                className="mt-1"
               />
-              <p className="text-xs text-muted-foreground">
-                We POST to this URL before scanning. Non-2xx aborts the
-                scan so we never exercise destructive actions against an
-                un-reset backend.
-              </p>
-            </div>
-          )}
+              <span>
+                STUB NETWORK WRITES
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: '10px',
+                    color: 'var(--ink-2)',
+                    letterSpacing: '0.08em',
+                    textTransform: 'none',
+                    marginTop: '3px',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Intercept DELETE / POST / PUT / PATCH with a synthetic 200 so
+                  the crawler exercises write paths without side effects.
+                </span>
+              </span>
+            </label>
 
-          {safetyMode === 'allow-destructive' && (
-            <div className="border border-amber-800/60 bg-amber-900/10 rounded-md p-3 flex items-start gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="space-y-2">
-                <div className="text-amber-200 text-sm">
-                  Allow-destructive mode clicks everything — delete
-                  buttons, send emails, submit forms. <strong>Only use
-                  against staging or a disposable test environment</strong>.
+            {safetyMode === 'sandbox' && (
+              <FormCell
+                label="RESET HOOK URL"
+                required
+                helper="POSTED BEFORE EACH RUN — NON-2XX ABORTS"
+              >
+                <input
+                  value={resetHookUrl}
+                  onChange={(e) => setResetHookUrl(e.target.value)}
+                  placeholder="https://staging.example.com/__reset"
+                  className="vt-input"
+                  style={{ height: '44px' }}
+                />
+              </FormCell>
+            )}
+
+            {safetyMode === 'allow-destructive' && (
+              <div
+                className="p-4 flex items-start gap-3"
+                style={{
+                  border: '1px solid color-mix(in oklab, var(--warn) 45%, var(--rule))',
+                  background: 'var(--warn-soft)',
+                }}
+              >
+                <AlertTriangle
+                  className="w-4 h-4 flex-shrink-0 mt-0.5"
+                  strokeWidth={1.5}
+                  style={{ color: 'var(--warn)' }}
+                />
+                <div className="space-y-3">
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '13px',
+                      color: 'var(--ink-0)',
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    Allow-destructive clicks everything — delete buttons,
+                    submit forms, sent emails.{' '}
+                    <strong style={{ color: 'var(--warn)' }}>
+                      Only against staging or a disposable test environment.
+                    </strong>
+                  </div>
+                  <label
+                    className="flex items-center gap-2 cursor-pointer"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10.5px',
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: 'var(--warn)',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={acknowledgedDestructive}
+                      onChange={(e) =>
+                        setAcknowledgedDestructive(e.target.checked)
+                      }
+                    />
+                    I ACKNOWLEDGE · PROCEED
+                  </label>
                 </div>
-                <label className="flex items-center gap-2 text-sm text-amber-100">
-                  <input
-                    type="checkbox"
-                    checked={acknowledgedDestructive}
-                    onChange={(e) =>
-                      setAcknowledgedDestructive(e.target.checked)
-                    }
-                  />
-                  I understand, proceed anyway.
-                </label>
+              </div>
+            )}
+
+            <div
+              className="p-4 flex items-start gap-3"
+              style={{
+                border: '1px solid color-mix(in oklab, var(--accent) 45%, var(--rule))',
+                background: 'var(--accent-soft)',
+              }}
+            >
+              <Info
+                className="w-4 h-4 flex-shrink-0 mt-0.5"
+                strokeWidth={1.5}
+                style={{ color: 'var(--accent)' }}
+              />
+              <div
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '13px',
+                  color: 'var(--ink-1)',
+                  lineHeight: 1.55,
+                }}
+              >
+                Run against staging or a sandbox — not production. Destructive
+                actions are skipped by default, but heuristics are not perfect.
               </div>
             </div>
-          )}
-
-          <div className="border border-blue-800/60 bg-blue-900/10 rounded-md p-3 flex items-start gap-2">
-            <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-200">
-              Run against staging or a sandbox, not production. Destructive
-              actions are skipped by default but heuristics are not perfect.
-            </div>
           </div>
-        </CardContent>
-      </Card>
+        </section>
 
-      <div className="flex items-center justify-end gap-3">
-        <Button variant="ghost" onClick={() => router.back()}>
-          Cancel
-        </Button>
-        <Button
-          disabled={!canRun || mutation.isPending}
-          onClick={() => mutation.mutate()}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+        {/* Actions */}
+        <div
+          className="pt-6 flex items-center justify-end gap-3"
+          style={{ borderTop: '1px solid var(--rule)' }}
         >
-          {mutation.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Queuing…
-            </>
-          ) : (
-            <>
-              <Compass className="w-4 h-4 mr-2" /> Start scan
-            </>
-          )}
-        </Button>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="vt-btn vt-btn--ghost"
+          >
+            CANCEL
+          </button>
+          <button
+            type="button"
+            disabled={!canRun || mutation.isPending}
+            onClick={() => mutation.mutate()}
+            className="vt-btn vt-btn--primary"
+          >
+            {mutation.isPending ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
+                QUEUING
+              </>
+            ) : (
+              <>
+                <Compass className="w-3.5 h-3.5" strokeWidth={1.5} />
+                COMMISSION SCAN
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </>
+            )}
+          </button>
+        </div>
+
+        <footer
+          className="pt-6 flex justify-between gap-4 flex-wrap"
+          style={{
+            borderTop: '1px solid var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          <span>SHEET 07 · COMMISSION</span>
+          <span>DEPTH · ⊢ {maxPages} ⊣ MAX</span>
+          <span>SAFETY · {SAFETY_DETAIL[safetyMode].stamp}</span>
+        </footer>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+function FormCell({
+  label,
+  required,
+  helper,
+  annotation,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  helper?: string;
+  annotation?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <label
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+          }}
+        >
+          {label}
+          {required && <span style={{ color: 'var(--accent)', marginLeft: '6px' }}>*</span>}
+        </label>
+        {annotation && (
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {annotation}
+          </span>
+        )}
       </div>
+      {children}
+      {helper && (
+        <p
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.1em',
+            color: 'var(--ink-2)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {helper}
+        </p>
+      )}
     </div>
   );
 }

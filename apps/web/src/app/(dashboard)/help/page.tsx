@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import {
-  BookOpen,
   MousePointer,
   Type,
   Navigation,
@@ -15,30 +14,27 @@ import {
   Wand2,
   ChevronDown,
   ChevronRight,
-  Code,
-  FileText,
-  Terminal,
+  Copy,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 
 function CopyButton({ text }: { text: string }) {
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+    <button
+      type="button"
       onClick={() => {
         navigator.clipboard.writeText(text);
         toast.success('Copied to clipboard');
       }}
+      className="vt-btn vt-btn--ghost"
+      style={{ padding: '4px 8px', fontSize: '10px' }}
     >
-      <Copy className="h-3 w-3" />
-    </Button>
+      <Copy className="w-3 h-3" strokeWidth={1.5} />
+    </button>
   );
 }
 
@@ -56,8 +52,8 @@ const ACTIONS: ActionDoc[] = [
   {
     name: 'Navigate',
     type: 'navigate',
-    icon: <Navigation className="w-5 h-5" />,
-    description: 'Navigate the browser to a URL. This is usually the first step in a test.',
+    icon: <Navigation className="w-4 h-4" strokeWidth={1.5} />,
+    description: 'Navigate the browser to a URL. Usually the first step in a test.',
     naturalExamples: [
       'Go to https://example.com',
       'Navigate to https://myapp.com/login',
@@ -76,8 +72,8 @@ const ACTIONS: ActionDoc[] = [
   {
     name: 'Click',
     type: 'click',
-    icon: <MousePointer className="w-5 h-5" />,
-    description: 'Click on an element. You can use CSS selectors, text content, or describe the element.',
+    icon: <MousePointer className="w-4 h-4" strokeWidth={1.5} />,
+    description: 'Click on an element. Use CSS selectors, text content, or a description.',
     naturalExamples: [
       'Click the login button',
       'Click on "Sign Up"',
@@ -99,7 +95,7 @@ const ACTIONS: ActionDoc[] = [
   {
     name: 'Type',
     type: 'type',
-    icon: <Type className="w-5 h-5" />,
+    icon: <Type className="w-4 h-4" strokeWidth={1.5} />,
     description: 'Type text into an input field. Automatically clears existing content first.',
     naturalExamples: [
       'Type "hello@example.com" in the email field',
@@ -120,7 +116,7 @@ const ACTIONS: ActionDoc[] = [
   {
     name: 'Wait',
     type: 'waitFor',
-    icon: <Clock className="w-5 h-5" />,
+    icon: <Clock className="w-4 h-4" strokeWidth={1.5} />,
     description: 'Wait for an element to appear or for a specified duration.',
     naturalExamples: [
       'Wait for the dashboard to appear',
@@ -142,8 +138,8 @@ const ACTIONS: ActionDoc[] = [
   {
     name: 'Screenshot',
     type: 'screenshot',
-    icon: <Camera className="w-5 h-5" />,
-    description: 'Capture a screenshot for visual comparison. Can capture full page or specific element.',
+    icon: <Camera className="w-4 h-4" strokeWidth={1.5} />,
+    description: 'Capture a screenshot for visual comparison. Full page or specific element.',
     naturalExamples: [
       'Take a screenshot',
       'Capture screenshot named "login-page"',
@@ -163,7 +159,7 @@ const ACTIONS: ActionDoc[] = [
   {
     name: 'Assert',
     type: 'assert',
-    icon: <CheckCircle className="w-5 h-5" />,
+    icon: <CheckCircle className="w-4 h-4" strokeWidth={1.5} />,
     description: 'Verify that an element exists, is visible, or contains specific text.',
     naturalExamples: [
       'Verify the welcome message is visible',
@@ -185,7 +181,7 @@ const ACTIONS: ActionDoc[] = [
   {
     name: 'Hover',
     type: 'hover',
-    icon: <Eye className="w-5 h-5" />,
+    icon: <Eye className="w-4 h-4" strokeWidth={1.5} />,
     description: 'Hover over an element to trigger hover states or dropdown menus.',
     naturalExamples: [
       'Hover over the menu',
@@ -203,7 +199,7 @@ const ACTIONS: ActionDoc[] = [
   {
     name: 'Scroll',
     type: 'scroll',
-    icon: <Scroll className="w-5 h-5" />,
+    icon: <Scroll className="w-4 h-4" strokeWidth={1.5} />,
     description: 'Scroll the page or scroll an element into view.',
     naturalExamples: [
       'Scroll to the footer',
@@ -221,25 +217,18 @@ const ACTIONS: ActionDoc[] = [
   {
     name: 'Clear',
     type: 'clear',
-    icon: <Trash2 className="w-5 h-5" />,
+    icon: <Trash2 className="w-4 h-4" strokeWidth={1.5} />,
     description: 'Clear the content of an input field.',
-    naturalExamples: [
-      'Clear the search field',
-      'Clear the email input',
-    ],
-    yamlExamples: [
-      '- clear: "#search"',
-      '- clear: "input[name=email]"',
-    ],
-    parameters: [
-      { name: 'selector', required: true, description: 'Input field to clear' },
-    ],
+    naturalExamples: ['Clear the search field', 'Clear the email input'],
+    yamlExamples: ['- clear: "#search"', '- clear: "input[name=email]"'],
+    parameters: [{ name: 'selector', required: true, description: 'Input field to clear' }],
   },
   {
     name: 'AI Action',
     type: 'ai',
-    icon: <Wand2 className="w-5 h-5" />,
-    description: 'Use AI to interpret and execute a complex action. Great for dynamic or hard-to-describe elements.',
+    icon: <Wand2 className="w-4 h-4" strokeWidth={1.5} />,
+    description:
+      'Use AI to interpret and execute a complex action. Great for dynamic or hard-to-describe elements.',
     naturalExamples: [
       'Find and click the third product in the list',
       'Accept the cookie banner if it appears',
@@ -260,8 +249,8 @@ const SELECTOR_TIPS = [
   { pattern: '.class', description: 'Select by class', example: '.btn-primary' },
   { pattern: 'tag', description: 'Select by tag', example: 'button' },
   { pattern: '[attr=value]', description: 'Select by attribute', example: '[data-testid="submit"]' },
-  { pattern: 'text="..."', description: 'Select by text content', example: 'text="Sign In"' },
-  { pattern: ':has-text("...")', description: 'Contains text', example: 'button:has-text("Login")' },
+  { pattern: 'text="…"', description: 'Select by text content', example: 'text="Sign In"' },
+  { pattern: ':has-text("…")', description: 'Contains text', example: 'button:has-text("Login")' },
 ];
 
 const SMART_SELECTORS = [
@@ -272,65 +261,226 @@ const SMART_SELECTORS = [
   { keyword: 'search', generates: 'input[type="search"], input[placeholder*="search" i]' },
 ];
 
+const TIPS = [
+  {
+    kind: 'DO',
+    body:
+      'Use data-testid attributes for stable selectors that don’t break with UI changes.',
+  },
+  {
+    kind: 'DO',
+    body:
+      'Add waitFor after actions that trigger page loads or API calls.',
+  },
+  {
+    kind: 'DO',
+    body:
+      'Name screenshots descriptively, e.g. "checkout-step-2" instead of "screenshot1".',
+  },
+  {
+    kind: 'DO',
+    body:
+      'Use the AI action for complex interactions that are hard to describe with selectors.',
+  },
+  {
+    kind: 'WARN',
+    body:
+      'Avoid brittle selectors like .class1.class2.class3 that may change.',
+  },
+  {
+    kind: 'WARN',
+    body:
+      'Keep tests focused — one test per user flow for easier debugging.',
+  },
+];
+
+const TOC = [
+  { no: '01', title: 'quick start', stamp: 'two vocabularies' },
+  { no: '02', title: 'schedule of actions', stamp: `${ACTIONS.length} · STEPS` },
+  { no: '03', title: 'selector guide', stamp: 'DETAIL A' },
+  { no: '04', title: 'practice notes', stamp: `${TIPS.length} · RULES` },
+];
+
 export default function HelpPage() {
   const [expandedAction, setExpandedAction] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Record<string, 'natural' | 'yaml' | 'params'>>({});
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+
+  const getTab = (type: string) => activeTab[type] || 'natural';
+  const setTab = (type: string, tab: 'natural' | 'yaml' | 'params') =>
+    setActiveTab((prev) => ({ ...prev, [type]: tab }));
 
   return (
-    <div className="max-w-[960px] mx-auto px-6 md:px-12 py-10 pb-16 vt-reveal">
-      {/* Tome masthead — the help page is a bound reference, so it
-          opens like a chapter of a book: Roman numeral, long title,
-          italic sub-head. */}
-      <header className="pb-8 border-b-2 mb-14" style={{ borderColor: 'var(--ink-0)' }}>
-        <div className="vt-kicker mb-4" style={{ color: 'var(--ink-2)' }}>
-          Chapter I · Authoring tests
-        </div>
-        <h1 className="vt-display" style={{ fontSize: 'clamp(44px, 6vw, 76px)', lineHeight: 0.97, fontWeight: 310 }}>
-          The <em>manual</em>.
-        </h1>
-        <p
-          className="mt-5 vt-italic"
-          style={{ fontVariationSettings: '"opsz" 24', fontSize: '19px', color: 'var(--ink-1)', maxWidth: '56ch' }}
-        >
-          Two vocabularies for writing tests: plain English sentences, or
-          YAML for the programmer&apos;s convenience. Both compile to the
-          same step array. This is the reference to both.
-        </p>
-      </header>
-
-      {/* Quick Start */}
-      <Card className="vt-panel" style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)' }}>
-        <CardHeader>
-          <CardTitle className="text-foreground">Quick Start</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            VisionTest.ai supports two ways to write tests
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-foreground">
-                <Wand2 className="w-5 h-5 text-purple-400" />
-                <h3 className="font-semibold">Natural Language</h3>
+    <VtStage width="narrow">
+      <EditorialHero
+        width="narrow"
+        sheet="M-01"
+        eyebrow="§ MANUAL · AUTHORING"
+        revision={<>REV · 02 · {isoDate}</>}
+        title={
+          <>
+            the <em>manual</em>.
+          </>
+        }
+        lead="Two vocabularies for writing tests: plain English sentences, or YAML for the programmer's convenience. Both compile to the same step array. This sheet is the reference."
+      >
+        {/* ── Contents ──────────────────────────────────────────────── */}
+        <section aria-labelledby="toc-head">
+          <div className="vt-section-head">
+            <span className="num">§ 00</span>
+            <span className="ttl" id="toc-head">contents</span>
+            <span className="rule" />
+            <span className="stamp">{TOC.length} · SECTIONS</span>
+          </div>
+          <div
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+            }}
+          >
+            {TOC.map((entry, i) => (
+              <div
+                key={entry.no}
+                className="grid grid-cols-[80px_1fr_180px] items-center"
+                style={{
+                  borderBottom: i < TOC.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                }}
+              >
+                <div
+                  className="py-3 px-4 vt-mono"
+                  style={{
+                    borderRight: '1px solid var(--rule-soft)',
+                    fontSize: '11px',
+                    letterSpacing: '0.18em',
+                    color: 'var(--accent)',
+                  }}
+                >
+                  § {entry.no}
+                </div>
+                <div
+                  className="py-3 px-4"
+                  style={{
+                    borderRight: '1px solid var(--rule-soft)',
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '16px',
+                    color: 'var(--ink-0)',
+                    textTransform: 'lowercase',
+                  }}
+                >
+                  {entry.title}
+                </div>
+                <div
+                  className="py-3 px-4 vt-mono text-right"
+                  style={{
+                    fontSize: '10px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                  }}
+                >
+                  {entry.stamp}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Write tests in plain English. Perfect for non-technical users or quick prototyping.
+            ))}
+          </div>
+        </section>
+
+        {/* ── §01 Quick start ───────────────────────────────────────── */}
+        <section aria-labelledby="qs-head">
+          <div className="vt-section-head">
+            <span className="num">§ 01</span>
+            <span className="ttl" id="qs-head">quick start</span>
+            <span className="rule" />
+            <span className="stamp">TWO VOCABULARIES</span>
+          </div>
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-0"
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+            }}
+          >
+            <div
+              className="p-6"
+              style={{ borderRight: '1px solid var(--rule)' }}
+            >
+              <div
+                className="vt-mono mb-3"
+                style={{
+                  fontSize: '10px',
+                  letterSpacing: '0.24em',
+                  textTransform: 'uppercase',
+                  color: 'var(--accent)',
+                }}
+              >
+                A · NATURAL LANGUAGE
+              </div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '13.5px',
+                  color: 'var(--ink-1)',
+                  lineHeight: 1.5,
+                  marginBottom: '14px',
+                }}
+              >
+                Plain English. Good for non-technical authors and quick prototyping.
               </p>
-              <pre className="bg-card p-3 rounded-lg text-sm text-muted-foreground overflow-x-auto">
+              <pre
+                className="vt-mono"
+                style={{
+                  background: 'var(--bg-0)',
+                  border: '1px solid var(--rule)',
+                  padding: '12px 14px',
+                  fontSize: '12px',
+                  color: 'var(--ink-1)',
+                  lineHeight: 1.55,
+                  overflowX: 'auto',
+                  margin: 0,
+                }}
+              >
 {`Go to https://example.com
 Click the login button
 Type "test@email.com" in email
 Click submit`}
               </pre>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-foreground">
-                <FileText className="w-5 h-5 text-green-400" />
-                <h3 className="font-semibold">YAML Script</h3>
+            <div className="p-6">
+              <div
+                className="vt-mono mb-3"
+                style={{
+                  fontSize: '10px',
+                  letterSpacing: '0.24em',
+                  textTransform: 'uppercase',
+                  color: 'var(--accent)',
+                }}
+              >
+                B · YAML SCRIPT
               </div>
-              <p className="text-sm text-muted-foreground">
-                Structured format with precise selectors. Great for complex tests and CI/CD.
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '13.5px',
+                  color: 'var(--ink-1)',
+                  lineHeight: 1.5,
+                  marginBottom: '14px',
+                }}
+              >
+                Structured. Precise selectors. Good for complex tests and CI/CD.
               </p>
-              <pre className="bg-card p-3 rounded-lg text-sm text-muted-foreground overflow-x-auto">
+              <pre
+                className="vt-mono"
+                style={{
+                  background: 'var(--bg-0)',
+                  border: '1px solid var(--rule)',
+                  padding: '12px 14px',
+                  fontSize: '12px',
+                  color: 'var(--ink-1)',
+                  lineHeight: 1.55,
+                  overflowX: 'auto',
+                  margin: 0,
+                }}
+              >
 {`- navigate: https://example.com
 - click: "#login-btn"
 - type:
@@ -340,194 +490,474 @@ Click submit`}
               </pre>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* Actions Reference */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-foreground">Supported Actions</h2>
-        <div className="space-y-3">
-          {ACTIONS.map((action) => (
-            <Card 
-              key={action.type}
-              className="bg-card border-border overflow-hidden"
-            >
-              <button
-                onClick={() => setExpandedAction(expandedAction === action.type ? null : action.type)}
-                className="w-full px-6 py-4 flex items-center justify-between hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-muted rounded-lg text-blue-400">
-                    {action.icon}
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-lg font-semibold text-foreground">{action.name}</h3>
-                    <p className="text-sm text-muted-foreground">{action.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="font-mono">{action.type}</Badge>
-                  {expandedAction === action.type ? (
-                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+        {/* ── §02 Actions ───────────────────────────────────────────── */}
+        <section aria-labelledby="actions-head">
+          <div className="vt-section-head">
+            <span className="num">§ 02</span>
+            <span className="ttl" id="actions-head">schedule of actions</span>
+            <span className="rule" />
+            <span className="stamp">{String(ACTIONS.length).padStart(2, '0')} · STEPS</span>
+          </div>
+          <div
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+            }}
+          >
+            {ACTIONS.map((action, idx) => {
+              const open = expandedAction === action.type;
+              const tab = getTab(action.type);
+              return (
+                <div
+                  key={action.type}
+                  style={{
+                    borderBottom: idx < ACTIONS.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setExpandedAction(open ? null : action.type)}
+                    className="w-full grid grid-cols-[80px_40px_1fr_140px_40px] items-center text-left"
+                    style={{
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      transition: 'background var(--dur-quick) var(--ease-out)',
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        'color-mix(in oklab, var(--bg-2) 35%, transparent)')
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <div
+                      className="py-4 px-4 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '11px',
+                        letterSpacing: '0.18em',
+                        color: 'var(--accent)',
+                      }}
+                    >
+                      § {String(idx + 1).padStart(2, '0')}
+                    </div>
+                    <div
+                      className="py-4 px-3 flex items-center justify-center"
+                      style={{ borderRight: '1px solid var(--rule-soft)', color: 'var(--ink-1)' }}
+                    >
+                      {action.icon}
+                    </div>
+                    <div
+                      className="py-4 px-4"
+                      style={{ borderRight: '1px solid var(--rule-soft)' }}
+                    >
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: '17px',
+                          color: 'var(--ink-0)',
+                          textTransform: 'lowercase',
+                        }}
+                      >
+                        {action.name}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: '12.5px',
+                          color: 'var(--ink-2)',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {action.description}
+                      </div>
+                    </div>
+                    <div
+                      className="py-4 px-4 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '10.5px',
+                        letterSpacing: '0.16em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-1)',
+                      }}
+                    >
+                      {action.type}
+                    </div>
+                    <div className="py-4 px-3 flex items-center justify-center" style={{ color: 'var(--ink-2)' }}>
+                      {open ? (
+                        <ChevronDown className="w-4 h-4" strokeWidth={1.5} />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
+                      )}
+                    </div>
+                  </button>
+                  {open && (
+                    <div
+                      className="px-6 py-5"
+                      style={{
+                        borderTop: '1px solid var(--rule-soft)',
+                        background: 'color-mix(in oklab, var(--bg-2) 20%, transparent)',
+                      }}
+                    >
+                      <div
+                        className="flex items-center gap-0 mb-4"
+                        style={{ border: '1px solid var(--rule)' }}
+                      >
+                        {(['natural', 'yaml', 'params'] as const).map((t, ti) => {
+                          const active = tab === t;
+                          return (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => setTab(action.type, t)}
+                              style={{
+                                flex: 1,
+                                padding: '9px 14px',
+                                borderRight: ti < 2 ? '1px solid var(--rule-soft)' : 'none',
+                                background: active ? 'var(--accent-soft)' : 'transparent',
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: '10.5px',
+                                letterSpacing: '0.2em',
+                                textTransform: 'uppercase',
+                                color: active ? 'var(--accent)' : 'var(--ink-1)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {t === 'natural' ? 'NATURAL' : t === 'yaml' ? 'YAML' : 'PARAMS'}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {tab === 'natural' && (
+                        <div className="space-y-2">
+                          {action.naturalExamples.map((ex, i) => (
+                            <div
+                              key={i}
+                              className="group flex items-center gap-3 py-2 px-3"
+                              style={{ border: '1px solid var(--rule-soft)' }}
+                            >
+                              <span
+                                className="vt-mono"
+                                style={{
+                                  fontSize: '10px',
+                                  letterSpacing: '0.14em',
+                                  color: 'var(--ink-2)',
+                                }}
+                              >
+                                ·{String(i + 1).padStart(2, '0')}
+                              </span>
+                              <code
+                                className="vt-mono flex-1"
+                                style={{ fontSize: '12.5px', color: 'var(--ink-0)' }}
+                              >
+                                {ex}
+                              </code>
+                              <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <CopyButton text={ex} />
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {tab === 'yaml' && (
+                        <div className="space-y-3">
+                          {action.yamlExamples.map((ex, i) => (
+                            <div key={i} className="relative group">
+                              <pre
+                                className="vt-mono"
+                                style={{
+                                  background: 'var(--bg-0)',
+                                  border: '1px solid var(--rule)',
+                                  padding: '12px 40px 12px 14px',
+                                  fontSize: '12px',
+                                  color: 'var(--accent)',
+                                  lineHeight: 1.55,
+                                  overflowX: 'auto',
+                                  margin: 0,
+                                }}
+                              >
+                                {ex}
+                              </pre>
+                              <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <CopyButton text={ex} />
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {tab === 'params' && (
+                        <div style={{ border: '1px solid var(--rule-soft)' }}>
+                          <div
+                            className="grid grid-cols-[140px_110px_1fr] gap-0"
+                            style={{
+                              borderBottom: '1px solid var(--rule)',
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '9.5px',
+                              letterSpacing: '0.22em',
+                              textTransform: 'uppercase',
+                              color: 'var(--ink-2)',
+                            }}
+                          >
+                            {['PARAMETER', 'REQUIRED', 'DESCRIPTION'].map((h, i) => (
+                              <div
+                                key={h}
+                                className="py-2.5 px-3"
+                                style={{
+                                  borderRight: i < 2 ? '1px solid var(--rule-soft)' : 'none',
+                                }}
+                              >
+                                {h}
+                              </div>
+                            ))}
+                          </div>
+                          {action.parameters.map((p, pi) => (
+                            <div
+                              key={pi}
+                              className="grid grid-cols-[140px_110px_1fr] gap-0"
+                              style={{
+                                borderBottom:
+                                  pi < action.parameters.length - 1
+                                    ? '1px solid var(--rule-soft)'
+                                    : 'none',
+                              }}
+                            >
+                              <div
+                                className="py-2.5 px-3 vt-mono"
+                                style={{
+                                  borderRight: '1px solid var(--rule-soft)',
+                                  fontSize: '11.5px',
+                                  color: 'var(--accent)',
+                                }}
+                              >
+                                {p.name}
+                              </div>
+                              <div
+                                className="py-2.5 px-3 vt-mono"
+                                style={{
+                                  borderRight: '1px solid var(--rule-soft)',
+                                  fontSize: '10px',
+                                  letterSpacing: '0.18em',
+                                  textTransform: 'uppercase',
+                                  color: p.required ? 'var(--accent)' : 'var(--ink-2)',
+                                }}
+                              >
+                                {p.required ? 'REQUIRED' : 'OPTIONAL'}
+                              </div>
+                              <div
+                                className="py-2.5 px-3"
+                                style={{
+                                  fontFamily: 'var(--font-body)',
+                                  fontSize: '12.5px',
+                                  color: 'var(--ink-1)',
+                                }}
+                              >
+                                {p.description}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-              </button>
+              );
+            })}
+          </div>
+        </section>
 
-              {expandedAction === action.type && (
-                <div className="px-6 pb-6 border-t border-border pt-4">
-                  <Tabs defaultValue="natural" className="w-full">
-                    <TabsList className="bg-muted">
-                      <TabsTrigger value="natural">Natural Language</TabsTrigger>
-                      <TabsTrigger value="yaml">YAML</TabsTrigger>
-                      <TabsTrigger value="params">Parameters</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="natural" className="mt-4">
-                      <div className="space-y-2">
-                        {action.naturalExamples.map((ex, i) => (
-                          <div key={i} className="flex items-center gap-2 group">
-                            <Terminal className="w-4 h-4 text-muted-foreground/70" />
-                            <code className="text-sm text-green-400 flex-1">{ex}</code>
-                            <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              <CopyButton text={ex} />
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="yaml" className="mt-4">
-                      <div className="space-y-2">
-                        {action.yamlExamples.map((ex, i) => (
-                          <div key={i} className="relative group">
-                            <pre className="bg-background p-3 rounded text-sm text-yellow-400 overflow-x-auto pr-8">
-                              {ex}
-                            </pre>
-                            <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <CopyButton text={ex} />
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="params" className="mt-4">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border">
-                            <th className="text-left py-2 text-muted-foreground">Parameter</th>
-                            <th className="text-left py-2 text-muted-foreground">Required</th>
-                            <th className="text-left py-2 text-muted-foreground">Description</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {action.parameters.map((param, i) => (
-                            <tr key={i} className="border-b border-border/50">
-                              <td className="py-2 font-mono text-blue-400">{param.name}</td>
-                              <td className="py-2">
-                                {param.required ? (
-                                  <Badge variant="destructive" className="text-xs">Required</Badge>
-                                ) : (
-                                  <Badge variant="secondary" className="text-xs">Optional</Badge>
-                                )}
-                              </td>
-                              <td className="py-2 text-muted-foreground">{param.description}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </TabsContent>
-                  </Tabs>
+        {/* ── §03 Selector guide ────────────────────────────────────── */}
+        <section aria-labelledby="sel-head">
+          <div className="vt-section-head">
+            <span className="num">§ 03</span>
+            <span className="ttl" id="sel-head">selector guide</span>
+            <span className="rule" />
+            <span className="stamp">DETAIL A · TARGETING</span>
+          </div>
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-0"
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+            }}
+          >
+            <div style={{ borderRight: '1px solid var(--rule)' }}>
+              <div
+                className="px-5 py-3 vt-mono"
+                style={{
+                  borderBottom: '1px solid var(--rule)',
+                  fontSize: '10px',
+                  letterSpacing: '0.24em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                BASIC SELECTORS
+              </div>
+              {SELECTOR_TIPS.map((tip, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-[130px_1fr] gap-0 items-center"
+                  style={{
+                    borderBottom:
+                      i < SELECTOR_TIPS.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                  }}
+                >
+                  <div
+                    className="py-3 px-4 vt-mono"
+                    style={{
+                      borderRight: '1px solid var(--rule-soft)',
+                      fontSize: '11.5px',
+                      color: 'var(--accent)',
+                    }}
+                  >
+                    {tip.pattern}
+                  </div>
+                  <div className="py-3 px-4">
+                    <div
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '12.5px',
+                        color: 'var(--ink-1)',
+                      }}
+                    >
+                      {tip.description}
+                    </div>
+                    <div
+                      className="vt-mono"
+                      style={{
+                        fontSize: '10.5px',
+                        color: 'var(--ink-2)',
+                        marginTop: '2px',
+                      }}
+                    >
+                      {tip.example}
+                    </div>
+                  </div>
                 </div>
-              )}
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Selectors Guide */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <Code className="w-5 h-5" />
-            CSS Selector Guide
-          </CardTitle>
-          <CardDescription>
-            Learn how to target elements precisely
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Basic Selectors</h4>
-              <table className="w-full text-sm">
-                <tbody>
-                  {SELECTOR_TIPS.map((tip, i) => (
-                    <tr key={i} className="border-b border-border/50">
-                      <td className="py-2 font-mono text-purple-400">{tip.pattern}</td>
-                      <td className="py-2 text-muted-foreground">{tip.description}</td>
-                      <td className="py-2 font-mono text-muted-foreground text-xs">{tip.example}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              ))}
             </div>
             <div>
-              <h4 className="font-semibold text-foreground mb-3">Smart Selectors</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                When using natural language, VisionTest.ai automatically converts common phrases to selectors:
-              </p>
-              <table className="w-full text-sm">
-                <tbody>
-                  {SMART_SELECTORS.map((sel, i) => (
-                    <tr key={i} className="border-b border-border/50">
-                      <td className="py-2 text-green-400">"{sel.keyword}"</td>
-                      <td className="py-2 text-muted-foreground font-mono text-xs">{sel.generates}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div
+                className="px-5 py-3 vt-mono"
+                style={{
+                  borderBottom: '1px solid var(--rule)',
+                  fontSize: '10px',
+                  letterSpacing: '0.24em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                SMART · NATURAL-LANGUAGE
+              </div>
+              {SMART_SELECTORS.map((sel, i) => (
+                <div
+                  key={i}
+                  className="py-3 px-4"
+                  style={{
+                    borderBottom:
+                      i < SMART_SELECTORS.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                  }}
+                >
+                  <div
+                    className="vt-mono"
+                    style={{
+                      fontSize: '11.5px',
+                      color: 'var(--accent)',
+                      marginBottom: '3px',
+                    }}
+                  >
+                    "{sel.keyword}"
+                  </div>
+                  <div
+                    className="vt-mono"
+                    style={{
+                      fontSize: '10.5px',
+                      color: 'var(--ink-2)',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    → {sel.generates}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* Tips */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">💡 Tips & Best Practices</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-3 text-muted-foreground">
-            <li className="flex gap-3">
-              <span className="text-green-400">✓</span>
-              <span>Use <code className="bg-muted px-1 rounded">data-testid</code> attributes for stable selectors that won't break with UI changes</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-green-400">✓</span>
-              <span>Add <code className="bg-muted px-1 rounded">waitFor</code> steps after actions that trigger page loads or API calls</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-green-400">✓</span>
-              <span>Name your screenshots descriptively (e.g., "checkout-step-2" instead of "screenshot1")</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-green-400">✓</span>
-              <span>Use the AI action for complex interactions that are hard to describe with selectors</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-yellow-400">⚠</span>
-              <span>Avoid using brittle selectors like <code className="bg-muted px-1 rounded">.class1.class2.class3</code> that may change</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="text-yellow-400">⚠</span>
-              <span>Keep tests focused - one test per user flow for easier debugging</span>
-            </li>
-          </ul>
-        </CardContent>
-      </Card>
-    </div>
+        {/* ── §04 Tips ──────────────────────────────────────────────── */}
+        <section aria-labelledby="tips-head">
+          <div className="vt-section-head">
+            <span className="num">§ 04</span>
+            <span className="ttl" id="tips-head">practice notes</span>
+            <span className="rule" />
+            <span className="stamp">{String(TIPS.length).padStart(2, '0')} · RULES</span>
+          </div>
+          <div
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+            }}
+          >
+            {TIPS.map((tip, i) => {
+              const color = tip.kind === 'DO' ? 'var(--pass)' : 'var(--warn)';
+              const Icon = tip.kind === 'DO' ? CheckCircle2 : AlertTriangle;
+              return (
+                <div
+                  key={i}
+                  className="grid grid-cols-[80px_1fr] gap-0 items-start"
+                  style={{
+                    borderBottom: i < TIPS.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                  }}
+                >
+                  <div
+                    className="py-4 px-4 flex items-center gap-2 vt-mono"
+                    style={{
+                      borderRight: '1px solid var(--rule-soft)',
+                      fontSize: '10.5px',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color,
+                    }}
+                  >
+                    <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    {tip.kind}
+                  </div>
+                  <div
+                    className="py-4 px-4"
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '13.5px',
+                      color: 'var(--ink-1)',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {tip.body}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <footer
+          className="pt-6 flex justify-between gap-4 flex-wrap"
+          style={{
+            borderTop: '1px solid var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          <span>SHEET · MANUAL</span>
+          <span>CHAPTER I · AUTHORING</span>
+          <span>DRAWN · {isoDate}</span>
+        </footer>
+      </EditorialHero>
+    </VtStage>
   );
 }

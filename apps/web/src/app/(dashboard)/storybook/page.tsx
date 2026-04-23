@@ -5,24 +5,15 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useCurrentProject } from '@/hooks/useProject';
 import {
-  BookOpen,
   RefreshCw,
   Loader2,
-  CheckCircle2,
   AlertTriangle,
-  Circle,
   Search,
   Settings,
+  ArrowRight,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 
 interface StoryTest {
   id: string;
@@ -86,9 +77,10 @@ export default function StorybookPage() {
     }
   }
 
-  const filtered = stories.filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = stories.filter(
+    (s) => !search || s.name.toLowerCase().includes(search.toLowerCase())
+  );
 
-  // Group by component (first two parts of name: "Storybook / Component / Story")
   const grouped = new Map<string, StoryTest[]>();
   for (const story of filtered) {
     const parts = story.name.split(' / ');
@@ -97,125 +89,423 @@ export default function StorybookPage() {
     grouped.get(group)!.push(story);
   }
 
-  // Component gallery — stories grouped by component. Emphasise
-  // component COUNT as the Fraunces numeral; stories count reads as
-  // sub-meta. No "Stats" label — the headline is the stat.
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+  const lastSyncStamp = config?.lastSyncAt
+    ? new Date(config.lastSyncAt).toISOString().slice(0, 16).replace('T', ' · ')
+    : '— · NEVER';
+
+  if (!project) {
+    return (
+      <VtStage width="narrow">
+        <EditorialHero
+          width="narrow"
+          sheet="S-00"
+          eyebrow="§ CATALOG · STORYBOOK"
+          revision={<>REV · 01 · {isoDate}</>}
+          title={<>no <em>project</em> selected.</>}
+          lead="The component catalog is scoped to a project. Choose one from the switcher to see its index."
+        />
+      </VtStage>
+    );
+  }
+
   return (
-    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      <header className="pb-7 border-b mb-10" style={{ borderColor: 'var(--rule)' }}>
-        <div className="vt-eyebrow mb-5">§ Gallery · Storybook</div>
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 items-end">
-          <div>
-            <h1 className="vt-display" style={{ fontSize: 'clamp(38px, 5vw, 60px)', lineHeight: 0.98 }}>
-              Your components, <em>on stage</em>.
-            </h1>
-            <p
-              className="mt-4 vt-italic"
-              style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '62ch' }}
-            >
-              Every story synced from your Storybook instance becomes a
-              fixture VisionTest can photograph. Hover, click, convert to
-              a test.{' '}
-              <span className="vt-mono text-[13px]" style={{ color: 'var(--ink-2)' }}>
-                {config?.lastSyncAt
-                  ? `Last sync: ${new Date(config.lastSyncAt).toLocaleString()}`
-                  : 'Not synced yet.'}
-              </span>
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet={`S-${String(stories.length).padStart(2, '0')}`}
+        eyebrow="§ CATALOG · STORYBOOK"
+        revision={<>REV · 02 · {isoDate}</>}
+        title={
+          <>
+            component <em>catalog</em>.
+          </>
+        }
+        lead="Every story synced from your Storybook instance is indexed here as a fixture. Photograph any of them, promote to a test, keep the baseline."
+        actions={
+          <>
             <Link href="/settings/storybook" className="vt-btn">
-              <Settings className="w-4 h-4" /> Configure
+              <Settings className="w-3.5 h-3.5" strokeWidth={1.5} />
+              CONFIGURE
             </Link>
             {config?.storybookUrl && (
-              <button type="button" onClick={handleSync} disabled={syncing} className="vt-btn vt-btn--primary">
-                {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                Sync now
+              <button
+                type="button"
+                onClick={handleSync}
+                disabled={syncing}
+                className="vt-btn vt-btn--primary"
+              >
+                {syncing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5" strokeWidth={1.5} />
+                )}
+                SYNC
               </button>
             )}
+          </>
+        }
+      >
+        {/* ── Title block ───────────────────────────────────────────── */}
+        <div className="vt-title-block">
+          <div className="span3">
+            <span className="k">PROJECT</span>
+            <span className="v big">{project.name}</span>
+          </div>
+          <div className="span2">
+            <span className="k">CATALOG ID</span>
+            <span className="v">
+              VT-S-{(project.slug || project.id.slice(-8)).toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <span className="k">REV</span>
+            <span className="v" style={{ color: 'var(--accent)' }}>02</span>
+          </div>
+          <div className="span2">
+            <span className="k">LAST SYNC · UTC</span>
+            <span className="v">{lastSyncStamp}</span>
+          </div>
+          <div className="span2">
+            <span className="k">COMPONENTS</span>
+            <span className="v">{String(grouped.size).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">STORIES</span>
+            <span className="v">{String(stories.length).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">MODE</span>
+            <span className="v">{(config?.mode || 'MANUAL').toUpperCase()}</span>
           </div>
         </div>
-      </header>
 
-      {config?.lastSyncError && (
-        <div className="p-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10 text-sm text-red-800 dark:text-red-400">
-          <AlertTriangle className="h-4 w-4 inline mr-2" />
-          Last sync error: {config.lastSyncError}
-        </div>
-      )}
-
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search stories..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
-      </div>
-
-      {/* Stats */}
-      {stories.length > 0 && (
-        <div className="text-sm text-muted-foreground">
-          {stories.length} stories - {grouped.size} components
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-      ) : stories.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No Storybook stories</h3>
-            <p className="text-muted-foreground mt-1">
-              Connect your Storybook to auto-discover components and create visual tests.
-            </p>
-            <div className="flex items-center justify-center gap-3 mt-4">
-              <Link href="/settings/storybook/wizard">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white"><BookOpen className="h-4 w-4 mr-2" /> Set Up Storybook</Button>
-              </Link>
-              <Link href="/settings/storybook">
-                <Button variant="outline"><Settings className="h-4 w-4 mr-2" /> Advanced Settings</Button>
-              </Link>
+        {/* ── Sync error ────────────────────────────────────────────── */}
+        {config?.lastSyncError && (
+          <div
+            style={{
+              border: '1px solid var(--fail)',
+              background: 'var(--fail-soft)',
+              padding: '16px 20px',
+            }}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <AlertTriangle className="w-4 h-4" style={{ color: 'var(--fail)' }} />
+              <span
+                className="vt-mono"
+                style={{
+                  fontSize: '10.5px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--fail)',
+                }}
+              >
+                LAST SYNC · ERROR
+              </span>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {Array.from(grouped.entries()).map(([group, groupStories]) => (
-            <Card key={group}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  {group.replace('Storybook / ', '')}
-                  <Badge variant="outline" className="text-xs">{groupStories.length} stories</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {groupStories.map((story) => {
-                    const storyName = story.name.split(' / ').pop() || story.name;
-                    return (
-                      <Link key={story.id} href={`/tests/${story.id}`} className="block p-3 rounded-lg border hover:bg-accent/50 transition-colors text-center">
-                        <div className="w-full h-16 bg-muted rounded mb-2 flex items-center justify-center">
-                          <BookOpen className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <p className="text-xs font-medium truncate">{storyName}</p>
-                        <div className="mt-1">
-                          {story.status === 'ACTIVE' ? (
-                            <CheckCircle2 className="h-3 w-3 text-green-600 inline" />
-                          ) : story.status === 'ARCHIVED' ? (
-                            <Circle className="h-3 w-3 text-gray-400 inline" />
-                          ) : (
-                            <AlertTriangle className="h-3 w-3 text-yellow-600 inline" />
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+            <p
+              className="vt-mono"
+              style={{
+                fontSize: '12px',
+                color: 'var(--ink-1)',
+                lineHeight: 1.5,
+              }}
+            >
+              {config.lastSyncError}
+            </p>
+          </div>
+        )}
+
+        {/* ── Search ────────────────────────────────────────────────── */}
+        <div
+          className="relative"
+          style={{
+            border: '1px solid var(--rule)',
+            background: 'color-mix(in oklab, var(--bg-1) 45%, transparent)',
+            padding: '6px 10px 6px 38px',
+          }}
+        >
+          <Search
+            className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
+            strokeWidth={1.5}
+            style={{ color: 'var(--ink-2)' }}
+          />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="SEARCH STORIES…"
+            className="vt-mono w-full bg-transparent border-none outline-none"
+            style={{
+              fontSize: '12px',
+              letterSpacing: '0.14em',
+              color: 'var(--ink-0)',
+              textTransform: 'uppercase',
+              padding: '6px 0',
+            }}
+          />
         </div>
-      )}
+
+        {/* ── Catalog index ─────────────────────────────────────────── */}
+        <section aria-labelledby="index-head">
+          <div className="vt-section-head">
+            <span className="num">§ 02</span>
+            <span className="ttl" id="index-head">library index</span>
+            <span className="rule" />
+            <span className="stamp">
+              {String(grouped.size).padStart(2, '0')} · COMPONENTS
+            </span>
+          </div>
+
+          {loading ? (
+            <LoadingFrame label="READING CATALOG" />
+          ) : stories.length === 0 ? (
+            <EmptyFrame
+              label="CATALOG EMPTY"
+              body="Connect a Storybook instance and the library index will populate. Every story becomes a fixture the camera can work with."
+              action={
+                <div className="flex items-center gap-2">
+                  <Link href="/settings/storybook/wizard" className="vt-btn vt-btn--primary">
+                    SET UP STORYBOOK
+                    <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  </Link>
+                  <Link href="/settings/storybook" className="vt-btn">
+                    <Settings className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    ADVANCED
+                  </Link>
+                </div>
+              }
+            />
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              {Array.from(grouped.entries()).map(([group, groupStories], idx) => (
+                <div
+                  key={group}
+                  style={{
+                    borderBottom:
+                      idx < grouped.size - 1 ? '1px solid var(--rule-soft)' : 'none',
+                  }}
+                >
+                  <div
+                    className="grid grid-cols-[90px_1fr_100px] items-center"
+                    style={{ borderBottom: '1px solid var(--rule-soft)' }}
+                  >
+                    <div
+                      className="py-3 px-4 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '11px',
+                        letterSpacing: '0.14em',
+                        color: 'var(--accent)',
+                      }}
+                    >
+                      C-{String(idx + 1).padStart(3, '0')}
+                    </div>
+                    <div
+                      className="py-3 px-4"
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '18px',
+                        color: 'var(--ink-0)',
+                        textTransform: 'lowercase',
+                        borderRight: '1px solid var(--rule-soft)',
+                      }}
+                    >
+                      {group.replace('Storybook / ', '')}
+                    </div>
+                    <div
+                      className="py-3 px-4 vt-mono text-right"
+                      style={{
+                        fontSize: '10.5px',
+                        letterSpacing: '0.18em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-2)',
+                      }}
+                    >
+                      {String(groupStories.length).padStart(2, '0')} STORIES
+                    </div>
+                  </div>
+                  <div>
+                    {groupStories.map((story, si) => {
+                      const storyName = story.name.split(' / ').pop() || story.name;
+                      const statusColor =
+                        story.status === 'ACTIVE'
+                          ? 'var(--pass)'
+                          : story.status === 'ARCHIVED'
+                          ? 'var(--ink-2)'
+                          : 'var(--warn)';
+                      return (
+                        <Link
+                          key={story.id}
+                          href={`/tests/${story.id}`}
+                          className="grid grid-cols-[90px_1fr_140px_100px] items-center group"
+                          style={{
+                            borderBottom:
+                              si < groupStories.length - 1
+                                ? '1px solid var(--rule-soft)'
+                                : 'none',
+                            textDecoration: 'none',
+                            transition: 'background var(--dur-quick) var(--ease-out)',
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background =
+                              'color-mix(in oklab, var(--bg-2) 35%, transparent)')
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = 'transparent')
+                          }
+                        >
+                          <div
+                            className="py-3 px-4 vt-mono"
+                            style={{
+                              borderRight: '1px solid var(--rule-soft)',
+                              fontSize: '10.5px',
+                              letterSpacing: '0.12em',
+                              color: 'var(--ink-2)',
+                            }}
+                          >
+                            · {String(si + 1).padStart(2, '0')}
+                          </div>
+                          <div
+                            className="py-3 px-4 truncate"
+                            style={{
+                              borderRight: '1px solid var(--rule-soft)',
+                              fontFamily: 'var(--font-body)',
+                              fontSize: '13.5px',
+                              color: 'var(--ink-0)',
+                            }}
+                          >
+                            <span className="group-hover:text-[color:var(--accent)] transition-colors">
+                              {storyName}
+                            </span>
+                          </div>
+                          <div
+                            className="py-3 px-4 vt-mono text-right"
+                            style={{
+                              borderRight: '1px solid var(--rule-soft)',
+                              fontSize: '10px',
+                              letterSpacing: '0.18em',
+                              textTransform: 'uppercase',
+                              color: statusColor,
+                            }}
+                          >
+                            {story.status}
+                          </div>
+                          <div className="py-3 px-4 flex items-center justify-end">
+                            <ArrowRight
+                              className="w-3 h-3 transition-transform group-hover:translate-x-1"
+                              strokeWidth={1.5}
+                              style={{ color: 'var(--ink-2)' }}
+                            />
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <footer
+          className="pt-6 flex justify-between gap-4 flex-wrap"
+          style={{
+            borderTop: '1px solid var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          <span>SHEET · CATALOG · {project.name}</span>
+          <span>SYNCED · {lastSyncStamp}</span>
+          <span>FIXTURES · {String(stories.length).padStart(3, '0')}</span>
+        </footer>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+/* ───────────────────────────────────────────────────── primitives ── */
+
+function EmptyFrame({
+  label,
+  body,
+  action,
+}: {
+  label: string;
+  body: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div
+      className="p-12 text-center"
+      style={{
+        border: '1px dashed var(--rule)',
+        background: 'color-mix(in oklab, var(--bg-1) 20%, transparent)',
+      }}
+    >
+      <div
+        className="vt-mono"
+        style={{
+          fontSize: '10.5px',
+          letterSpacing: '0.24em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
+      <p
+        className="mx-auto mt-4"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          color: 'var(--ink-1)',
+          maxWidth: '52ch',
+          lineHeight: 1.5,
+        }}
+      >
+        {body}
+      </p>
+      {action && <div className="mt-6 flex justify-center">{action}</div>}
+    </div>
+  );
+}
+
+function LoadingFrame({ label }: { label: string }) {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule)',
+        background: 'color-mix(in oklab, var(--bg-1) 20%, transparent)',
+      }}
+    >
+      <Loader2
+        className="w-5 h-5 animate-spin mx-auto mb-4"
+        strokeWidth={1.5}
+        style={{ color: 'var(--ink-2)' }}
+      />
+      <div
+        className="vt-mono"
+        style={{
+          fontSize: '10.5px',
+          letterSpacing: '0.24em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
     </div>
   );
 }

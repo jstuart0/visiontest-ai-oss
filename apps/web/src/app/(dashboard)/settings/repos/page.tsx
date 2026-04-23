@@ -4,33 +4,15 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useCurrentProject } from '@/hooks/useProject';
 import {
-  GitBranch,
   Plus,
   Trash2,
   CheckCircle2,
   XCircle,
   Loader2,
   RefreshCw,
-  ExternalLink,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 import {
   Dialog,
   DialogContent,
@@ -68,7 +50,6 @@ export default function RepoSettingsPage() {
   const [addLoading, setAddLoading] = useState(false);
   const [testLoading, setTestLoading] = useState<string | null>(null);
 
-  // Form state
   const [provider, setProvider] = useState('GITHUB');
   const [repoUrl, setRepoUrl] = useState('');
   const [defaultBranch, setDefaultBranch] = useState('main');
@@ -141,184 +122,350 @@ export default function RepoSettingsPage() {
     }
   }
 
-  return (
-    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
-        <div>
-          <div className="vt-eyebrow mb-5">§ Archives · Repositories</div>
-          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
-            Where the <em>code</em> lives.
-          </h1>
-          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
-            GitHub, GitLab, or a local checkout — the source the auto-fixer
-            reads and writes to. Paired with a Fix Runner that can execute
-            the repo&apos;s test suite in a sandbox.
-          </p>
-        </div>
-        <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Connect Repository
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Connect Repository</DialogTitle>
-              <DialogDescription>
-                Link a Git repository for code investigation and fix generation.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Provider</Label>
-                <Select value={provider} onValueChange={setProvider}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GITHUB">GitHub</SelectItem>
-                    <SelectItem value="GITLAB">GitLab</SelectItem>
-                    <SelectItem value="BITBUCKET">Bitbucket</SelectItem>
-                    <SelectItem value="LOCAL">Local</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Repository URL</Label>
-                <Input
-                  value={repoUrl}
-                  onChange={(e) => setRepoUrl(e.target.value)}
-                  placeholder="https://github.com/org/repo"
-                />
-              </div>
-              <div>
-                <Label>Default Branch</Label>
-                <Input
-                  value={defaultBranch}
-                  onChange={(e) => setDefaultBranch(e.target.value)}
-                  placeholder="main"
-                />
-              </div>
-              <div>
-                <Label>Access Token</Label>
-                <Input
-                  type="password"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  placeholder="ghp_..."
-                />
-              </div>
-              <div>
-                <Label>Repository Type</Label>
-                <Select value={repoType} onValueChange={setRepoType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SINGLE">Single Repo</SelectItem>
-                    <SelectItem value="MONOREPO">Monorepo</SelectItem>
-                    <SelectItem value="SERVICE">Service</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {repoType === 'MONOREPO' && (
-                <div>
-                  <Label>Default Path (monorepo sub-path)</Label>
-                  <Input
-                    value={defaultPath}
-                    onChange={(e) => setDefaultPath(e.target.value)}
-                    placeholder="packages/app"
-                  />
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
-              <Button onClick={handleAdd} disabled={addLoading || !repoUrl}>
-                {addLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Connect
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </header>
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : repos.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <GitBranch className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No repositories connected</h3>
-            <p className="text-muted-foreground mt-1">
-              Connect a repository to enable code investigation and autonomous fixes.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {repos.map((repo) => (
-            <Card key={repo.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <GitBranch className="h-5 w-5" />
-                    <CardTitle className="text-base">{repo.repoUrl}</CardTitle>
+  return (
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet="07.D / 14"
+        eyebrow="§ 07.D · ARCHIVES"
+        back={{ href: '/settings', label: 'BACK · WORKBENCH' }}
+        revision={<>REV · 02 · {isoDate}</>}
+        title={<>where the <em>code</em> lives.</>}
+        lead="GitHub, GitLab, or a local checkout — the source the auto-fixer reads and writes to. Paired with a fix runner that can execute the repo’s test suite in a sandbox."
+        actions={
+          <Dialog open={showAdd} onOpenChange={setShowAdd}>
+            <DialogTrigger asChild>
+              <button className="vt-btn vt-btn--primary">
+                <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+                CONNECT REPO
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Connect Repository</DialogTitle>
+                <DialogDescription>Link a Git repository for code investigation and fix generation.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Field label="PROVIDER">
+                  <select className="vt-input" value={provider} onChange={(e) => setProvider(e.target.value)}>
+                    <option value="GITHUB">GitHub</option>
+                    <option value="GITLAB">GitLab</option>
+                    <option value="BITBUCKET">Bitbucket</option>
+                    <option value="LOCAL">Local</option>
+                  </select>
+                </Field>
+                <Field label="REPOSITORY URL">
+                  <input
+                    className="vt-input"
+                    value={repoUrl}
+                    onChange={(e) => setRepoUrl(e.target.value)}
+                    placeholder="https://github.com/org/repo"
+                  />
+                </Field>
+                <Field label="DEFAULT BRANCH">
+                  <input
+                    className="vt-input"
+                    value={defaultBranch}
+                    onChange={(e) => setDefaultBranch(e.target.value)}
+                    placeholder="main"
+                  />
+                </Field>
+                <Field label="ACCESS TOKEN">
+                  <input
+                    className="vt-input"
+                    type="password"
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    placeholder="ghp_..."
+                  />
+                </Field>
+                <Field label="REPOSITORY TYPE">
+                  <select className="vt-input" value={repoType} onChange={(e) => setRepoType(e.target.value)}>
+                    <option value="SINGLE">Single Repo</option>
+                    <option value="MONOREPO">Monorepo</option>
+                    <option value="SERVICE">Service</option>
+                  </select>
+                </Field>
+                {repoType === 'MONOREPO' && (
+                  <Field label="DEFAULT PATH · MONOREPO SUB-PATH">
+                    <input
+                      className="vt-input"
+                      value={defaultPath}
+                      onChange={(e) => setDefaultPath(e.target.value)}
+                      placeholder="packages/app"
+                    />
+                  </Field>
+                )}
+              </div>
+              <DialogFooter>
+                <button className="vt-btn" onClick={() => setShowAdd(false)}>CANCEL</button>
+                <button className="vt-btn vt-btn--primary" onClick={handleAdd} disabled={addLoading || !repoUrl}>
+                  {addLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  CONNECT
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        }
+      >
+        <section aria-labelledby="repos-head">
+          <div className="vt-section-head">
+            <span className="num">§ 01</span>
+            <span className="ttl" id="repos-head">repositories on file</span>
+            <span className="rule" />
+            <span className="stamp">{repos.length.toString().padStart(2, '0')} CONNECTED</span>
+          </div>
+
+          {loading ? (
+            <LoadingFrame />
+          ) : repos.length === 0 ? (
+            <EmptyFrame
+              title="no repositories connected."
+              body="Connect a repository to enable code investigation and autonomous fixes."
+            />
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              <div
+                className="grid grid-cols-[100px_1fr_160px_160px] gap-0"
+                style={{
+                  borderBottom: '1px solid var(--rule-strong)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '9.5px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                {['CODE', 'REPO · URL', 'BRANCH · TYPE', 'LAST SYNC'].map((h, i) => (
+                  <div
+                    key={h}
+                    className="py-3 px-4"
+                    style={{ borderRight: i < 3 ? '1px solid var(--rule)' : 'none' }}
+                  >
+                    {h}
                   </div>
-                  <div className="flex items-center gap-2">
-                    {repo.lastTestResult === 'success' ? (
-                      <Badge variant="outline" className="text-green-600">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Connected
-                      </Badge>
-                    ) : repo.lastTestResult === 'failure' ? (
-                      <Badge variant="outline" className="text-red-600">
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Failed
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Not tested</Badge>
-                    )}
+                ))}
+              </div>
+
+              {repos.map((repo, i) => (
+                <div
+                  key={repo.id}
+                  style={{
+                    borderBottom: i < repos.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                  }}
+                >
+                  <div className="grid grid-cols-[100px_1fr_160px_160px] gap-0 items-center">
+                    <div
+                      className="py-4 px-4"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        letterSpacing: '0.18em',
+                        color: 'var(--accent)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      R-{String(i + 1).padStart(2, '0')}
+                    </div>
+                    <div
+                      className="py-4 px-4"
+                      style={{ borderRight: '1px solid var(--rule-soft)' }}
+                    >
+                      <div
+                        className="vt-mono truncate"
+                        style={{
+                          fontSize: '13px',
+                          color: 'var(--ink-0)',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {repo.repoUrl}
+                      </div>
+                      <div
+                        className="mt-1"
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '10px',
+                          letterSpacing: '0.14em',
+                          textTransform: 'uppercase',
+                          color: 'var(--ink-2)',
+                        }}
+                      >
+                        {repo.provider}
+                        {repo.defaultPath && <> · {repo.defaultPath}</>}
+                      </div>
+                    </div>
+                    <div
+                      className="py-4 px-4 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '11px',
+                        color: 'var(--ink-1)',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      <div>{repo.defaultBranch}</div>
+                      <div className="mt-1" style={{ color: 'var(--ink-2)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                        {repo.repoType}
+                      </div>
+                    </div>
+                    <div className="py-4 px-4">
+                      {repo.lastTestResult === 'success' ? (
+                        <span className="vt-chip vt-chip--pass" style={{ fontSize: '9.5px' }}>
+                          <CheckCircle2 className="w-3 h-3" /> CONNECTED
+                        </span>
+                      ) : repo.lastTestResult === 'failure' ? (
+                        <span className="vt-chip vt-chip--fail" style={{ fontSize: '9.5px' }}>
+                          <XCircle className="w-3 h-3" /> FAILED
+                        </span>
+                      ) : (
+                        <span className="vt-chip" style={{ fontSize: '9.5px' }}>
+                          UNTESTED
+                        </span>
+                      )}
+                      {repo.lastTestedAt && (
+                        <div
+                          className="mt-2"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '9.5px',
+                            letterSpacing: '0.14em',
+                            color: 'var(--ink-2)',
+                            fontVariantNumeric: 'tabular-nums',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {new Date(repo.lastTestedAt).toISOString().slice(0, 16).replace('T', ' · ')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    className="px-4 py-3 flex items-center gap-2"
+                    style={{
+                      borderTop: '1px solid var(--rule-soft)',
+                      background: 'color-mix(in oklab, var(--bg-2) 20%, transparent)',
+                    }}
+                  >
+                    <button
+                      className="vt-btn"
+                      style={{ padding: '6px 12px', fontSize: '10px' }}
+                      onClick={() => handleTestConnection(repo.id)}
+                      disabled={testLoading === repo.id}
+                    >
+                      {testLoading === repo.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3 h-3" />
+                      )}
+                      TEST CONNECTION
+                    </button>
+                    <button
+                      className="vt-btn vt-btn--ghost"
+                      style={{ padding: '6px 12px', fontSize: '10px', color: 'var(--fail)' }}
+                      onClick={() => handleDelete(repo.id)}
+                    >
+                      <Trash2 className="w-3 h-3" /> REMOVE
+                    </button>
                   </div>
                 </div>
-                <CardDescription>
-                  {repo.provider} - {repo.repoType} - Branch: {repo.defaultBranch}
-                  {repo.defaultPath && ` - Path: ${repo.defaultPath}`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTestConnection(repo.id)}
-                    disabled={testLoading === repo.id}
-                  >
-                    {testLoading === repo.id ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                    )}
-                    Test Connection
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => handleDelete(repo.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Remove
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              ))}
+            </div>
+          )}
+        </section>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div
+        className="mb-2"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9.5px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function LoadingFrame() {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: 'var(--ink-2)' }} />
+      <div
+        className="mt-3"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        LOADING
+      </div>
+    </div>
+  );
+}
+
+function EmptyFrame({ title, body }: { title: string; body: string }) {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <div className="vt-kicker" style={{ color: 'var(--ink-2)', justifyContent: 'center' }}>
+        PLATE EMPTY
+      </div>
+      <h3
+        className="mt-3"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(22px, 2.4vw, 32px)',
+          color: 'var(--ink-0)',
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        className="mt-3 mx-auto"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          maxWidth: '52ch',
+          color: 'var(--ink-1)',
+          lineHeight: 1.5,
+        }}
+      >
+        {body}
+      </p>
     </div>
   );
 }

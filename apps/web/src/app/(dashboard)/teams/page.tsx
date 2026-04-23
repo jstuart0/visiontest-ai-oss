@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Users,
   Plus,
   Trash2,
   Crown,
@@ -11,47 +10,25 @@ import {
   User,
   Eye,
   UserPlus,
-  FolderKanban,
   Loader2,
+  X,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 import { teamsApi, type Team, type TeamMember } from '@/lib/api';
 import { toast } from 'sonner';
 
-function getRoleIcon(role: string) {
+function RoleIcon({ role }: { role: string }) {
+  const common = { strokeWidth: 1.5 };
   switch (role) {
     case 'OWNER':
-      return <Crown className="h-4 w-4 text-amber-500" />;
+      return <Crown className="w-3.5 h-3.5" {...common} style={{ color: 'var(--accent)' }} />;
     case 'ADMIN':
-      return <Shield className="h-4 w-4 text-blue-400" />;
+      return <Shield className="w-3.5 h-3.5" {...common} style={{ color: 'var(--ink-1)' }} />;
     case 'VIEWER':
-      return <Eye className="h-4 w-4 text-muted-foreground" />;
+      return <Eye className="w-3.5 h-3.5" {...common} style={{ color: 'var(--ink-2)' }} />;
     default:
-      return <User className="h-4 w-4 text-green-400" />;
+      return <User className="w-3.5 h-3.5" {...common} style={{ color: 'var(--ink-2)' }} />;
   }
 }
 
@@ -94,8 +71,13 @@ export default function TeamsPage() {
   });
 
   const addMemberMutation = useMutation({
-    mutationFn: ({ teamId, data }: { teamId: string; data: { userId: string; role?: string } }) =>
-      teamsApi.addMember(teamId, data),
+    mutationFn: ({
+      teamId,
+      data,
+    }: {
+      teamId: string;
+      data: { userId: string; role?: string };
+    }) => teamsApi.addMember(teamId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
       setInviteTeamId(null);
@@ -139,264 +121,729 @@ export default function TeamsPage() {
     deleteMutation.mutate(teamId);
   };
 
-  // Masthead — teams are people. Treat the page like the mast of a
-  // newspaper: a soft roman headline, no icon, team count typeset as
-  // "in this edition" meta.
+  const list = (teams as Team[]) || [];
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+  const totalMembers = list.reduce((sum, t) => sum + (t.members?.length || 0), 0);
+  const totalProjects = list.reduce((sum, t) => sum + ((t as any)._count?.projects || 0), 0);
+
   return (
-    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      <header className="pb-8 border-b-2 mb-12" style={{ borderColor: 'var(--ink-0)' }}>
-        <div className="flex items-start justify-between gap-8 flex-wrap">
-          <div className="flex-1 min-w-[280px]">
-            <div className="vt-kicker mb-4" style={{ color: 'var(--ink-2)' }}>
-              § Masthead · {teams?.length || 0} {teams?.length === 1 ? 'team' : 'teams'}
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet={`T-${String(list.length).padStart(2, '0')}`}
+        eyebrow="§ MASTHEAD · TEAMS"
+        revision={<>REV · 02 · {isoDate}</>}
+        title={
+          <>
+            the <em>masthead</em>.
+          </>
+        }
+        lead="A team is a byline for a slice of the surface — pages, flows, or user journeys. Approvals route to the team that owns the surface; its members get credited."
+        actions={
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="vt-btn vt-btn--primary"
+          >
+            <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+            NEW TEAM
+          </button>
+        }
+      >
+        {/* ── Title block ───────────────────────────────────────────── */}
+        <div className="vt-title-block">
+          <div className="span3">
+            <span className="k">SECTION</span>
+            <span className="v big">Masthead · teams</span>
+          </div>
+          <div className="span2">
+            <span className="k">EDITION</span>
+            <span className="v">{isoDate}</span>
+          </div>
+          <div>
+            <span className="k">REV</span>
+            <span className="v" style={{ color: 'var(--accent)' }}>02</span>
+          </div>
+          <div className="span2">
+            <span className="k">TEAMS</span>
+            <span className="v">{String(list.length).padStart(3, '0')}</span>
+          </div>
+          <div className="span2">
+            <span className="k">MEMBERS · TOTAL</span>
+            <span className="v">{String(totalMembers).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">PROJECTS</span>
+            <span className="v">{String(totalProjects).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">STATUS</span>
+            <span className="v" style={{ color: 'var(--pass)' }}>ACTIVE</span>
+          </div>
+        </div>
+
+        {/* ── Sections ──────────────────────────────────────────────── */}
+        <section aria-labelledby="teams-head">
+          <div className="vt-section-head">
+            <span className="num">§ 02</span>
+            <span className="ttl" id="teams-head">bylines</span>
+            <span className="rule" />
+            <span className="stamp">{String(list.length).padStart(2, '0')} · TEAMS</span>
+          </div>
+
+          {isLoading ? (
+            <LoadingFrame label="LOADING MASTHEAD" />
+          ) : list.length === 0 ? (
+            <EmptyFrame
+              label="NO TEAMS ON THE MASTHEAD"
+              body="Create a team to group members and route approvals. A team can own projects, flows, or surfaces."
+              action={
+                <button
+                  type="button"
+                  onClick={() => setCreateOpen(true)}
+                  className="vt-btn vt-btn--primary"
+                >
+                  <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  CREATE FIRST TEAM
+                </button>
+              }
+            />
+          ) : (
+            <div className="space-y-8">
+              {list.map((team, idx) => (
+                <TeamBlock
+                  key={team.id}
+                  team={team}
+                  idx={idx}
+                  onDelete={() => handleDeleteTeam(team.id)}
+                  onInvite={() => setInviteTeamId(team.id)}
+                  onRemoveMember={(userId) =>
+                    removeMemberMutation.mutate({ teamId: team.id, userId })
+                  }
+                  onRoleChange={(userId, role) =>
+                    teamsApi
+                      .updateMember(team.id, userId, { role })
+                      .then(() => {
+                        queryClient.invalidateQueries({ queryKey: ['teams'] });
+                        toast.success('Role updated');
+                      })
+                      .catch(() => toast.error('Failed to update role'))
+                  }
+                />
+              ))}
             </div>
-            <h1
-              className="vt-display"
-              style={{ fontSize: 'clamp(44px, 6vw, 76px)', lineHeight: 0.97, fontWeight: 310 }}
-            >
-              Who runs the <em>tests</em>.
-            </h1>
-            <p
-              className="mt-4 vt-italic"
+          )}
+        </section>
+
+        <footer
+          className="pt-6 flex justify-between gap-4 flex-wrap"
+          style={{
+            borderTop: '1px solid var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          <span>SHEET · MASTHEAD</span>
+          <span>EDITION · {isoDate}</span>
+          <span>BYLINES · {String(list.length).padStart(3, '0')}</span>
+        </footer>
+      </EditorialHero>
+
+      {createOpen && (
+        <CreateTeamDialog
+          newTeam={newTeam}
+          setNewTeam={setNewTeam}
+          onCreate={handleCreateTeam}
+          onClose={() => setCreateOpen(false)}
+          pending={createMutation.isPending}
+        />
+      )}
+
+      {inviteTeamId && (
+        <InviteDialog
+          inviteData={inviteData}
+          setInviteData={setInviteData}
+          onInvite={handleInvite}
+          onClose={() => setInviteTeamId(null)}
+          pending={addMemberMutation.isPending}
+        />
+      )}
+    </VtStage>
+  );
+}
+
+/* ───────────────────────────────────────────────────── primitives ── */
+
+function TeamBlock({
+  team,
+  idx,
+  onDelete,
+  onInvite,
+  onRemoveMember,
+  onRoleChange,
+}: {
+  team: Team;
+  idx: number;
+  onDelete: () => void;
+  onInvite: () => void;
+  onRemoveMember: (userId: string) => void;
+  onRoleChange: (userId: string, role: string) => void;
+}) {
+  const memberCount = team.members?.length || 0;
+  const projectCount = (team as any)._count?.projects || 0;
+
+  return (
+    <div
+      style={{
+        border: '1px solid var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+      }}
+    >
+      {/* Title-block masthead */}
+      <div
+        className="grid grid-cols-[110px_1fr_auto] items-start"
+        style={{ borderBottom: '1px solid var(--rule-strong)' }}
+      >
+        <div
+          className="py-5 px-5 vt-mono"
+          style={{
+            borderRight: '1px solid var(--rule)',
+            fontSize: '11px',
+            letterSpacing: '0.18em',
+            color: 'var(--accent)',
+          }}
+        >
+          T-{String(idx + 1).padStart(3, '0')}
+        </div>
+        <div className="py-5 px-6" style={{ borderRight: '1px solid var(--rule)' }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(22px, 2.4vw, 30px)',
+              lineHeight: 1,
+              letterSpacing: '-0.005em',
+              color: 'var(--ink-0)',
+              textTransform: 'lowercase',
+            }}
+          >
+            {team.name}
+          </div>
+          {team.description && (
+            <div
+              className="mt-2"
               style={{
-                fontVariationSettings: '"opsz" 24',
-                fontSize: '17px',
+                fontFamily: 'var(--font-body)',
+                fontSize: '13px',
                 color: 'var(--ink-1)',
-                maxWidth: '58ch',
+                lineHeight: 1.5,
+                maxWidth: '60ch',
               }}
             >
-              A team is a group of people who own a slice of the surface —
-              pages, flows, or user journeys. Approvals route to the team
-              that owns the surface.
-            </p>
-          </div>
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="vt-btn vt-btn--primary shrink-0"
+              {team.description}
+            </div>
+          )}
+          <div
+            className="mt-3 flex items-center gap-4 vt-mono"
+            style={{
+              fontSize: '10px',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
           >
-            <Plus className="w-4 h-4" />
-            New team
+            <span>{String(memberCount).padStart(2, '0')} MEMBERS</span>
+            <span>·</span>
+            <span>{String(projectCount).padStart(2, '0')} PROJECTS</span>
+          </div>
+        </div>
+        <div className="py-4 px-4 flex items-center gap-2">
+          <button type="button" onClick={onInvite} className="vt-btn">
+            <UserPlus className="w-3.5 h-3.5" strokeWidth={1.5} />
+            INVITE
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="vt-btn vt-btn--ghost"
+            style={{ padding: '8px 12px', color: 'var(--fail)' }}
+            title="Delete team"
+          >
+            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Teams List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      {/* Member rows */}
+      {memberCount === 0 ? (
+        <div
+          className="py-8 text-center vt-mono"
+          style={{
+            fontSize: '10.5px',
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+          }}
+        >
+          NO MEMBERS ON THIS BYLINE
         </div>
-      ) : !teams || teams.length === 0 ? (
-        <Card className="bg-card border-border">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Users className="w-12 h-12 text-muted-foreground/70 mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No teams yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create a team to collaborate on visual regression testing
-            </p>
-            <Button onClick={() => setCreateOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Your First Team
-            </Button>
-          </CardContent>
-        </Card>
       ) : (
-        <div className="grid gap-4">
-          {teams.map((team) => (
-            <Card key={team.id} className="bg-card border-border">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg text-foreground">{team.name}</CardTitle>
-                    {team.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{team.description}</p>
-                    )}
+        <div>
+          <div
+            className="grid grid-cols-[70px_1fr_160px_90px] gap-0"
+            style={{
+              borderBottom: '1px solid var(--rule)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '9.5px',
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            {['NO.', 'NAME · EMAIL', 'ROLE', 'ACTION'].map((h, i) => (
+              <div
+                key={h}
+                className="py-3 px-4"
+                style={{
+                  borderRight: i < 3 ? '1px solid var(--rule)' : 'none',
+                  textAlign: i >= 2 ? 'right' : 'left',
+                }}
+              >
+                {h}
+              </div>
+            ))}
+          </div>
+          {team.members?.map((member: TeamMember, mi: number) => (
+            <div
+              key={member.id}
+              className="grid grid-cols-[70px_1fr_160px_90px] gap-0 items-center"
+              style={{
+                borderBottom:
+                  mi < (team.members?.length || 0) - 1
+                    ? '1px solid var(--rule-soft)'
+                    : 'none',
+              }}
+            >
+              <div
+                className="py-3 px-4 vt-mono"
+                style={{
+                  borderRight: '1px solid var(--rule-soft)',
+                  fontSize: '10.5px',
+                  letterSpacing: '0.14em',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                · {String(mi + 1).padStart(2, '0')}
+              </div>
+              <div
+                className="py-3 px-4"
+                style={{ borderRight: '1px solid var(--rule-soft)' }}
+              >
+                <div
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '14px',
+                    color: 'var(--ink-0)',
+                    textTransform: 'lowercase',
+                  }}
+                >
+                  {member.user.name || member.user.email}
+                </div>
+                {member.user.name && (
+                  <div
+                    className="vt-mono"
+                    style={{
+                      fontSize: '11px',
+                      color: 'var(--ink-2)',
+                      marginTop: '2px',
+                    }}
+                  >
+                    {member.user.email}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInviteTeamId(team.id)}
-                      className="border-border text-muted-foreground hover:bg-accent"
-                    >
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Invite
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteTeam(team.id)}
-                      className="text-muted-foreground hover:text-red-400 hover:bg-accent"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                  <span className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    {team.members?.length || 0} member{(team.members?.length || 0) !== 1 ? 's' : ''}
+                )}
+              </div>
+              <div
+                className="py-3 px-4 flex items-center gap-2"
+                style={{ borderRight: '1px solid var(--rule-soft)' }}
+              >
+                <RoleIcon role={member.role} />
+                {member.role === 'OWNER' ? (
+                  <span
+                    className="vt-mono"
+                    style={{
+                      fontSize: '10.5px',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color: 'var(--accent)',
+                    }}
+                  >
+                    OWNER
                   </span>
-                  <span className="flex items-center gap-1">
-                    <FolderKanban className="w-4 h-4" />
-                    {team._count?.projects || 0} project{(team._count?.projects || 0) !== 1 ? 's' : ''}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {team.members?.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-sm text-muted-foreground"
-                    >
-                      {getRoleIcon(member.role)}
-                      <span>{member.user.name || member.user.email}</span>
-                      {member.role !== 'OWNER' ? (
-                        <select
-                          value={member.role}
-                          onChange={(e) =>
-                            teamsApi.updateMember(team.id, member.userId, { role: e.target.value })
-                              .then(() => {
-                                queryClient.invalidateQueries({ queryKey: ['teams'] });
-                                toast.success('Role updated');
-                              })
-                              .catch(() => toast.error('Failed to update role'))
-                          }
-                          className="text-xs bg-muted border border-border rounded px-1 py-0.5 text-muted-foreground"
-                        >
-                          <option value="ADMIN">Admin</option>
-                          <option value="MEMBER">Member</option>
-                          <option value="VIEWER">Viewer</option>
-                        </select>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">OWNER</Badge>
-                      )}
-                      {member.role !== 'OWNER' && (
-                        <button
-                          onClick={() =>
-                            removeMemberMutation.mutate({
-                              teamId: team.id,
-                              userId: member.userId,
-                            })
-                          }
-                          className="text-muted-foreground hover:text-red-400 transition-colors ml-1"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                ) : (
+                  <select
+                    value={member.role}
+                    onChange={(e) => onRoleChange(member.userId, e.target.value)}
+                    className="vt-mono"
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid var(--rule)',
+                      color: 'var(--ink-1)',
+                      padding: '4px 8px',
+                      fontSize: '10.5px',
+                      letterSpacing: '0.18em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="MEMBER">MEMBER</option>
+                    <option value="VIEWER">VIEWER</option>
+                  </select>
+                )}
+              </div>
+              <div className="py-2 px-3 flex items-center justify-end">
+                {member.role !== 'OWNER' && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveMember(member.userId)}
+                    className="vt-btn vt-btn--ghost"
+                    style={{
+                      padding: '6px 10px',
+                      fontSize: '10px',
+                      color: 'var(--fail)',
+                    }}
+                    title="Remove member"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  </button>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Create Team Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Create Team</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Create a new team to organize members and projects
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Team Name</Label>
-              <Input
-                value={newTeam.name}
-                onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
-                placeholder="My Team"
-                className="bg-muted border-border text-foreground"
-              />
+function EmptyFrame({
+  label,
+  body,
+  action,
+}: {
+  label: string;
+  body: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div
+      className="p-12 text-center"
+      style={{
+        border: '1px dashed var(--rule)',
+        background: 'color-mix(in oklab, var(--bg-1) 20%, transparent)',
+      }}
+    >
+      <div
+        className="vt-mono"
+        style={{
+          fontSize: '10.5px',
+          letterSpacing: '0.24em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
+      <p
+        className="mx-auto mt-4"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          color: 'var(--ink-1)',
+          maxWidth: '52ch',
+          lineHeight: 1.5,
+        }}
+      >
+        {body}
+      </p>
+      {action && <div className="mt-6 flex justify-center">{action}</div>}
+    </div>
+  );
+}
+
+function LoadingFrame({ label }: { label: string }) {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule)',
+        background: 'color-mix(in oklab, var(--bg-1) 20%, transparent)',
+      }}
+    >
+      <Loader2
+        className="w-5 h-5 animate-spin mx-auto mb-4"
+        strokeWidth={1.5}
+        style={{ color: 'var(--ink-2)' }}
+      />
+      <div
+        className="vt-mono"
+        style={{
+          fontSize: '10.5px',
+          letterSpacing: '0.24em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function CreateTeamDialog({
+  newTeam,
+  setNewTeam,
+  onCreate,
+  onClose,
+  pending,
+}: {
+  newTeam: { name: string; description: string };
+  setNewTeam: (v: any) => void;
+  onCreate: () => void;
+  onClose: () => void;
+  pending: boolean;
+}) {
+  return (
+    <Dialog title="§ NEW TEAM" subtitle="create a byline" onClose={onClose}>
+      <div className="px-6 py-5 space-y-5">
+        <div>
+          <label
+            className="vt-mono block mb-2"
+            style={{
+              fontSize: '10px',
+              letterSpacing: '0.24em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            TEAM NAME
+          </label>
+          <input
+            type="text"
+            value={newTeam.name}
+            onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
+            placeholder="My team"
+            className="vt-input"
+          />
+        </div>
+        <div>
+          <label
+            className="vt-mono block mb-2"
+            style={{
+              fontSize: '10px',
+              letterSpacing: '0.24em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            DESCRIPTION · OPTIONAL
+          </label>
+          <input
+            type="text"
+            value={newTeam.description}
+            onChange={(e) => setNewTeam({ ...newTeam, description: e.target.value })}
+            placeholder="What this team owns"
+            className="vt-input"
+          />
+        </div>
+      </div>
+      <div
+        className="px-6 py-4 flex items-center justify-end gap-2"
+        style={{ borderTop: '1px solid var(--rule)' }}
+      >
+        <button type="button" onClick={onClose} className="vt-btn vt-btn--ghost">
+          CANCEL
+        </button>
+        <button
+          type="button"
+          onClick={onCreate}
+          disabled={pending || !newTeam.name.trim()}
+          className="vt-btn vt-btn--primary"
+        >
+          {pending ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
+              CREATING…
+            </>
+          ) : (
+            <>
+              <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+              CREATE TEAM
+            </>
+          )}
+        </button>
+      </div>
+    </Dialog>
+  );
+}
+
+function InviteDialog({
+  inviteData,
+  setInviteData,
+  onInvite,
+  onClose,
+  pending,
+}: {
+  inviteData: { email: string; role: string };
+  setInviteData: (v: any) => void;
+  onInvite: () => void;
+  onClose: () => void;
+  pending: boolean;
+}) {
+  return (
+    <Dialog title="§ INVITE" subtitle="add to byline" onClose={onClose}>
+      <div className="px-6 py-5 space-y-5">
+        <div>
+          <label
+            className="vt-mono block mb-2"
+            style={{
+              fontSize: '10px',
+              letterSpacing: '0.24em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            EMAIL ADDRESS
+          </label>
+          <input
+            type="email"
+            value={inviteData.email}
+            onChange={(e) => setInviteData({ ...inviteData, email: e.target.value })}
+            placeholder="member@example.com"
+            className="vt-input"
+          />
+        </div>
+        <div>
+          <label
+            className="vt-mono block mb-2"
+            style={{
+              fontSize: '10px',
+              letterSpacing: '0.24em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            ROLE
+          </label>
+          <select
+            value={inviteData.role}
+            onChange={(e) => setInviteData({ ...inviteData, role: e.target.value })}
+            className="vt-input"
+            style={{ cursor: 'pointer' }}
+          >
+            <option value="ADMIN">ADMIN</option>
+            <option value="MEMBER">MEMBER</option>
+            <option value="VIEWER">VIEWER</option>
+          </select>
+        </div>
+      </div>
+      <div
+        className="px-6 py-4 flex items-center justify-end gap-2"
+        style={{ borderTop: '1px solid var(--rule)' }}
+      >
+        <button type="button" onClick={onClose} className="vt-btn vt-btn--ghost">
+          CANCEL
+        </button>
+        <button
+          type="button"
+          onClick={onInvite}
+          disabled={pending || !inviteData.email.trim()}
+          className="vt-btn vt-btn--primary"
+        >
+          {pending ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
+              SENDING…
+            </>
+          ) : (
+            <>
+              <UserPlus className="w-3.5 h-3.5" strokeWidth={1.5} />
+              SEND INVITE
+            </>
+          )}
+        </button>
+      </div>
+    </Dialog>
+  );
+}
+
+function Dialog({
+  title,
+  subtitle,
+  onClose,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'color-mix(in oklab, var(--bg-3) 75%, transparent)' }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[520px]"
+        style={{
+          border: '1px solid var(--rule-strong)',
+          background: 'var(--bg-1)',
+        }}
+      >
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{ borderBottom: '1px solid var(--rule)' }}
+        >
+          <div>
+            <div
+              className="vt-mono"
+              style={{
+                fontSize: '10px',
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: 'var(--accent)',
+                marginBottom: '4px',
+              }}
+            >
+              {title}
             </div>
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Description (optional)</Label>
-              <Input
-                value={newTeam.description}
-                onChange={(e) => setNewTeam({ ...newTeam, description: e.target.value })}
-                placeholder="Team description"
-                className="bg-muted border-border text-foreground"
-              />
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '22px',
+                color: 'var(--ink-0)',
+                textTransform: 'lowercase',
+              }}
+            >
+              {subtitle}
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setCreateOpen(false)}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateTeam}
-              disabled={createMutation.isPending || !newTeam.name.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {createMutation.isPending ? 'Creating...' : 'Create Team'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Invite Member Dialog */}
-      <Dialog open={!!inviteTeamId} onOpenChange={() => setInviteTeamId(null)}>
-        <DialogContent className="bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Invite Member</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Add a member to this team by email
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Email Address</Label>
-              <Input
-                type="email"
-                value={inviteData.email}
-                onChange={(e) => setInviteData({ ...inviteData, email: e.target.value })}
-                placeholder="member@example.com"
-                className="bg-muted border-border text-foreground"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Role</Label>
-              <Select
-                value={inviteData.role}
-                onValueChange={(v) => setInviteData({ ...inviteData, role: v })}
-              >
-                <SelectTrigger className="bg-muted border-border text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="MEMBER">Member</SelectItem>
-                  <SelectItem value="VIEWER">Viewer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setInviteTeamId(null)}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleInvite}
-              disabled={addMemberMutation.isPending || !inviteData.email.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {addMemberMutation.isPending ? 'Adding...' : 'Send Invite'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <button
+            type="button"
+            onClick={onClose}
+            className="vt-btn vt-btn--ghost"
+            style={{ padding: '6px 10px' }}
+          >
+            <X className="w-4 h-4" strokeWidth={1.5} />
+          </button>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }

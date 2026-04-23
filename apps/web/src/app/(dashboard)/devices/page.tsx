@@ -1,28 +1,17 @@
 'use client';
 
+// Devices — Sheet · Device set.
+// A roster of named viewport/browser variants. Each device = D-XXX part ID
+// with viewport dimensions in mono, platform chip, scale factor.
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Smartphone,
   Plus,
-  Monitor,
-  Tablet,
   Trash2,
   Edit,
   Search,
-  Wifi,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -38,28 +27,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { PlatformFilter } from '@/components/devices/PlatformFilter';
 import { MobileViewportPreview } from '@/components/devices/MobileViewportPreview';
-import { SortableTableHead } from '@/components/ui/sortable-table-head';
 import { useSortableTable } from '@/hooks/useSortableTable';
 import { devicesApi, type DeviceProfile, type Platform } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-const platformIcons: Record<string, typeof Monitor> = {
-  WEB: Monitor,
-  IOS: Smartphone,
-  ANDROID: Smartphone,
-  MOBILE_WEB: Tablet,
-};
-
-const platformColors: Record<string, string> = {
-  WEB: 'text-blue-400',
-  IOS: 'text-muted-foreground',
-  ANDROID: 'text-green-400',
-  MOBILE_WEB: 'text-purple-400',
-};
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 
 export default function DevicesPage() {
   const queryClient = useQueryClient();
@@ -69,7 +43,7 @@ export default function DevicesPage() {
   const [deleteDevice, setDeleteDevice] = useState<DeviceProfile | null>(null);
   const [editDevice, setEditDevice] = useState<DeviceProfile | null>(null);
   const [previewDevice, setPreviewDevice] = useState<DeviceProfile | null>(null);
-  const { sortColumn, sortDirection, handleSort, sortData } = useSortableTable<DeviceProfile>();
+  const { sortData } = useSortableTable<DeviceProfile>();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -93,7 +67,7 @@ export default function DevicesPage() {
   const { data: availableDevices = [] } = useQuery({
     queryKey: ['devices-available'],
     queryFn: () => devicesApi.available(),
-    refetchInterval: 30000, // Check every 30 seconds
+    refetchInterval: 30000,
   });
 
   const createMutation = useMutation({
@@ -161,188 +135,383 @@ export default function DevicesPage() {
     }
   );
 
-  // Hardware bench — mobile emulation profiles. Headline treats the
-  // list as a cabinet of devices on a workbench.
-  return (
-    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
-        <div>
-          <div className="vt-eyebrow mb-5">§ Bench · Device profiles</div>
-          <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', lineHeight: 0.98 }}>
-            The <em>hardware</em> shelf.
-          </h1>
-          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
-            Screen sizes, pixel ratios, user-agent strings. Each profile is a
-            physical-device stand-in for what the browser pretends to be.
-          </p>
-        </div>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="vt-btn vt-btn--primary shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          New profile
-        </Button>
-      </header>
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+  const totalCt = devices.length;
+  const builtInCt = devices.filter((d: DeviceProfile) => d.isBuiltIn).length;
+  const customCt = totalCt - builtInCt;
 
-      {/* Connected Devices Banner */}
-      {availableDevices.length > 0 && (
-        <div className="flex items-center gap-3 p-3 bg-green-900/20 border border-green-800/50 rounded-lg">
-          <Wifi className="w-5 h-5 text-green-400" />
-          <span className="text-green-400 text-sm">
-            {availableDevices.length} device{availableDevices.length !== 1 ? 's' : ''} available
-          </span>
-          <div className="flex gap-2 ml-auto">
-            {availableDevices.slice(0, 3).map((d: any) => (
-              <Badge key={d.id} variant="secondary" className="bg-green-900/30 text-green-300 text-xs">
-                {d.name} ({d.state})
-              </Badge>
-            ))}
-            {availableDevices.length > 3 && (
-              <Badge variant="secondary" className="bg-green-900/30 text-green-300 text-xs">
-                +{availableDevices.length - 3} more
-              </Badge>
-            )}
+  return (
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet="D · DEVICE SET"
+        eyebrow="§ 01 · BENCH"
+        revision={<>REV · 02 · {isoDate}</>}
+        title={
+          <>
+            device <em>roster</em>.
+          </>
+        }
+        lead={
+          'Named viewport variants. Every profile is a part — platform, dimensions, scale, user-agent — filed against a D-number. The runner composes these against tests to produce plate photography.'
+        }
+        actions={
+          <button onClick={() => setCreateOpen(true)} className="vt-btn vt-btn--primary">
+            <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+            NEW PROFILE
+          </button>
+        }
+      >
+        {/* Title-block */}
+        <div className="vt-title-block">
+          <div className="span3">
+            <span className="k">REGISTER</span>
+            <span className="v big">device profiles</span>
+          </div>
+          <div className="span2">
+            <span className="k">SHEET ID</span>
+            <span className="v">VT-DEV-{String(totalCt).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">REV</span>
+            <span className="v" style={{ color: 'var(--accent)' }}>02</span>
+          </div>
+          <div>
+            <span className="k">TOTAL</span>
+            <span className="v">{String(totalCt).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">BUILT-IN</span>
+            <span className="v">{String(builtInCt).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">CUSTOM</span>
+            <span className="v" style={{ color: 'var(--accent)' }}>{String(customCt).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">CONNECTED</span>
+            <span className="v" style={{ color: availableDevices.length ? 'var(--pass)' : 'var(--ink-2)' }}>
+              {String(availableDevices.length).padStart(2, '0')}
+            </span>
+          </div>
+          <div>
+            <span className="k">DRAWN</span>
+            <span className="v">{isoDate}</span>
           </div>
         </div>
-      )}
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <PlatformFilter value={platformFilter} onChange={setPlatformFilter} />
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search devices..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-card border-border text-foreground"
-          />
-        </div>
-      </div>
+        {/* Connected bench banner */}
+        {availableDevices.length > 0 && (
+          <section>
+            <div className="vt-section-head">
+              <span className="num">§ 02</span>
+              <span className="ttl">bench · live</span>
+              <span className="rule" />
+              <span className="stamp">{String(availableDevices.length).padStart(2, '0')} ATTACHED</span>
+            </div>
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              <div className="flex flex-wrap items-center gap-0">
+                {availableDevices.map((d: any, i: number) => (
+                  <div
+                    key={d.id}
+                    className="px-4 py-3"
+                    style={{
+                      borderRight: i < availableDevices.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10.5px',
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-1)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    <span style={{ color: 'var(--pass)', marginRight: '8px' }}>●</span>
+                    {d.name}
+                    <span style={{ color: 'var(--ink-2)', marginLeft: '8px' }}>· {d.state}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
-      {/* Devices Table */}
-      <div className="rounded-lg border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border hover:bg-transparent">
-              <SortableTableHead column="device" label="Device" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
-              <SortableTableHead column="platform" label="Platform" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
-              <SortableTableHead column="resolution" label="Resolution" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
-              <SortableTableHead column="scale" label="Scale" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
-              <SortableTableHead column="type" label="Type" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
-              <TableHead className="text-muted-foreground text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  Loading devices...
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  No device profiles found
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((device: DeviceProfile) => {
-                const Icon = platformIcons[device.platform] || Monitor;
-                return (
-                  <TableRow key={device.id} className="border-border hover:bg-accent/50">
-                    <TableCell>
-                      <button
-                        onClick={() => setPreviewDevice(device)}
-                        className="flex items-center gap-3 text-left hover:text-blue-400 transition-colors"
+        {/* Filters */}
+        <section>
+          <div className="vt-section-head">
+            <span className="num">§ {availableDevices.length > 0 ? '03' : '02'}</span>
+            <span className="ttl">filter · search</span>
+            <span className="rule" />
+            <span className="stamp">{String(filtered.length).padStart(2, '0')} OF {String(totalCt).padStart(2, '0')}</span>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <PlatformFilter value={platformFilter} onChange={setPlatformFilter} />
+            <div className="relative flex-1 min-w-[240px] max-w-[420px]">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5"
+                style={{ color: 'var(--ink-2)' }}
+                strokeWidth={1.5}
+              />
+              <input
+                type="search"
+                placeholder="SEARCH · DEVICES"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="vt-input"
+                style={{ paddingLeft: '36px', width: '100%' }}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Device roster */}
+        <section>
+          <div className="vt-section-head">
+            <span className="num">§ {availableDevices.length > 0 ? '04' : '03'}</span>
+            <span className="ttl">schedule of devices</span>
+            <span className="rule" />
+            <span className="stamp">PART · NAME · PLATFORM · DIM · SCALE</span>
+          </div>
+
+          {isLoading ? (
+            <LoadingPlate label="READING BENCH" />
+          ) : filtered.length === 0 ? (
+            <EmptyPlate
+              heading="no devices on file."
+              body="Add a profile, or unfilter to see the built-in set. Each profile becomes a part filed under D-xxx."
+            />
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              {/* header */}
+              <div
+                className="grid grid-cols-[70px_1fr_120px_140px_80px_110px_90px] gap-0"
+                style={{
+                  borderBottom: '1px solid var(--rule-strong)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '9.5px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                {['PART', 'NAME', 'PLATFORM', 'DIMENSION', 'SCALE', 'TYPE', 'ACT'].map((h, i) => (
+                  <div
+                    key={h}
+                    className="py-3 px-4"
+                    style={{
+                      borderRight: i < 6 ? '1px solid var(--rule)' : 'none',
+                      textAlign: i === 6 ? 'right' : 'left',
+                    }}
+                  >
+                    {h}
+                  </div>
+                ))}
+              </div>
+
+              {filtered.map((device: DeviceProfile, i: number) => (
+                <div
+                  key={device.id}
+                  className="grid grid-cols-[70px_1fr_120px_140px_80px_110px_90px] gap-0 group"
+                  style={{
+                    borderBottom: i < filtered.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                    transition: 'background var(--dur-quick) var(--ease-out)',
+                    animation: `vt-reveal var(--dur-reveal) ${(i + 1) * 30}ms var(--ease-out) both`,
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      'color-mix(in oklab, var(--bg-2) 35%, transparent)')
+                  }
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <div
+                    className="py-3 px-4"
+                    style={{
+                      borderRight: '1px solid var(--rule-soft)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10.5px',
+                      letterSpacing: '0.14em',
+                      color: 'var(--accent)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    D-{String(i + 1).padStart(3, '0')}
+                  </div>
+                  <button
+                    onClick={() => setPreviewDevice(device)}
+                    className="py-3 px-4 text-left"
+                    style={{
+                      borderRight: '1px solid var(--rule-soft)',
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '14px',
+                      color: 'var(--ink-0)',
+                      textTransform: 'lowercase',
+                    }}
+                  >
+                    <div
+                      className="transition-colors"
+                      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-0)')}
+                    >
+                      {device.name}
+                    </div>
+                    {device.osVersion && (
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '9.5px',
+                          letterSpacing: '0.14em',
+                          color: 'var(--ink-2)',
+                          textTransform: 'uppercase',
+                          marginTop: '3px',
+                        }}
                       >
-                        <Icon className={cn('w-5 h-5', platformColors[device.platform])} />
-                        <div>
-                          <div className="font-medium text-foreground">{device.name}</div>
-                          {device.osVersion && (
-                            <div className="text-xs text-muted-foreground">{device.osVersion}</div>
-                          )}
-                        </div>
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          'text-xs',
-                          device.platform === 'IOS' && 'bg-muted/50 text-muted-foreground',
-                          device.platform === 'ANDROID' && 'bg-green-500/10 text-green-400',
-                          device.platform === 'MOBILE_WEB' && 'bg-purple-500/10 text-purple-400',
-                          device.platform === 'WEB' && 'bg-blue-500/10 text-blue-400'
-                        )}
-                      >
-                        {device.platform === 'MOBILE_WEB' ? 'Mobile Web' : device.platform}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-sm">
-                      {device.width}×{device.height}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {device.scaleFactor}x
-                    </TableCell>
-                    <TableCell>
-                      {device.isBuiltIn ? (
-                        <Badge variant="secondary" className="text-xs bg-muted/50 text-muted-foreground">
-                          Built-in
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-400">
-                          Custom
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {!device.isBuiltIn && (
-                        <div className="flex gap-1 justify-end">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
-                            onClick={() => {
-                              setEditDevice(device);
-                              setFormData({
-                                name: device.name,
-                                platform: device.platform,
-                                width: device.width,
-                                height: device.height,
-                                scaleFactor: device.scaleFactor || 1,
-                                userAgent: device.userAgent || '',
-                              });
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-accent"
-                            onClick={() => setDeleteDevice(device)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                        OS · {device.osVersion}
+                      </div>
+                    )}
+                  </button>
+                  <div
+                    className="py-3 px-4 flex items-center"
+                    style={{ borderRight: '1px solid var(--rule-soft)' }}
+                  >
+                    <PlatformChip platform={device.platform} />
+                  </div>
+                  <div
+                    className="py-3 px-4"
+                    style={{
+                      borderRight: '1px solid var(--rule-soft)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      letterSpacing: '0.1em',
+                      color: 'var(--ink-1)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    ⊢ {device.width} × {device.height} ⊣
+                  </div>
+                  <div
+                    className="py-3 px-4"
+                    style={{
+                      borderRight: '1px solid var(--rule-soft)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      letterSpacing: '0.1em',
+                      color: 'var(--ink-1)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {device.scaleFactor}×
+                  </div>
+                  <div
+                    className="py-3 px-4 flex items-center"
+                    style={{ borderRight: '1px solid var(--rule-soft)' }}
+                  >
+                    <span
+                      className={device.isBuiltIn ? 'vt-chip' : 'vt-chip vt-chip--accent'}
+                      style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                    >
+                      {device.isBuiltIn ? 'BUILT-IN' : 'CUSTOM'}
+                    </span>
+                  </div>
+                  <div className="py-3 px-4 flex justify-end items-center gap-2">
+                    {!device.isBuiltIn && (
+                      <>
+                        <button
+                          type="button"
+                          aria-label="Edit"
+                          onClick={() => {
+                            setEditDevice(device);
+                            setFormData({
+                              name: device.name,
+                              platform: device.platform,
+                              width: device.width,
+                              height: device.height,
+                              scaleFactor: device.scaleFactor || 1,
+                              userAgent: device.userAgent || '',
+                              osVersion: device.osVersion || '',
+                            });
+                          }}
+                          className="w-7 h-7 flex items-center justify-center transition-colors"
+                          style={{ border: '1px solid var(--rule)', color: 'var(--ink-2)' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = 'var(--accent)';
+                            e.currentTarget.style.borderColor = 'var(--accent)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = 'var(--ink-2)';
+                            e.currentTarget.style.borderColor = 'var(--rule)';
+                          }}
+                        >
+                          <Edit className="w-3 h-3" strokeWidth={1.5} />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Delete"
+                          onClick={() => setDeleteDevice(device)}
+                          className="w-7 h-7 flex items-center justify-center transition-colors"
+                          style={{ border: '1px solid var(--rule)', color: 'var(--ink-2)' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = 'var(--fail)';
+                            e.currentTarget.style.borderColor = 'var(--fail)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = 'var(--ink-2)';
+                            e.currentTarget.style.borderColor = 'var(--rule)';
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3" strokeWidth={1.5} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-      {/* Device Preview Dialog */}
+        <Colophon sheet="DEVICE SET" count={filtered.length} />
+      </EditorialHero>
+
+      {/* Preview dialog */}
       <Dialog open={!!previewDevice} onOpenChange={() => setPreviewDevice(null)}>
-        <DialogContent className="bg-card border-border max-w-md">
+        <DialogContent
+          style={{
+            background: 'var(--bg-1)',
+            border: '1px solid var(--rule-strong)',
+            maxWidth: '28rem',
+          }}
+        >
           <DialogHeader>
-            <DialogTitle className="text-foreground">{previewDevice?.name}</DialogTitle>
+            <DialogTitle
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--ink-0)',
+                textTransform: 'lowercase',
+                fontSize: '24px',
+              }}
+            >
+              {previewDevice?.name}
+            </DialogTitle>
+            <DialogDescription
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+              }}
+            >
+              DETAIL A · ORTHOGRAPHIC PREVIEW
+            </DialogDescription>
           </DialogHeader>
           {previewDevice && (
             <div className="flex justify-center py-4">
@@ -358,161 +527,358 @@ export default function DevicesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Device Dialog */}
+      {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent style={{ background: 'var(--bg-1)', border: '1px solid var(--rule-strong)' }}>
           <DialogHeader>
-            <DialogTitle className="text-foreground">Create Device Profile</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Add a custom device profile for testing
+            <DialogTitle
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--ink-0)',
+                textTransform: 'lowercase',
+                fontSize: '24px',
+              }}
+            >
+              new device profile
+            </DialogTitle>
+            <DialogDescription
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+              }}
+            >
+              FILE AS D-xxx · CUSTOM
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label className="text-muted-foreground">Device Name</Label>
-              <Input
+            <FieldLabel label="DEVICE NAME">
+              <input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., iPhone 16"
-                className="bg-muted border-border text-foreground mt-1"
+                placeholder="IPHONE 16"
+                className="vt-input"
               />
-            </div>
-            <div>
-              <Label className="text-muted-foreground">Platform</Label>
+            </FieldLabel>
+            <FieldLabel label="PLATFORM">
               <Select
                 value={formData.platform}
                 onValueChange={(v) => setFormData({ ...formData, platform: v as Platform })}
               >
-                <SelectTrigger className="bg-muted border-border text-foreground mt-1">
+                <SelectTrigger
+                  className="vt-input"
+                  style={{ textAlign: 'left' }}
+                >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="WEB" className="text-muted-foreground">Web</SelectItem>
-                  <SelectItem value="IOS" className="text-muted-foreground">iOS</SelectItem>
-                  <SelectItem value="ANDROID" className="text-muted-foreground">Android</SelectItem>
-                  <SelectItem value="MOBILE_WEB" className="text-muted-foreground">Mobile Web</SelectItem>
+                <SelectContent
+                  style={{ background: 'var(--bg-1)', border: '1px solid var(--rule-strong)' }}
+                >
+                  <SelectItem value="WEB">Web</SelectItem>
+                  <SelectItem value="IOS">iOS</SelectItem>
+                  <SelectItem value="ANDROID">Android</SelectItem>
+                  <SelectItem value="MOBILE_WEB">Mobile Web</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FieldLabel>
             <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label className="text-muted-foreground">Width</Label>
-                <Input
+              <FieldLabel label="WIDTH">
+                <input
                   type="number"
                   value={formData.width}
                   onChange={(e) => setFormData({ ...formData, width: parseInt(e.target.value) || 0 })}
-                  className="bg-muted border-border text-foreground mt-1"
+                  className="vt-input"
                 />
-              </div>
-              <div>
-                <Label className="text-muted-foreground">Height</Label>
-                <Input
+              </FieldLabel>
+              <FieldLabel label="HEIGHT">
+                <input
                   type="number"
                   value={formData.height}
                   onChange={(e) => setFormData({ ...formData, height: parseInt(e.target.value) || 0 })}
-                  className="bg-muted border-border text-foreground mt-1"
+                  className="vt-input"
                 />
-              </div>
-              <div>
-                <Label className="text-muted-foreground">Scale</Label>
-                <Input
+              </FieldLabel>
+              <FieldLabel label="SCALE">
+                <input
                   type="number"
                   step="0.1"
                   value={formData.scaleFactor}
                   onChange={(e) => setFormData({ ...formData, scaleFactor: parseFloat(e.target.value) || 1 })}
-                  className="bg-muted border-border text-foreground mt-1"
+                  className="vt-input"
                 />
-              </div>
+              </FieldLabel>
             </div>
-            <div>
-              <Label className="text-muted-foreground">OS Version (optional)</Label>
-              <Input
+            <FieldLabel label="OS VERSION · OPTIONAL">
+              <input
                 value={formData.osVersion}
                 onChange={(e) => setFormData({ ...formData, osVersion: e.target.value })}
-                placeholder="e.g., 17.0"
-                className="bg-muted border-border text-foreground mt-1"
+                placeholder="17.0"
+                className="vt-input"
               />
-            </div>
-            <div>
-              <Label className="text-muted-foreground">User Agent (optional)</Label>
-              <Input
+            </FieldLabel>
+            <FieldLabel label="USER AGENT · OPTIONAL">
+              <input
                 value={formData.userAgent}
                 onChange={(e) => setFormData({ ...formData, userAgent: e.target.value })}
-                placeholder="Custom user agent string"
-                className="bg-muted border-border text-foreground mt-1"
+                placeholder="CUSTOM USER AGENT"
+                className="vt-input"
               />
-            </div>
+            </FieldLabel>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setCreateOpen(false)} className="text-muted-foreground">
-              Cancel
-            </Button>
-            <Button
+            <button onClick={() => setCreateOpen(false)} className="vt-btn vt-btn--ghost">
+              CANCEL
+            </button>
+            <button
               onClick={() => createMutation.mutate(formData)}
               disabled={!formData.name || createMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="vt-btn vt-btn--primary"
             >
-              {createMutation.isPending ? 'Creating...' : 'Create'}
-            </Button>
+              {createMutation.isPending ? 'FILING…' : 'FILE PROFILE'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Device Dialog */}
+      {/* Edit dialog */}
       <Dialog open={!!editDevice} onOpenChange={() => setEditDevice(null)}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent style={{ background: 'var(--bg-1)', border: '1px solid var(--rule-strong)' }}>
           <DialogHeader>
-            <DialogTitle className="text-foreground">Edit Device Profile</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Update device profile settings.</DialogDescription>
+            <DialogTitle
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--ink-0)',
+                textTransform: 'lowercase',
+                fontSize: '24px',
+              }}
+            >
+              edit profile
+            </DialogTitle>
+            <DialogDescription
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+              }}
+            >
+              REVISING · {editDevice?.name}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">Name</Label>
-              <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="bg-muted border-border text-foreground" />
-            </div>
+            <FieldLabel label="NAME">
+              <input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="vt-input"
+              />
+            </FieldLabel>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label className="text-muted-foreground">Width</Label><Input type="number" value={formData.width} onChange={(e) => setFormData({ ...formData, width: parseInt(e.target.value) || 0 })} className="bg-muted border-border text-foreground" /></div>
-              <div><Label className="text-muted-foreground">Height</Label><Input type="number" value={formData.height} onChange={(e) => setFormData({ ...formData, height: parseInt(e.target.value) || 0 })} className="bg-muted border-border text-foreground" /></div>
-              <div><Label className="text-muted-foreground">Scale</Label><Input type="number" step="0.5" value={formData.scaleFactor} onChange={(e) => setFormData({ ...formData, scaleFactor: parseFloat(e.target.value) || 1 })} className="bg-muted border-border text-foreground" /></div>
+              <FieldLabel label="WIDTH">
+                <input
+                  type="number"
+                  value={formData.width}
+                  onChange={(e) => setFormData({ ...formData, width: parseInt(e.target.value) || 0 })}
+                  className="vt-input"
+                />
+              </FieldLabel>
+              <FieldLabel label="HEIGHT">
+                <input
+                  type="number"
+                  value={formData.height}
+                  onChange={(e) => setFormData({ ...formData, height: parseInt(e.target.value) || 0 })}
+                  className="vt-input"
+                />
+              </FieldLabel>
+              <FieldLabel label="SCALE">
+                <input
+                  type="number"
+                  step="0.5"
+                  value={formData.scaleFactor}
+                  onChange={(e) => setFormData({ ...formData, scaleFactor: parseFloat(e.target.value) || 1 })}
+                  className="vt-input"
+                />
+              </FieldLabel>
             </div>
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">User Agent</Label>
-              <Input value={formData.userAgent} onChange={(e) => setFormData({ ...formData, userAgent: e.target.value })} className="bg-muted border-border text-foreground" />
-            </div>
+            <FieldLabel label="USER AGENT">
+              <input
+                value={formData.userAgent}
+                onChange={(e) => setFormData({ ...formData, userAgent: e.target.value })}
+                className="vt-input"
+              />
+            </FieldLabel>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditDevice(null)}>Cancel</Button>
-            <Button onClick={() => editDevice && updateMutation.mutate({ id: editDevice.id, data: formData })} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
+            <button onClick={() => setEditDevice(null)} className="vt-btn vt-btn--ghost">
+              CANCEL
+            </button>
+            <button
+              onClick={() => editDevice && updateMutation.mutate({ id: editDevice.id, data: formData })}
+              disabled={updateMutation.isPending}
+              className="vt-btn vt-btn--primary"
+            >
+              {updateMutation.isPending ? 'SAVING…' : 'SAVE REVISION'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
+      {/* Delete dialog */}
       <Dialog open={!!deleteDevice} onOpenChange={() => setDeleteDevice(null)}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent style={{ background: 'var(--bg-1)', border: '1px solid var(--rule-strong)' }}>
           <DialogHeader>
-            <DialogTitle className="text-foreground">Delete Device Profile</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Are you sure you want to delete &quot;{deleteDevice?.name}&quot;?
+            <DialogTitle
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--fail)',
+                textTransform: 'lowercase',
+                fontSize: '24px',
+              }}
+            >
+              delete profile
+            </DialogTitle>
+            <DialogDescription
+              style={{
+                fontFamily: 'var(--font-body)',
+                color: 'var(--ink-1)',
+                fontSize: '14px',
+              }}
+            >
+              Delete &ldquo;{deleteDevice?.name}&rdquo; from the register. This cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteDevice(null)} className="text-muted-foreground">
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
+            <button onClick={() => setDeleteDevice(null)} className="vt-btn vt-btn--ghost">
+              CANCEL
+            </button>
+            <button
               onClick={() => deleteDevice && deleteMutation.mutate(deleteDevice.id)}
               disabled={deleteMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
+              className="vt-btn"
+              style={{ borderColor: 'var(--fail)', color: 'var(--fail)' }}
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-            </Button>
+              {deleteMutation.isPending ? 'DELETING…' : 'CONFIRM · DELETE'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </VtStage>
+  );
+}
+
+/* ── primitives ── */
+
+function PlatformChip({ platform }: { platform: string }) {
+  const label = platform === 'MOBILE_WEB' ? 'MOBILE WEB' : platform;
+  return (
+    <span className="vt-chip" style={{ fontSize: '9.5px', padding: '3px 8px' }}>
+      {label}
+    </span>
+  );
+}
+
+function FieldLabel({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span
+        style={{
+          display: 'block',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9.5px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+          marginBottom: '6px',
+        }}
+      >
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function LoadingPlate({ label }: { label: string }) {
+  return (
+    <div
+      className="p-12 text-center"
+      style={{
+        border: '1px dashed var(--rule)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '10.5px',
+        letterSpacing: '0.24em',
+        textTransform: 'uppercase',
+        color: 'var(--ink-2)',
+      }}
+    >
+      — {label} —
     </div>
+  );
+}
+
+function EmptyPlate({ heading, body }: { heading: string; body: string }) {
+  return (
+    <div
+      className="p-12 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <div
+        className="vt-kicker"
+        style={{ color: 'var(--ink-2)', justifyContent: 'center' }}
+      >
+        PLATE EMPTY
+      </div>
+      <h3
+        className="mt-4"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(24px, 2.6vw, 34px)',
+          color: 'var(--ink-0)',
+          textTransform: 'lowercase',
+        }}
+      >
+        {heading}
+      </h3>
+      <p
+        className="mt-3 mx-auto"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          maxWidth: '52ch',
+          color: 'var(--ink-1)',
+          lineHeight: 1.5,
+        }}
+      >
+        {body}
+      </p>
+    </div>
+  );
+}
+
+function Colophon({ sheet, count }: { sheet: string; count: number }) {
+  return (
+    <footer
+      className="pt-6 flex justify-between gap-4 flex-wrap"
+      style={{
+        borderTop: '1px solid var(--rule)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '10px',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: 'var(--ink-2)',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      <span>SHEET · {sheet}</span>
+      <span>COUNT · {String(count).padStart(3, '0')}</span>
+      <span>CHECKED · VT</span>
+    </footer>
   );
 }

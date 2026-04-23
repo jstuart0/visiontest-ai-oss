@@ -1,35 +1,17 @@
 'use client';
 
-// Features list — scenario-grouping surface.
+// Features — subsystem roster.
 //
-// UX principles from the plan: (a) text-first — the free-form name and
-// sharedSetup are the point, not a wizard; (b) empty state teaches with
-// a concrete example; (c) preview-and-edit — you see the setup prose
-// inline, no nested dialog for the core content.
+// Each feature is a named subsystem with its own part number (F-XXX),
+// an impact area derived from its description, and the count of linked
+// scenarios. Rendered as a drafting-sheet ruled table:
+// REF · NAME · AREA · TESTS · LAST UPDATE.
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Layers,
-  Plus,
-  ArrowRight,
-  Loader2,
-  Sparkles,
-  ChevronRight,
-} from 'lucide-react';
+import { Plus, Loader2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -41,9 +23,26 @@ import {
 } from '@/components/ui/dialog';
 import { useCurrentProject } from '@/hooks/useProject';
 import { featuresApi, type Feature } from '@/lib/api';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 
-const EXAMPLE_SETUP =
-  'navigate /login, wait for input[type=password]';
+const EXAMPLE_SETUP = 'navigate /login, wait for input[type=password]';
+
+/**
+ * Derive a short, all-caps "impact area" from a feature. Pulls from the
+ * first noun-ish chunk of the description; falls back to the first word
+ * of the name. This is cosmetic — never mutates the entity.
+ */
+function impactArea(f: Feature): string {
+  const src = (f.description || f.name || '').trim();
+  if (!src) return 'GENERAL';
+  const first = src.split(/[\s,.—–-]+/).filter(Boolean)[0] || 'GENERAL';
+  return first.slice(0, 12).toUpperCase();
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toISOString().slice(0, 10).replace(/-/g, '.');
+}
 
 export default function FeaturesPage() {
   const { project } = useCurrentProject();
@@ -71,7 +70,7 @@ export default function FeaturesPage() {
       }),
     onSuccess: (f: Feature) => {
       queryClient.invalidateQueries({ queryKey: ['features'] });
-      toast.success(`Feature "${f.name}" created`);
+      toast.success(`Feature "${f.name}" drafted`);
       setCreateOpen(false);
       setDraft({ name: '', description: '', sharedSetup: '' });
     },
@@ -80,202 +79,474 @@ export default function FeaturesPage() {
 
   if (!project) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <div className="text-muted-foreground mb-4">
-          Select a project to manage features
-        </div>
-        <Link href="/">
-          <Button variant="outline">Go to Dashboard</Button>
-        </Link>
-      </div>
+      <VtStage width="narrow">
+        <div className="vt-kicker mb-3" style={{ color: 'var(--accent)' }}>§ no project</div>
+        <h1 className="vt-display mb-6" style={{ fontSize: 'clamp(40px, 6vw, 72px)' }}>
+          Pick a <em>project</em> to see its subsystems.
+        </h1>
+        <p className="text-[17px]" style={{ color: 'var(--ink-1)' }}>
+          Features are scoped to a project. Open the switcher at the top-left
+          to pick one, or draft a new project.
+        </p>
+      </VtStage>
     );
   }
 
-  return (
-    <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
-      <header className="pb-6 border-b flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
-        <div>
-          <div className="vt-eyebrow mb-5">§ Features · Scenario groups</div>
-          <h1 className="vt-display" style={{ fontSize: 'clamp(40px, 6vw, 68px)', lineHeight: 0.97 }}>
-            Group <em>related</em> scenarios.
-          </h1>
-          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
-            One Feature, many scenarios, shared setup. Perfect for "login"
-            with a happy path, a wrong-password path, a lockout path — all
-            sharing the same setup prose.
-          </p>
-        </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Plus className="w-4 h-4 mr-2" /> New feature
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-xl">
-            <DialogHeader>
-              <DialogTitle>New feature</DialogTitle>
-              <DialogDescription>
-                A feature is a group of scenarios that share setup. Think
-                &quot;Login&quot; with scenarios for happy path, wrong
-                password, lockout, forgot password.
-              </DialogDescription>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!draft.name.trim()) return;
-                createMutation.mutate();
-              }}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Name <span className="text-red-400">*</span>
-                </label>
-                <Input
-                  autoFocus
-                  value={draft.name}
-                  onChange={(e) =>
-                    setDraft({ ...draft, name: e.target.value })
-                  }
-                  placeholder="e.g. Login, Checkout, Settings"
-                  className="bg-muted border-border"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Description
-                </label>
-                <Input
-                  value={draft.description}
-                  onChange={(e) =>
-                    setDraft({ ...draft, description: e.target.value })
-                  }
-                  placeholder="What this feature covers"
-                  className="bg-muted border-border"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Shared setup (prose)
-                </label>
-                <Textarea
-                  value={draft.sharedSetup}
-                  onChange={(e) =>
-                    setDraft({ ...draft, sharedSetup: e.target.value })
-                  }
-                  placeholder={EXAMPLE_SETUP}
-                  className="bg-muted border-border font-mono min-h-[80px]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Prepended to every scenario&apos;s story before parsing.
-                  One action per sentence, same rules as the regular story
-                  editor.
-                </p>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setCreateOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!draft.name.trim() || createMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  {createMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating…
-                    </>
-                  ) : (
-                    'Create feature'
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </header>
+  const items = (features || []) as Feature[];
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+  const totalTests = items.reduce((s, f) => s + (f._count?.tests ?? 0), 0);
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center gap-2 text-muted-foreground py-8">
-          <Loader2 className="w-5 h-5 animate-spin" /> Loading features…
+  return (
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet={`02 / 14`}
+        eyebrow="§ 02 · SUBSYSTEM ROSTER"
+        revision={<>REV · 01 · {isoDate}</>}
+        title={
+          <>
+            subsystem <em>roster</em>
+          </>
+        }
+        lead={
+          'Each feature is a subsystem — a named group of scenarios that share setup prose. The roster below schedules every subsystem with its part number, impact area, and linked test count.'
+        }
+        actions={
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <button type="button" className="vt-btn vt-btn--primary">
+                <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+                NEW FEATURE
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xl">
+              <DialogHeader>
+                <DialogTitle>Draft feature</DialogTitle>
+                <DialogDescription>
+                  A feature groups scenarios with shared setup — Login (happy,
+                  wrong-password, lockout), Checkout (guest, logged-in, coupon).
+                </DialogDescription>
+              </DialogHeader>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!draft.name.trim()) return;
+                  createMutation.mutate();
+                }}
+                className="space-y-5 pt-2"
+              >
+                <FieldBlock label="NAME" required>
+                  <input
+                    autoFocus
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    placeholder="e.g. Login, Checkout, Settings"
+                    className="vt-input"
+                  />
+                </FieldBlock>
+                <FieldBlock label="DESCRIPTION">
+                  <input
+                    value={draft.description}
+                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                    placeholder="What this subsystem covers"
+                    className="vt-input"
+                  />
+                </FieldBlock>
+                <FieldBlock
+                  label="SHARED SETUP · PROSE"
+                  helper="Prepended to every scenario's story before parsing."
+                >
+                  <textarea
+                    value={draft.sharedSetup}
+                    onChange={(e) => setDraft({ ...draft, sharedSetup: e.target.value })}
+                    placeholder={EXAMPLE_SETUP}
+                    className="vt-input"
+                    style={{ minHeight: '90px', resize: 'vertical' }}
+                  />
+                </FieldBlock>
+                <DialogFooter>
+                  <button
+                    type="button"
+                    onClick={() => setCreateOpen(false)}
+                    className="vt-btn vt-btn--ghost"
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!draft.name.trim() || createMutation.isPending}
+                    className="vt-btn vt-btn--primary"
+                  >
+                    {createMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        DRAFTING
+                      </>
+                    ) : (
+                      <>
+                        DRAFT FEATURE
+                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      </>
+                    )}
+                  </button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        }
+      >
+        {/* Title-block: project / roster counts */}
+        <div className="vt-title-block">
+          <div className="span3">
+            <span className="k">PROJECT</span>
+            <span className="v big">{project.name}</span>
+          </div>
+          <div className="span2">
+            <span className="k">SHEET ID</span>
+            <span className="v">VT-FEAT-{(project.slug || project.id.slice(-6)).toUpperCase()}</span>
+          </div>
+          <div>
+            <span className="k">REV</span>
+            <span className="v" style={{ color: 'var(--accent)' }}>01</span>
+          </div>
+          <div className="span2">
+            <span className="k">DRAWN</span>
+            <span className="v">{isoDate}</span>
+          </div>
+          <div className="span2">
+            <span className="k">SUBSYSTEMS</span>
+            <span className="v">{String(items.length).padStart(3, '0')}</span>
+          </div>
+          <div className="span2">
+            <span className="k">TESTS · TOTAL</span>
+            <span className="v">{String(totalTests).padStart(3, '0')}</span>
+          </div>
         </div>
-      ) : features && features.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {features.map((f) => (
-            <Link key={f.id} href={`/features/${f.id}`} className="group">
-              <Card className="bg-card border-border hover:border-muted-foreground transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-foreground text-base">
-                      {f.name}
-                    </CardTitle>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 mt-1" />
-                  </div>
-                  {f.description && (
-                    <CardDescription className="text-muted-foreground">
-                      {f.description}
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-3 pt-0">
-                  {f.sharedSetup && (
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                        Shared setup
-                      </div>
-                      <pre className="font-mono text-xs text-muted-foreground/90 bg-muted/50 rounded px-2 py-1.5 whitespace-pre-wrap line-clamp-3">
-                        {f.sharedSetup}
-                      </pre>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-xs">
-                    <Badge variant="outline" className="bg-muted/50">
-                      {f._count?.tests ?? 0} scenario
-                      {(f._count?.tests ?? 0) === 1 ? '' : 's'}
-                    </Badge>
-                    <span className="text-muted-foreground">
-                      updated{' '}
-                      {new Date(f.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <Card className="bg-card border-dashed border-border">
-          <CardContent className="py-12 flex flex-col items-center text-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-              <Layers className="w-6 h-6 text-muted-foreground" />
-            </div>
-            <div className="space-y-1 max-w-md">
-              <h3 className="text-foreground font-medium">
-                No features yet
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                A feature is a group of scenarios with shared setup. Great
-                for a page or journey that has multiple variations — happy
-                path, error cases, edge cases.
-              </p>
-            </div>
-            <Button
-              onClick={() => setCreateOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+
+        {/* §02 — roster table */}
+        <section aria-labelledby="roster-head">
+          <div className="vt-section-head">
+            <span className="num">§ 02</span>
+            <span className="ttl" id="roster-head">schedule of subsystems</span>
+            <span className="rule" />
+            <span className="stamp">
+              {items.length === 0 ? 'AWAITING DRAFT' : `${items.length} PARTS`}
+            </span>
+          </div>
+
+          {isLoading ? (
+            <LoadingFrame label="LOADING ROSTER" />
+          ) : items.length === 0 ? (
+            <EmptyRoster onDraft={() => setCreateOpen(true)} />
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
             >
-              <Sparkles className="w-4 h-4 mr-2" /> Try an example
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
+              <RosterHeaderRow />
+              {items.map((f, i) => (
+                <RosterRow
+                  key={f.id}
+                  feature={f}
+                  idx={i}
+                  isLast={i === items.length - 1}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <footer
+          className="pt-6 flex justify-between gap-4 flex-wrap"
+          style={{
+            borderTop: '1px solid var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          <span>SHEET 02 · ROSTER · {project.name}</span>
+          <span>CHECKED · {(project.slug || 'VT').toUpperCase()}</span>
+          <span>TESTS MAPPED · {String(totalTests).padStart(3, '0')}</span>
+        </footer>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+/* ── row primitives ──────────────────────────────────────────────── */
+
+function RosterHeaderRow() {
+  return (
+    <div
+      className="grid grid-cols-[90px_1.4fr_150px_90px_130px_40px] gap-0"
+      style={{
+        borderBottom: '1px solid var(--rule-strong)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '9.5px',
+        letterSpacing: '0.24em',
+        textTransform: 'uppercase',
+        color: 'var(--ink-2)',
+      }}
+    >
+      {['REF', 'NAME', 'AREA', 'TESTS', 'LAST UPDATE', ''].map((h, i) => (
+        <div
+          key={i}
+          className="py-3 px-4"
+          style={{
+            borderRight: i < 5 ? '1px solid var(--rule)' : 'none',
+            textAlign: i === 3 ? 'right' : 'left',
+          }}
+        >
+          {h}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RosterRow({
+  feature,
+  idx,
+  isLast,
+}: {
+  feature: Feature;
+  idx: number;
+  isLast: boolean;
+}) {
+  const testCount = feature._count?.tests ?? 0;
+  const part = `F-${String(idx + 1).padStart(3, '0')}`;
+  return (
+    <Link
+      href={`/features/${feature.id}`}
+      className="grid grid-cols-[90px_1.4fr_150px_90px_130px_40px] gap-0 group"
+      style={{
+        borderBottom: isLast ? 'none' : '1px solid var(--rule-soft)',
+        textDecoration: 'none',
+        transition: 'background var(--dur-quick) var(--ease-out)',
+        animation: `vt-reveal var(--dur-reveal) ${(idx + 1) * 30}ms var(--ease-out) both`,
+      }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.background =
+          'color-mix(in oklab, var(--bg-2) 35%, transparent)')
+      }
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+    >
+      <div
+        className="py-4 px-4"
+        style={{
+          borderRight: '1px solid var(--rule-soft)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '11px',
+          letterSpacing: '0.16em',
+          color: 'var(--accent)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {part}
+      </div>
+      <div
+        className="py-4 px-4 min-w-0"
+        style={{ borderRight: '1px solid var(--rule-soft)' }}
+      >
+        <div
+          className="truncate"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '17px',
+            color: 'var(--ink-0)',
+            textTransform: 'lowercase',
+            lineHeight: 1.15,
+          }}
+        >
+          {feature.name}
+        </div>
+        {feature.description && (
+          <div
+            className="truncate mt-1"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '12.5px',
+              color: 'var(--ink-2)',
+              lineHeight: 1.4,
+            }}
+          >
+            {feature.description}
+          </div>
+        )}
+      </div>
+      <div
+        className="py-4 px-4"
+        style={{
+          borderRight: '1px solid var(--rule-soft)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10.5px',
+          letterSpacing: '0.18em',
+          color: 'var(--ink-1)',
+          textTransform: 'uppercase',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {impactArea(feature)}
+      </div>
+      <div
+        className="py-4 px-4 text-right"
+        style={{
+          borderRight: '1px solid var(--rule-soft)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '13px',
+          letterSpacing: '0.06em',
+          color: testCount === 0 ? 'var(--ink-2)' : 'var(--ink-0)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {String(testCount).padStart(2, '0')}
+      </div>
+      <div
+        className="py-4 px-4"
+        style={{
+          borderRight: '1px solid var(--rule-soft)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10.5px',
+          letterSpacing: '0.1em',
+          color: 'var(--ink-2)',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {formatDate(feature.updatedAt)}
+      </div>
+      <div className="py-4 px-4 flex items-center justify-end">
+        <ArrowRight
+          className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1"
+          strokeWidth={1.5}
+          style={{ color: 'var(--ink-2)' }}
+        />
+      </div>
+    </Link>
+  );
+}
+
+function FieldBlock({
+  label,
+  required,
+  helper,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  helper?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+          display: 'inline-block',
+        }}
+      >
+        {label}
+        {required && <span style={{ color: 'var(--accent)', marginLeft: '6px' }}>*</span>}
+      </label>
+      {children}
+      {helper && (
+        <p
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.08em',
+            color: 'var(--ink-2)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {helper}
+        </p>
       )}
+    </div>
+  );
+}
+
+function LoadingFrame({ label }: { label: string }) {
+  return (
+    <div
+      className="p-12 text-center"
+      style={{
+        border: '1px dashed var(--rule)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <div
+        className="inline-flex items-center gap-3"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '11px',
+          letterSpacing: '0.24em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function EmptyRoster({ onDraft }: { onDraft: () => void }) {
+  return (
+    <div
+      className="p-12 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <div
+        className="vt-kicker"
+        style={{ color: 'var(--ink-2)', justifyContent: 'center' }}
+      >
+        ROSTER EMPTY
+      </div>
+      <h3
+        className="mt-4"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(26px, 3vw, 38px)',
+          color: 'var(--ink-0)',
+          textTransform: 'lowercase',
+        }}
+      >
+        no subsystems on file.
+      </h3>
+      <p
+        className="mt-3 mx-auto"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14.5px',
+          maxWidth: '52ch',
+          color: 'var(--ink-1)',
+          lineHeight: 1.55,
+        }}
+      >
+        A feature is a subsystem — a page or journey with several scenarios
+        sharing the same setup. Draft one and its scenarios will index back
+        to it automatically.
+      </p>
+      <div className="mt-8 flex justify-center">
+        <button type="button" onClick={onDraft} className="vt-btn vt-btn--primary">
+          <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+          DRAFT FIRST FEATURE
+        </button>
+      </div>
     </div>
   );
 }

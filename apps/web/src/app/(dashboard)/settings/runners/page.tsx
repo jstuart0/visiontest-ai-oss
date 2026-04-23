@@ -3,34 +3,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useCurrentProject } from '@/hooks/useProject';
-import {
-  Server,
-  Plus,
-  Trash2,
-  Loader2,
-  Circle,
-  Wifi,
-  WifiOff,
-  Activity,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Plus, Trash2, Loader2, Activity } from 'lucide-react';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 import {
   Dialog,
   DialogContent,
@@ -54,14 +29,14 @@ interface RunnerData {
   project?: { id: string; name: string } | null;
 }
 
-const statusColors: Record<string, string> = {
-  OFFLINE: 'bg-gray-400',
-  STARTING: 'bg-yellow-400',
-  READY: 'bg-green-400',
-  BUSY: 'bg-blue-400',
-  DEGRADED: 'bg-orange-400',
-  DRAINING: 'bg-purple-400',
-  UNHEALTHY: 'bg-red-400',
+const statusToken: Record<string, 'pass' | 'fail' | 'warn' | 'accent' | 'mute'> = {
+  OFFLINE: 'mute',
+  STARTING: 'warn',
+  READY: 'pass',
+  BUSY: 'accent',
+  DEGRADED: 'warn',
+  DRAINING: 'accent',
+  UNHEALTHY: 'fail',
 };
 
 export default function RunnersPage() {
@@ -130,134 +105,335 @@ export default function RunnersPage() {
     }
   }
 
-  // Stagehands — runners that actually execute fix sessions. Labeled
-  // as crew, not as infrastructure.
-  return (
-    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
-        <div>
-          <div className="vt-eyebrow mb-5">§ Crew · Fix runners</div>
-          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
-            The <em>stagehands</em>.
-          </h1>
-          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
-            Where fix sessions actually execute — your CI, a local sandbox,
-            a self-hosted runner. Jobs wait in a queue here until a runner
-            picks them up.
-          </p>
-        </div>
-        <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Register Runner
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Register Fix Runner</DialogTitle>
-              <DialogDescription>
-                Add a runner to execute fix sessions and verifications.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Runner Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="my-runner-01" />
-              </div>
-              <div>
-                <Label>Runner Type</Label>
-                <Select value={type} onValueChange={setType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MANAGED">Managed</SelectItem>
-                    <SelectItem value="SELF_HOSTED">Self-Hosted</SelectItem>
-                    <SelectItem value="LOCAL">Local</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
-              <Button onClick={handleRegister} disabled={addLoading || !name}>
-                {addLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Register
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </header>
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : runners.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Server className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No runners registered</h3>
-            <p className="text-muted-foreground mt-1">
-              Register a runner to execute fix sessions.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {runners.map((runner) => (
-            <Card key={runner.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${statusColors[runner.status] || 'bg-gray-400'}`} />
-                    <CardTitle className="text-base">{runner.name}</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{runner.type.replace(/_/g, ' ')}</Badge>
-                    <Badge variant="outline">{runner.status}</Badge>
-                  </div>
-                </div>
-                <CardDescription>
-                  {runner.version && `v${runner.version} - `}
-                  Registered {new Date(runner.registeredAt).toLocaleDateString()}
-                  {runner.lastHeartbeatAt && ` - Last heartbeat: ${new Date(runner.lastHeartbeatAt).toLocaleString()}`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {runner.capabilities && Object.keys(runner.capabilities).length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap mb-4">
-                    {(runner.capabilities as any).languages?.map((lang: string) => (
-                      <Badge key={lang} variant="outline" className="text-xs">{lang}</Badge>
-                    ))}
-                    {(runner.capabilities as any).browsers?.map((browser: string) => (
-                      <Badge key={browser} variant="outline" className="text-xs">{browser}</Badge>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  {runner.status === 'READY' && (
-                    <Button variant="outline" size="sm" onClick={() => handleDrain(runner.id)}>
-                      <Activity className="h-4 w-4 mr-2" />
-                      Drain
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => handleDelete(runner.id)}
+  return (
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet="07.G / 14"
+        eyebrow="§ 07.G · CREW"
+        back={{ href: '/settings', label: 'BACK · WORKBENCH' }}
+        revision={<>REV · 02 · {isoDate}</>}
+        title={<>the <em>stagehands</em>.</>}
+        lead="Where fix sessions actually execute — your CI, a local sandbox, a self-hosted runner. Jobs wait in a queue here until a runner picks them up."
+        actions={
+          <Dialog open={showAdd} onOpenChange={setShowAdd}>
+            <DialogTrigger asChild>
+              <button className="vt-btn vt-btn--primary">
+                <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+                REGISTER RUNNER
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Register Fix Runner</DialogTitle>
+                <DialogDescription>Add a runner to execute fix sessions and verifications.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Field label="RUNNER NAME">
+                  <input
+                    className="vt-input"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="my-runner-01"
+                  />
+                </Field>
+                <Field label="RUNNER TYPE">
+                  <select className="vt-input" value={type} onChange={(e) => setType(e.target.value)}>
+                    <option value="MANAGED">Managed</option>
+                    <option value="SELF_HOSTED">Self-Hosted</option>
+                    <option value="LOCAL">Local</option>
+                  </select>
+                </Field>
+              </div>
+              <DialogFooter>
+                <button className="vt-btn" onClick={() => setShowAdd(false)}>CANCEL</button>
+                <button className="vt-btn vt-btn--primary" onClick={handleRegister} disabled={addLoading || !name}>
+                  {addLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  REGISTER
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        }
+      >
+        <section aria-labelledby="runners-head">
+          <div className="vt-section-head">
+            <span className="num">§ 01</span>
+            <span className="ttl" id="runners-head">crew on call</span>
+            <span className="rule" />
+            <span className="stamp">{runners.length.toString().padStart(2, '0')} REGISTERED</span>
+          </div>
+
+          {loading ? (
+            <LoadingFrame />
+          ) : runners.length === 0 ? (
+            <EmptyFrame
+              title="no runners registered."
+              body="Register a runner to execute fix sessions in your CI, a sandbox, or a local environment."
+            />
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              <div
+                className="grid grid-cols-[90px_1fr_160px_180px] gap-0"
+                style={{
+                  borderBottom: '1px solid var(--rule-strong)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '9.5px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                {['CODE', 'HOST · NAME', 'TYPE · VERSION', 'STATUS · HEARTBEAT'].map((h, i) => (
+                  <div
+                    key={h}
+                    className="py-3 px-4"
+                    style={{ borderRight: i < 3 ? '1px solid var(--rule)' : 'none' }}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Deregister
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                    {h}
+                  </div>
+                ))}
+              </div>
+
+              {runners.map((runner, i) => {
+                const tok = statusToken[runner.status] || 'mute';
+                const chipCls =
+                  tok === 'pass'
+                    ? 'vt-chip vt-chip--pass'
+                    : tok === 'fail'
+                    ? 'vt-chip vt-chip--fail'
+                    : tok === 'warn'
+                    ? 'vt-chip vt-chip--warn'
+                    : tok === 'accent'
+                    ? 'vt-chip vt-chip--accent'
+                    : 'vt-chip';
+                return (
+                  <div
+                    key={runner.id}
+                    style={{
+                      borderBottom: i < runners.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                    }}
+                  >
+                    <div className="grid grid-cols-[90px_1fr_160px_180px] gap-0 items-center">
+                      <div
+                        className="py-4 px-4"
+                        style={{
+                          borderRight: '1px solid var(--rule-soft)',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '11px',
+                          letterSpacing: '0.18em',
+                          color: 'var(--accent)',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        RN-{String(i + 1).padStart(2, '0')}
+                      </div>
+                      <div className="py-4 px-4" style={{ borderRight: '1px solid var(--rule-soft)' }}>
+                        <div
+                          className="vt-mono"
+                          style={{
+                            fontSize: '13px',
+                            color: 'var(--ink-0)',
+                            letterSpacing: '0.02em',
+                          }}
+                        >
+                          {runner.name}
+                        </div>
+                        {runner.capabilities && Object.keys(runner.capabilities).length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {(runner.capabilities as any).languages?.map((lang: string) => (
+                              <span key={lang} className="vt-chip" style={{ fontSize: '9px', padding: '2px 6px' }}>
+                                {lang}
+                              </span>
+                            ))}
+                            {(runner.capabilities as any).browsers?.map((browser: string) => (
+                              <span key={browser} className="vt-chip" style={{ fontSize: '9px', padding: '2px 6px' }}>
+                                {browser}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        className="py-4 px-4"
+                        style={{ borderRight: '1px solid var(--rule-soft)' }}
+                      >
+                        <div
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '10.5px',
+                            letterSpacing: '0.14em',
+                            textTransform: 'uppercase',
+                            color: 'var(--ink-1)',
+                          }}
+                        >
+                          {runner.type.replace(/_/g, ' ')}
+                        </div>
+                        <div
+                          className="mt-1 vt-mono"
+                          style={{
+                            fontSize: '10.5px',
+                            color: 'var(--ink-2)',
+                            letterSpacing: '0.04em',
+                          }}
+                        >
+                          {runner.version ? `v${runner.version}` : '— · no version'}
+                        </div>
+                      </div>
+                      <div className="py-4 px-4">
+                        <span
+                          className={chipCls}
+                          style={{ fontSize: '9.5px' }}
+                        >
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              width: 6,
+                              height: 6,
+                              background: 'currentColor',
+                              transform: 'rotate(45deg)',
+                            }}
+                          />
+                          {runner.status}
+                        </span>
+                        {runner.lastHeartbeatAt && (
+                          <div
+                            className="mt-2 vt-mono"
+                            style={{
+                              fontSize: '9.5px',
+                              letterSpacing: '0.14em',
+                              textTransform: 'uppercase',
+                              color: 'var(--ink-2)',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            HB · {new Date(runner.lastHeartbeatAt).toISOString().slice(0, 16).replace('T', ' · ')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div
+                      className="px-4 py-3 flex items-center gap-2"
+                      style={{
+                        borderTop: '1px solid var(--rule-soft)',
+                        background: 'color-mix(in oklab, var(--bg-2) 20%, transparent)',
+                      }}
+                    >
+                      {runner.status === 'READY' && (
+                        <button
+                          className="vt-btn"
+                          style={{ padding: '6px 12px', fontSize: '10px' }}
+                          onClick={() => handleDrain(runner.id)}
+                        >
+                          <Activity className="w-3 h-3" /> DRAIN
+                        </button>
+                      )}
+                      <button
+                        className="vt-btn vt-btn--ghost"
+                        style={{ padding: '6px 12px', fontSize: '10px', color: 'var(--fail)' }}
+                        onClick={() => handleDelete(runner.id)}
+                      >
+                        <Trash2 className="w-3 h-3" /> DEREGISTER
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div
+        className="mb-2"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9.5px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function LoadingFrame() {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: 'var(--ink-2)' }} />
+      <div
+        className="mt-3"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        LOADING
+      </div>
+    </div>
+  );
+}
+
+function EmptyFrame({ title, body }: { title: string; body: string }) {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <div className="vt-kicker" style={{ color: 'var(--ink-2)', justifyContent: 'center' }}>
+        PLATE EMPTY
+      </div>
+      <h3
+        className="mt-3"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(22px, 2.4vw, 32px)',
+          color: 'var(--ink-0)',
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        className="mt-3 mx-auto"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          maxWidth: '52ch',
+          color: 'var(--ink-1)',
+          lineHeight: 1.5,
+        }}
+      >
+        {body}
+      </p>
     </div>
   );
 }

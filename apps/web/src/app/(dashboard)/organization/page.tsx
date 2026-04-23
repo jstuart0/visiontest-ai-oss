@@ -4,21 +4,24 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { organizationsApi } from '@/lib/api';
 import { useCurrentProject } from '@/hooks/useProject';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, UserPlus, Trash2, Save, Crown, Shield, User, Eye } from 'lucide-react';
+import { UserPlus, Trash2, Save, Crown, Shield, User, Eye, Loader2 } from 'lucide-react';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 
-function getRoleIcon(role: string) {
+const ROLE_ORDER = ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'] as const;
+
+function RoleIcon({ role }: { role: string }) {
+  const common = { strokeWidth: 1.5 };
   switch (role) {
-    case 'OWNER': return <Crown className="h-3 w-3 text-yellow-500" />;
-    case 'ADMIN': return <Shield className="h-3 w-3 text-blue-500" />;
-    case 'MEMBER': return <User className="h-3 w-3 text-muted-foreground" />;
-    case 'VIEWER': return <Eye className="h-3 w-3 text-muted-foreground" />;
-    default: return null;
+    case 'OWNER':
+      return <Crown className="w-3.5 h-3.5" {...common} style={{ color: 'var(--accent)' }} />;
+    case 'ADMIN':
+      return <Shield className="w-3.5 h-3.5" {...common} style={{ color: 'var(--ink-1)' }} />;
+    case 'VIEWER':
+      return <Eye className="w-3.5 h-3.5" {...common} style={{ color: 'var(--ink-2)' }} />;
+    default:
+      return <User className="w-3.5 h-3.5" {...common} style={{ color: 'var(--ink-2)' }} />;
   }
 }
 
@@ -29,6 +32,7 @@ export default function OrganizationPage() {
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('MEMBER');
+  const [orgName, setOrgName] = useState('');
 
   const { data: org, isLoading } = useQuery({
     queryKey: ['organization', orgId],
@@ -52,7 +56,8 @@ export default function OrganizationPage() {
   });
 
   const addMemberMutation = useMutation({
-    mutationFn: (data: { email: string; role: string }) => organizationsApi.addMember(orgId!, data),
+    mutationFn: (data: { email: string; role: string }) =>
+      organizationsApi.addMember(orgId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization-members'] });
       setInviteEmail('');
@@ -70,124 +75,402 @@ export default function OrganizationPage() {
     onError: (error: any) => toast.error(error.message || 'Failed to remove member'),
   });
 
-  const [orgName, setOrgName] = useState('');
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
-  if (!orgId) return <div className="p-6 text-muted-foreground">Select a project to view organization settings.</div>;
+  if (!orgId) {
+    return (
+      <VtStage width="narrow">
+        <EditorialHero
+          width="narrow"
+          sheet="O-00"
+          eyebrow="§ NAMEPLATE · ORGANIZATION"
+          revision={<>REV · 01 · {isoDate}</>}
+          title={<>no <em>organization</em> selected.</>}
+          lead="Choose a project in the switcher; its organization nameplate will redraw here."
+        />
+      </VtStage>
+    );
+  }
 
-  // Nameplate — the institutional identity page. Subtle, formal.
-  // Uses an editorial dateline + a Fraunces italic name as a plate.
+  const memberList = (members as any[]) || [];
+  const displayName = orgName || org?.name || '';
+
   return (
-    <div className="max-w-[860px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      <header className="pb-8 border-b-2 mb-12" style={{ borderColor: 'var(--ink-0)' }}>
-        <div className="vt-kicker mb-4" style={{ color: 'var(--ink-2)' }}>§ Nameplate · Organization</div>
-        <h1
-          className="vt-display"
-          style={{ fontSize: 'clamp(40px, 5.5vw, 64px)', lineHeight: 0.98, fontWeight: 310 }}
-        >
-          Who we <em>are</em>.
-        </h1>
-        <p
-          className="mt-4 vt-italic"
-          style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '56ch' }}
-        >
-          The institution that owns the projects, the baselines, and the
-          credentials. Billing lives here too — quietly.
-        </p>
-      </header>
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet={`O-${String(memberList.length).padStart(2, '0')}`}
+        eyebrow="§ NAMEPLATE · ORGANIZATION"
+        revision={<>REV · 02 · {isoDate}</>}
+        title={
+          <>
+            the <em>nameplate</em>.
+          </>
+        }
+        lead="The institution that owns the projects, baselines, and credentials. Billing lives here too. Edit the name, amend the roster."
+      >
+        {/* ── Title block ───────────────────────────────────────────── */}
+        <div className="vt-title-block">
+          <div className="span3">
+            <span className="k">ORGANIZATION</span>
+            <span className="v big">{org?.name || '—'}</span>
+          </div>
+          <div className="span2">
+            <span className="k">ORG ID</span>
+            <span className="v">VT-O-{orgId.slice(-8).toUpperCase()}</span>
+          </div>
+          <div>
+            <span className="k">REV</span>
+            <span className="v" style={{ color: 'var(--accent)' }}>02</span>
+          </div>
+          <div className="span2">
+            <span className="k">DRAWN</span>
+            <span className="v">{isoDate}</span>
+          </div>
+          <div className="span2">
+            <span className="k">MEMBERS</span>
+            <span className="v">{String(memberList.length).padStart(3, '0')}</span>
+          </div>
+          <div>
+            <span className="k">PLAN</span>
+            <span className="v">{((org as any)?.plan || 'FREE').toString().toUpperCase()}</span>
+          </div>
+          <div>
+            <span className="k">STATUS</span>
+            <span className="v" style={{ color: 'var(--pass)' }}>ACTIVE</span>
+          </div>
+        </div>
 
-      {/* Org Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" /> Organization Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Organization Name</Label>
+        {/* ── Identity ──────────────────────────────────────────────── */}
+        <section aria-labelledby="ident-head">
+          <div className="vt-section-head">
+            <span className="num">§ 02</span>
+            <span className="ttl" id="ident-head">identity</span>
+            <span className="rule" />
+            <span className="stamp">NAMEPLATE · EDITABLE</span>
+          </div>
+          <div
+            style={{
+              border: '1px solid var(--rule-strong)',
+              background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              padding: '28px 32px',
+            }}
+          >
+            <label
+              className="vt-mono block mb-3"
+              style={{
+                fontSize: '10px',
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+              }}
+            >
+              ORGANIZATION NAME
+            </label>
             <div className="flex gap-2">
-              <Input
-                value={orgName || org?.name || ''}
+              <input
+                type="text"
+                value={displayName}
                 onChange={(e) => setOrgName(e.target.value)}
                 placeholder="Organization name"
+                className="vt-input flex-1"
               />
-              <Button
+              <button
+                type="button"
                 onClick={() => updateOrgMutation.mutate({ name: orgName })}
                 disabled={!orgName || updateOrgMutation.isPending}
+                className="vt-btn vt-btn--primary"
               >
-                <Save className="h-4 w-4 mr-1" /> Save
-              </Button>
+                {updateOrgMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
+                ) : (
+                  <Save className="w-3.5 h-3.5" strokeWidth={1.5} />
+                )}
+                SAVE
+              </button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </section>
 
-      {/* Members */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" /> Members
-          </CardTitle>
-          <CardDescription>
-            {members?.length || 0} member{(members?.length || 0) !== 1 ? 's' : ''}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Invite */}
-          <div className="flex gap-2">
-            <Input
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="Email address"
-              className="flex-1"
-            />
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value)}
-              className="bg-muted border border-border rounded px-2 text-sm"
-            >
-              <option value="ADMIN">Admin</option>
-              <option value="MEMBER">Member</option>
-              <option value="VIEWER">Viewer</option>
-            </select>
-            <Button
-              onClick={() => addMemberMutation.mutate({ email: inviteEmail, role: inviteRole })}
-              disabled={!inviteEmail || addMemberMutation.isPending}
-            >
-              <UserPlus className="h-4 w-4 mr-1" /> Add
-            </Button>
+        {/* ── Roster ────────────────────────────────────────────────── */}
+        <section aria-labelledby="roster-head">
+          <div className="vt-section-head">
+            <span className="num">§ 03</span>
+            <span className="ttl" id="roster-head">the roster</span>
+            <span className="rule" />
+            <span className="stamp">
+              {String(memberList.length).padStart(2, '0')} · MEMBERS
+            </span>
           </div>
 
-          {/* Member List */}
-          <div className="space-y-2">
-            {members?.map((member: any) => (
-              <div key={member.id || member.userId} className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  {getRoleIcon(member.role)}
-                  <div>
-                    <p className="text-sm font-medium">{member.user?.name || member.user?.email || member.email}</p>
-                    <p className="text-xs text-muted-foreground">{member.user?.email || member.email}</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs">{member.role}</Badge>
-                </div>
-                {member.role !== 'OWNER' && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-red-400"
-                    onClick={() => removeMemberMutation.mutate(member.id || member.userId)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+          {/* Invite row */}
+          <div
+            style={{
+              border: '1px solid var(--rule-strong)',
+              borderBottom: 'none',
+              background: 'color-mix(in oklab, var(--bg-2) 25%, transparent)',
+              padding: '18px 20px',
+            }}
+          >
+            <div
+              className="vt-mono mb-3"
+              style={{
+                fontSize: '10px',
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-2)',
+              }}
+            >
+              ADD MEMBER
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-2">
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="member@example.com"
+                className="vt-input"
+              />
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
+                className="vt-input"
+                style={{ cursor: 'pointer' }}
+              >
+                <option value="ADMIN">ADMIN</option>
+                <option value="MEMBER">MEMBER</option>
+                <option value="VIEWER">VIEWER</option>
+              </select>
+              <button
+                type="button"
+                onClick={() =>
+                  addMemberMutation.mutate({ email: inviteEmail, role: inviteRole })
+                }
+                disabled={!inviteEmail || addMemberMutation.isPending}
+                className="vt-btn vt-btn--primary"
+              >
+                {addMemberMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
+                ) : (
+                  <UserPlus className="w-3.5 h-3.5" strokeWidth={1.5} />
                 )}
-              </div>
-            ))}
-            {(!members || members.length === 0) && (
-              <p className="text-sm text-muted-foreground text-center py-4">No members found.</p>
-            )}
+                ADD
+              </button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Member rows */}
+          {isLoading ? (
+            <LoadingFrame label="READING ROSTER" />
+          ) : memberList.length === 0 ? (
+            <EmptyFrame label="NO MEMBERS" body="The roster is empty. Invite someone above." />
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              <div
+                className="grid grid-cols-[90px_1fr_160px_100px] gap-0"
+                style={{
+                  borderBottom: '1px solid var(--rule-strong)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '9.5px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                {['NO.', 'NAME · EMAIL', 'ROLE', 'ACTION'].map((h, i) => (
+                  <div
+                    key={h}
+                    className="py-3 px-4"
+                    style={{
+                      borderRight: i < 3 ? '1px solid var(--rule)' : 'none',
+                      textAlign: i >= 2 ? 'right' : 'left',
+                    }}
+                  >
+                    {h}
+                  </div>
+                ))}
+              </div>
+              {memberList.map((member: any, idx: number) => {
+                const name = member.user?.name || member.user?.email || member.email;
+                const email = member.user?.email || member.email;
+                return (
+                  <div
+                    key={member.id || member.userId}
+                    className="grid grid-cols-[90px_1fr_160px_100px] gap-0 items-center"
+                    style={{
+                      borderBottom:
+                        idx < memberList.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                    }}
+                  >
+                    <div
+                      className="py-3 px-4 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '11px',
+                        letterSpacing: '0.14em',
+                        color: 'var(--accent)',
+                      }}
+                    >
+                      M-{String(idx + 1).padStart(3, '0')}
+                    </div>
+                    <div
+                      className="py-3 px-4"
+                      style={{ borderRight: '1px solid var(--rule-soft)' }}
+                    >
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: '14px',
+                          color: 'var(--ink-0)',
+                          textTransform: 'lowercase',
+                        }}
+                      >
+                        {name}
+                      </div>
+                      {email !== name && (
+                        <div
+                          className="vt-mono"
+                          style={{
+                            fontSize: '11px',
+                            color: 'var(--ink-2)',
+                            marginTop: '2px',
+                          }}
+                        >
+                          {email}
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      className="py-3 px-4 flex items-center gap-2"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '10.5px',
+                        letterSpacing: '0.2em',
+                        textTransform: 'uppercase',
+                        color: member.role === 'OWNER' ? 'var(--accent)' : 'var(--ink-1)',
+                      }}
+                    >
+                      <RoleIcon role={member.role} />
+                      {member.role}
+                    </div>
+                    <div className="py-2 px-3 flex items-center justify-end">
+                      {member.role !== 'OWNER' && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeMemberMutation.mutate(member.id || member.userId)
+                          }
+                          className="vt-btn vt-btn--ghost"
+                          style={{
+                            padding: '6px 10px',
+                            fontSize: '10px',
+                            color: 'var(--fail)',
+                          }}
+                          title="Remove member"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <footer
+          className="pt-6 flex justify-between gap-4 flex-wrap"
+          style={{
+            borderTop: '1px solid var(--rule)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          <span>SHEET · NAMEPLATE · {org?.name || '—'}</span>
+          <span>ROSTER · {String(memberList.length).padStart(3, '0')}</span>
+          <span>DRAWN · {isoDate}</span>
+        </footer>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+/* ───────────────────────────────────────────────────── primitives ── */
+
+function EmptyFrame({ label, body }: { label: string; body: string }) {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule)',
+        borderTop: 'none',
+        background: 'color-mix(in oklab, var(--bg-1) 20%, transparent)',
+      }}
+    >
+      <div
+        className="vt-mono"
+        style={{
+          fontSize: '10.5px',
+          letterSpacing: '0.24em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
+      <p
+        className="mx-auto mt-3"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          color: 'var(--ink-1)',
+          maxWidth: '52ch',
+          lineHeight: 1.5,
+        }}
+      >
+        {body}
+      </p>
+    </div>
+  );
+}
+
+function LoadingFrame({ label }: { label: string }) {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule)',
+        borderTop: 'none',
+        background: 'color-mix(in oklab, var(--bg-1) 20%, transparent)',
+      }}
+    >
+      <Loader2
+        className="w-5 h-5 animate-spin mx-auto mb-4"
+        strokeWidth={1.5}
+        style={{ color: 'var(--ink-2)' }}
+      />
+      <div
+        className="vt-mono"
+        style={{
+          fontSize: '10.5px',
+          letterSpacing: '0.24em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
     </div>
   );
 }

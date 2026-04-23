@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useCurrentProject } from '@/hooks/useProject';
 import {
-  Brain,
   Plus,
   Trash2,
   Loader2,
@@ -13,30 +12,11 @@ import {
   XCircle,
   RefreshCw,
   Zap,
-  Globe,
-  Server,
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 import {
   Dialog,
   DialogContent,
@@ -82,12 +62,12 @@ interface ProviderDefaults {
   staticModels: ModelInfo[];
 }
 
-const providerIcons: Record<string, string> = {
-  ANTHROPIC: '🟠',
-  OPENAI: '🟢',
-  OPENROUTER: '🔵',
-  GEMINI: '🔷',
-  LOCAL: '🖥️',
+const PROVIDER_CODE: Record<string, string> = {
+  ANTHROPIC: 'ANT',
+  OPENAI: 'OAI',
+  OPENROUTER: 'ORT',
+  GEMINI: 'GEM',
+  LOCAL: 'LCL',
 };
 
 export default function AIProvidersPage() {
@@ -112,7 +92,6 @@ export default function AIProvidersPage() {
   const [maxRuntime, setMaxRuntime] = useState(120);
   const [isDefault, setIsDefault] = useState(false);
 
-  // Dynamic models
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
 
@@ -121,7 +100,6 @@ export default function AIProvidersPage() {
     if (project?.id) loadConfigs();
   }, [project?.id]);
 
-  // When provider changes, prefill from defaults
   useEffect(() => {
     const d = defaults[provider];
     if (d) {
@@ -162,9 +140,7 @@ export default function AIProvidersPage() {
       if (apiKey) params.apiKey = apiKey;
       if (baseUrl) params.baseUrl = baseUrl;
       const data = await api.get<{ provider: string; models: ModelInfo[] }>('/ai-providers/models', params);
-      if (data?.models?.length > 0) {
-        setModels(data.models);
-      }
+      if (data?.models?.length > 0) setModels(data.models);
     } catch (error) {
       console.error('Failed to fetch models:', error);
     } finally {
@@ -188,7 +164,7 @@ export default function AIProvidersPage() {
         maxRuntimeSeconds: maxRuntime,
         isDefault,
         supportsStreaming: true,
-        supportsImages: models.find(m => m.id === model)?.supportsImages ?? false,
+        supportsImages: models.find((m) => m.id === model)?.supportsImages ?? false,
       });
       setShowAdd(false);
       setApiKey('');
@@ -232,235 +208,540 @@ export default function AIProvidersPage() {
     }
   }
 
-  const selectedModelInfo = models.find(m => m.id === model);
+  const selectedModelInfo = models.find((m) => m.id === model);
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
-  // Engine room — pluggable LLM brains. Headline treats providers as
-  // a retainer of minds, not a list of services.
   return (
-    <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-10 vt-reveal">
-      <header className="pb-7 border-b mb-10 flex items-start justify-between gap-6 flex-wrap" style={{ borderColor: 'var(--rule)' }}>
-        <div>
-          <div className="vt-eyebrow mb-5">§ Settings · AI providers</div>
-          <h1 className="vt-display" style={{ fontSize: 'clamp(34px, 4.5vw, 56px)', lineHeight: 0.98 }}>
-            The <em>brains</em> on retainer.
-          </h1>
-          <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '60ch' }}>
-            Which models read the failure, write the fix, interpret the story.
-            OpenAI, Anthropic, Gemini, a local Ollama — all pluggable.
-          </p>
-        </div>
-        <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" />Add Provider</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add AI Provider</DialogTitle>
-              <DialogDescription>Configure a new LLM provider for AI-powered features</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              {/* Provider Selection */}
-              <div>
-                <Label>Provider</Label>
-                <Select value={provider} onValueChange={setProvider}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ANTHROPIC">{providerIcons.ANTHROPIC} Anthropic (Claude)</SelectItem>
-                    <SelectItem value="OPENAI">{providerIcons.OPENAI} OpenAI (GPT)</SelectItem>
-                    <SelectItem value="GEMINI">{providerIcons.GEMINI} Google Gemini</SelectItem>
-                    <SelectItem value="OPENROUTER">{providerIcons.OPENROUTER} OpenRouter</SelectItem>
-                    <SelectItem value="LOCAL">{providerIcons.LOCAL} Local LLM (Ollama)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet="07.A / 14"
+        eyebrow="§ 07.A · ENGINE ROOM"
+        back={{ href: '/settings', label: 'BACK · WORKBENCH' }}
+        revision={<>REV · 02 · {isoDate}</>}
+        title={<>brains <em>on</em> retainer.</>}
+        lead="LLMs that read the failure, write the fix, interpret the story. Anthropic, OpenAI, Gemini, OpenRouter, or a local Ollama — all pluggable."
+        actions={
+          <Dialog open={showAdd} onOpenChange={setShowAdd}>
+            <DialogTrigger asChild>
+              <button className="vt-btn vt-btn--primary">
+                <Plus className="w-3.5 h-3.5" strokeWidth={1.5} />
+                ADD PROVIDER
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add AI Provider</DialogTitle>
+                <DialogDescription>Configure a new LLM provider for AI-powered features.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Field label="PROVIDER">
+                  <select className="vt-input" value={provider} onChange={(e) => setProvider(e.target.value)}>
+                    <option value="ANTHROPIC">Anthropic (Claude)</option>
+                    <option value="OPENAI">OpenAI (GPT)</option>
+                    <option value="GEMINI">Google Gemini</option>
+                    <option value="OPENROUTER">OpenRouter</option>
+                    <option value="LOCAL">Local LLM (Ollama)</option>
+                  </select>
+                </Field>
 
-              {/* Name */}
-              <div>
-                <Label>Display Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} />
-              </div>
+                <Field label="DISPLAY NAME">
+                  <input className="vt-input" value={name} onChange={(e) => setName(e.target.value)} />
+                </Field>
 
-              {/* API Key */}
-              {defaults[provider]?.requiresApiKey && (
-                <div>
-                  <Label>API Key</Label>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Input
+                {defaults[provider]?.requiresApiKey && (
+                  <Field label="API KEY">
+                    <div className="flex items-stretch gap-2">
+                      <input
+                        className="vt-input flex-1"
                         type={showKey ? 'text' : 'password'}
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
-                        placeholder={provider === 'ANTHROPIC' ? 'sk-ant-...' : provider === 'OPENAI' ? 'sk-...' : provider === 'GEMINI' ? 'AIza...' : 'sk-or-...'}
+                        placeholder={
+                          provider === 'ANTHROPIC'
+                            ? 'sk-ant-...'
+                            : provider === 'OPENAI'
+                            ? 'sk-...'
+                            : provider === 'GEMINI'
+                            ? 'AIza...'
+                            : 'sk-or-...'
+                        }
                       />
+                      <button
+                        type="button"
+                        className="vt-btn"
+                        style={{ padding: '8px 12px' }}
+                        onClick={() => setShowKey(!showKey)}
+                      >
+                        {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => setShowKey(!showKey)}>
-                      {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-              )}
+                  </Field>
+                )}
 
-              {/* Base URL */}
-              {(provider === 'LOCAL' || provider === 'OPENROUTER') && (
+                {(provider === 'LOCAL' || provider === 'OPENROUTER') && (
+                  <Field label="BASE URL">
+                    <input
+                      className="vt-input"
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      placeholder={defaults[provider]?.baseUrl || ''}
+                    />
+                  </Field>
+                )}
+
                 <div>
-                  <Label>Base URL</Label>
-                  <Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={defaults[provider]?.baseUrl || ''} />
-                </div>
-              )}
-
-              {/* Model Selection */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <Label>Model</Label>
-                  <Button variant="ghost" size="sm" onClick={fetchModels} disabled={loadingModels}>
-                    {loadingModels ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-                    {apiKey || provider === 'LOCAL' ? 'Refresh Models' : 'Load Models'}
-                  </Button>
-                </div>
-                <Select value={model} onValueChange={setModel}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a model" />
-                  </SelectTrigger>
-                  <SelectContent>
+                  <div className="flex items-center justify-between mb-2">
+                    <div
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '9.5px',
+                        letterSpacing: '0.22em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-2)',
+                      }}
+                    >
+                      MODEL
+                    </div>
+                    <button
+                      type="button"
+                      className="vt-btn vt-btn--ghost"
+                      style={{ padding: '4px 10px', fontSize: '9.5px' }}
+                      onClick={fetchModels}
+                      disabled={loadingModels}
+                    >
+                      {loadingModels ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3 h-3" />
+                      )}
+                      {apiKey || provider === 'LOCAL' ? 'REFRESH' : 'LOAD'}
+                    </button>
+                  </div>
+                  <select className="vt-input" value={model} onChange={(e) => setModel(e.target.value)}>
+                    <option value="">Select a model</option>
                     {models.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{m.name}</span>
-                          {m.pricing?.inputPerMToken !== undefined && (
-                            <span className="text-xs text-muted-foreground">
-                              ${m.pricing.inputPerMToken}/M in
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
                     ))}
-                  </SelectContent>
-                </Select>
-                {selectedModelInfo && (
-                  <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                    {selectedModelInfo.description && <p>{selectedModelInfo.description}</p>}
-                    <div className="flex gap-3">
-                      {selectedModelInfo.contextWindow && <span>Context: {(selectedModelInfo.contextWindow / 1000).toFixed(0)}K</span>}
-                      {selectedModelInfo.maxOutputTokens && <span>Max output: {(selectedModelInfo.maxOutputTokens / 1000).toFixed(0)}K</span>}
-                      {selectedModelInfo.supportsImages && <Badge variant="outline" className="text-xs">Vision</Badge>}
+                  </select>
+                  {selectedModelInfo && (
+                    <div
+                      className="mt-2"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '10.5px',
+                        letterSpacing: '0.1em',
+                        color: 'var(--ink-2)',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {selectedModelInfo.contextWindow && (
+                        <>CTX · {(selectedModelInfo.contextWindow / 1000).toFixed(0)}K · </>
+                      )}
+                      {selectedModelInfo.maxOutputTokens && (
+                        <>OUT · {(selectedModelInfo.maxOutputTokens / 1000).toFixed(0)}K · </>
+                      )}
+                      {selectedModelInfo.supportsImages && <>VISION · Y</>}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="MAX TOKENS">
+                    <input
+                      className="vt-input"
+                      type="number"
+                      value={maxTokens}
+                      onChange={(e) => setMaxTokens(parseInt(e.target.value) || 4096)}
+                    />
+                  </Field>
+                  <Field label="MAX RUNTIME · SEC">
+                    <input
+                      className="vt-input"
+                      type="number"
+                      value={maxRuntime}
+                      onChange={(e) => setMaxRuntime(parseInt(e.target.value) || 120)}
+                    />
+                  </Field>
+                </div>
+
+                <Field label={`TEMPERATURE · ${temperature.toFixed(2)}`}>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={temperature}
+                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                    className="w-full"
+                  />
+                  <div
+                    className="flex justify-between mt-1"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '9.5px',
+                      letterSpacing: '0.18em',
+                      color: 'var(--ink-2)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    <span>PRECISE · 0</span>
+                    <span>CREATIVE · 1</span>
+                  </div>
+                </Field>
+
+                <div
+                  className="flex items-center justify-between p-3"
+                  style={{ border: '1px solid var(--rule)' }}
+                >
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10.5px',
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color: 'var(--ink-0)',
+                    }}
+                  >
+                    SET AS DEFAULT
+                  </div>
+                  <SegmentedToggle checked={isDefault} onChange={setIsDefault} />
+                </div>
+              </div>
+              <DialogFooter>
+                <button className="vt-btn" onClick={() => setShowAdd(false)}>CANCEL</button>
+                <button className="vt-btn vt-btn--primary" onClick={handleSave} disabled={saving || !model}>
+                  {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  ADD PROVIDER
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        }
+      >
+        <section aria-labelledby="providers-head">
+          <div className="vt-section-head">
+            <span className="num">§ 01</span>
+            <span className="ttl" id="providers-head">providers on file</span>
+            <span className="rule" />
+            <span className="stamp">{configs.length.toString().padStart(2, '0')} CONFIGURED</span>
+          </div>
+
+          {loading ? (
+            <LoadingFrame />
+          ) : configs.length === 0 ? (
+            <EmptyFrame
+              title="no ai providers configured."
+              body="Add one to enable intelligent failure analysis and autonomous fix generation. Without an AI provider, classification falls back to rule-based heuristics."
+            />
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              <div
+                className="grid grid-cols-[70px_1fr_180px_180px_160px] gap-0"
+                style={{
+                  borderBottom: '1px solid var(--rule-strong)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '9.5px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                {['CODE', 'NAME · MODEL', 'KEY', 'TEMP · TOKENS', 'STATUS'].map((h, i) => (
+                  <div
+                    key={h}
+                    className="py-3 px-4"
+                    style={{ borderRight: i < 4 ? '1px solid var(--rule)' : 'none' }}
+                  >
+                    {h}
+                  </div>
+                ))}
+              </div>
+              {configs.map((config, i) => (
+                <div
+                  key={config.id}
+                  style={{
+                    borderBottom: i < configs.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                    opacity: config.isActive ? 1 : 0.5,
+                  }}
+                >
+                  <div className="grid grid-cols-[70px_1fr_180px_180px_160px] gap-0 items-center">
+                    <div
+                      className="py-4 px-4"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        letterSpacing: '0.18em',
+                        color: 'var(--accent)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {PROVIDER_CODE[config.provider] || 'AI'}
+                    </div>
+                    <div
+                      className="py-3 px-4"
+                      style={{ borderRight: '1px solid var(--rule-soft)' }}
+                    >
+                      <div
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: '16px',
+                          color: 'var(--ink-0)',
+                          textTransform: 'lowercase',
+                        }}
+                      >
+                        {config.name}
+                        {config.isDefault && (
+                          <span
+                            className="ml-2 vt-rev-stamp"
+                            style={{ fontSize: '9px', padding: '2px 6px', verticalAlign: 'middle' }}
+                          >
+                            <Star className="w-2.5 h-2.5" strokeWidth={1.5} /> DEFAULT
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className="mt-1 vt-mono"
+                        style={{
+                          fontSize: '10.5px',
+                          letterSpacing: '0.06em',
+                          color: 'var(--ink-2)',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {config.provider} · {config.model}
+                      </div>
+                    </div>
+                    <div
+                      className="py-4 px-4 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '11px',
+                        color: config.hasApiKey ? 'var(--ink-1)' : 'var(--ink-2)',
+                      }}
+                    >
+                      {config.hasApiKey ? '••••••••••' : '—'}
+                    </div>
+                    <div
+                      className="py-4 px-4 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '11px',
+                        color: 'var(--ink-1)',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      T {config.temperature} · {config.maxTokens}
+                    </div>
+                    <div className="py-4 px-4">
+                      {config.isActive ? (
+                        <span className="vt-chip vt-chip--pass" style={{ fontSize: '9.5px' }}>
+                          CONNECTED
+                        </span>
+                      ) : (
+                        <span className="vt-chip" style={{ fontSize: '9.5px' }}>
+                          UNCONFIGURED
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Parameters */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Max Tokens</Label>
-                  <Input type="number" value={maxTokens} onChange={(e) => setMaxTokens(parseInt(e.target.value) || 4096)} />
-                </div>
-                <div>
-                  <Label>Max Runtime (seconds)</Label>
-                  <Input type="number" value={maxRuntime} onChange={(e) => setMaxRuntime(parseInt(e.target.value) || 120)} />
-                </div>
-              </div>
-
-              <div>
-                <Label>Temperature ({temperature})</Label>
-                <Input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={temperature}
-                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>Precise (0)</span>
-                  <span>Creative (1)</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label>Set as Default Provider</Label>
-                <Switch checked={isDefault} onCheckedChange={setIsDefault} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={saving || !model}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Add Provider
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </header>
-
-      {/* Provider List */}
-      {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-      ) : configs.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Brain className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No AI providers configured</h3>
-            <p className="text-muted-foreground mt-1">
-              Add an AI provider to enable intelligent failure analysis and fix generation.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Without an AI provider, the system uses rule-based heuristics for classification and analysis.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {configs.map((config) => (
-            <Card key={config.id} className={!config.isActive ? 'opacity-50' : ''}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{providerIcons[config.provider] || '🤖'}</span>
-                    <CardTitle className="text-base">{config.name}</CardTitle>
-                    {config.isDefault && (
-                      <Badge variant="outline" className="text-yellow-600">
-                        <Star className="h-3 w-3 mr-1" /> Default
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{config.provider}</Badge>
-                    <Badge variant="outline" className="font-mono text-xs">{config.model}</Badge>
-                  </div>
-                </div>
-                <CardDescription>
-                  {config.hasApiKey ? 'API key configured' : 'No API key'} - Max {config.maxTokens} tokens - Temp {config.temperature}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {testResult?.id === config.id && (
-                  <div className={`mb-3 p-3 rounded-lg text-sm ${testResult.success ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'}`}>
-                    {testResult.success ? <CheckCircle2 className="h-4 w-4 inline mr-2" /> : <XCircle className="h-4 w-4 inline mr-2" />}
-                    {testResult.message}
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleTest(config.id)} disabled={testing === config.id}>
-                    {testing === config.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
-                    Test Connection
-                  </Button>
-                  {!config.isDefault && (
-                    <Button variant="outline" size="sm" onClick={() => handleSetDefault(config.id)}>
-                      <Star className="h-4 w-4 mr-2" /> Set Default
-                    </Button>
+                  {testResult?.id === config.id && (
+                    <div
+                      className="px-4 py-3 vt-mono"
+                      style={{
+                        background: testResult.success ? 'var(--pass-soft)' : 'var(--fail-soft)',
+                        color: testResult.success ? 'var(--pass)' : 'var(--fail)',
+                        fontSize: '11px',
+                        letterSpacing: '0.04em',
+                        borderTop: '1px solid var(--rule-soft)',
+                      }}
+                    >
+                      {testResult.success ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 inline mr-2" />
+                      ) : (
+                        <XCircle className="w-3.5 h-3.5 inline mr-2" />
+                      )}
+                      {testResult.message}
+                    </div>
                   )}
-                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(config.id)}>
-                    <Trash2 className="h-4 w-4 mr-2" /> Remove
-                  </Button>
+
+                  <div
+                    className="px-4 py-3 flex items-center gap-2"
+                    style={{
+                      borderTop: '1px solid var(--rule-soft)',
+                      background: 'color-mix(in oklab, var(--bg-2) 20%, transparent)',
+                    }}
+                  >
+                    <button
+                      className="vt-btn"
+                      style={{ padding: '6px 12px', fontSize: '10px' }}
+                      onClick={() => handleTest(config.id)}
+                      disabled={testing === config.id}
+                    >
+                      {testing === config.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Zap className="w-3 h-3" />
+                      )}
+                      TEST
+                    </button>
+                    {!config.isDefault && (
+                      <button
+                        className="vt-btn"
+                        style={{ padding: '6px 12px', fontSize: '10px' }}
+                        onClick={() => handleSetDefault(config.id)}
+                      >
+                        <Star className="w-3 h-3" /> SET DEFAULT
+                      </button>
+                    )}
+                    <button
+                      className="vt-btn vt-btn--ghost"
+                      style={{ padding: '6px 12px', fontSize: '10px', color: 'var(--fail)' }}
+                      onClick={() => handleDelete(config.id)}
+                    >
+                      <Trash2 className="w-3 h-3" /> REMOVE
+                    </button>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              ))}
+            </div>
+          )}
+        </section>
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div
+        className="mb-2"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '9.5px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function SegmentedToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="grid grid-cols-2" style={{ border: '1px solid var(--rule)' }}>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        style={{
+          padding: '6px 14px',
+          background: !checked ? 'var(--bg-2)' : 'transparent',
+          color: !checked ? 'var(--ink-0)' : 'var(--ink-2)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          borderRight: '1px solid var(--rule)',
+          cursor: 'pointer',
+        }}
+      >
+        OFF
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        style={{
+          padding: '6px 14px',
+          background: checked ? 'var(--accent)' : 'transparent',
+          color: checked ? 'var(--bg-0)' : 'var(--ink-2)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+        }}
+      >
+        ON
+      </button>
+    </div>
+  );
+}
+
+function LoadingFrame() {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: 'var(--ink-2)' }} />
+      <div
+        className="mt-3"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        LOADING
+      </div>
+    </div>
+  );
+}
+
+function EmptyFrame({ title, body }: { title: string; body: string }) {
+  return (
+    <div
+      className="p-10 text-center"
+      style={{
+        border: '1px dashed var(--rule-strong)',
+        background: 'color-mix(in oklab, var(--bg-1) 25%, transparent)',
+      }}
+    >
+      <div className="vt-kicker" style={{ color: 'var(--ink-2)', justifyContent: 'center' }}>
+        PLATE EMPTY
+      </div>
+      <h3
+        className="mt-3"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(22px, 2.4vw, 32px)',
+          color: 'var(--ink-0)',
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        className="mt-3 mx-auto"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          maxWidth: '52ch',
+          color: 'var(--ink-1)',
+          lineHeight: 1.5,
+        }}
+      >
+        {body}
+      </p>
     </div>
   );
 }

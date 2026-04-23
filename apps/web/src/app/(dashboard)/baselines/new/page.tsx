@@ -1,51 +1,36 @@
 'use client';
 
-// Manual baseline creation — pick any passing execution, give it a
-// name, and promote its screenshots into a new baseline.
-//
-// UX rule: this is the "advanced" entry point. 95% of users should
-// reach the "Set as baseline" button directly on /executions/[id] or
-// /tests/[id]. This page exists for cross-test naming, for restoring
-// a historical snapshot, and as a discoverable alternative if the
-// inline button isn't visible (e.g. the test never passed).
+// Baselines / new — drafting a new reference print.
+// This is the advanced entry point (most users use the "Set as baseline"
+// button on an execution page). Sheet-style form: §01 pick execution,
+// §02 name + environment + supersede note, §03 commit.
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
-  ArrowLeft,
-  Layers,
   Loader2,
-  Info,
   CheckCircle2,
   XCircle,
   Clock,
   Activity,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { VtStage } from '@/components/shell/AppShell';
+import { EditorialHero } from '@/components/shell/EditorialHero';
 import { useCurrentProject } from '@/hooks/useProject';
 import { baselinesApi, executionsApi } from '@/lib/api';
 
 const STATUS_META: Record<
   string,
-  { icon: React.ElementType; color: string }
+  { icon: React.ElementType; tone: string; chip: string }
 > = {
-  PASSED: { icon: CheckCircle2, color: 'text-emerald-400' },
-  FAILED: { icon: XCircle, color: 'text-red-400' },
-  RUNNING: { icon: Activity, color: 'text-blue-400' },
-  PENDING: { icon: Clock, color: 'text-muted-foreground' },
-  QUEUED: { icon: Clock, color: 'text-muted-foreground' },
+  PASSED: { icon: CheckCircle2, tone: 'var(--pass)', chip: 'vt-chip vt-chip--pass' },
+  FAILED: { icon: XCircle, tone: 'var(--fail)', chip: 'vt-chip vt-chip--fail' },
+  RUNNING: { icon: Activity, tone: 'var(--accent)', chip: 'vt-chip vt-chip--accent' },
+  PENDING: { icon: Clock, tone: 'var(--ink-2)', chip: 'vt-chip' },
+  QUEUED: { icon: Clock, tone: 'var(--ink-2)', chip: 'vt-chip' },
 };
 
 export default function NewBaselinePage() {
@@ -55,13 +40,9 @@ export default function NewBaselinePage() {
   const [name, setName] = useState('');
   const [branch, setBranch] = useState('main');
 
-  // Show recent executions, prioritise PASSED. We don't block other
-  // statuses — there are legitimate reasons to baseline a failing run
-  // (e.g. recording "expected error" screens).
   const { data: executions, isLoading } = useQuery({
     queryKey: ['executions', project?.id, 'for-baseline'],
-    queryFn: () =>
-      executionsApi.list(project!.id, { limit: '30' } as any),
+    queryFn: () => executionsApi.list(project!.id, { limit: '30' } as any),
     enabled: !!project?.id,
   });
 
@@ -84,77 +65,133 @@ export default function NewBaselinePage() {
     onError: (err: any) => toast.error(err.message || 'Create failed'),
   });
 
-  const selectedExec = executions?.find((e) => e.id === selected);
+  const selectedExec = executions?.find((e: any) => e.id === selected);
+  const isoDate = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 
   if (!project) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <div className="text-muted-foreground mb-4">
-          Select a project first
+      <VtStage width="narrow">
+        <div className="vt-kicker mb-3" style={{ color: 'var(--accent)' }}>§ no project</div>
+        <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 60px)' }}>
+          Pick a <em>project</em> first.
+        </h1>
+        <div className="mt-8">
+          <Link href="/" className="vt-btn vt-btn--primary">BACK TO DASHBOARD</Link>
         </div>
-        <Link href="/">
-          <Button variant="outline">Go to Dashboard</Button>
-        </Link>
-      </div>
+      </VtStage>
     );
   }
 
   return (
-    <div className="max-w-[1000px] mx-auto px-6 md:px-12 py-10 space-y-10 vt-reveal">
-      <header className="pb-6 border-b" style={{ borderColor: 'var(--rule)' }}>
-        <div className="flex items-center gap-4 mb-5">
-          <button
-            type="button"
-            onClick={() => router.push('/baselines')}
-            className="vt-kicker inline-flex items-center gap-2 transition-colors"
-            style={{ color: 'var(--ink-2)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-2)')}
+    <VtStage width="wide">
+      <EditorialHero
+        width="wide"
+        sheet={`07.1 / 12`}
+        eyebrow={`§ 07.1 · NEW REFERENCE`}
+        revision={<>REV · DRAFT · {isoDate}</>}
+        back={{ href: '/baselines', label: 'BACK TO ARCHIVE' }}
+        title={
+          <>
+            promote an <em>execution</em>.
+          </>
+        }
+        lead="Pick a run; we promote its screenshots into the archive. Future tests with the same name will compare against this print. Most users reach this flow inline from an execution — this sheet is for renaming, rebranding, or pulling from an older run."
+      >
+        {/* Advisory strip — the "most people use Set as baseline inline" note */}
+        <div
+          className="p-4 flex items-start gap-3"
+          style={{
+            border: '1px solid var(--rule)',
+            borderLeft: '2px solid var(--accent)',
+            background: 'var(--accent-soft)',
+          }}
+        >
+          <div
+            className="vt-mono"
+            style={{
+              fontSize: '9.5px',
+              letterSpacing: '0.22em',
+              color: 'var(--accent)',
+              textTransform: 'uppercase',
+              minWidth: 72,
+            }}
           >
-            <ArrowLeft className="w-3 h-3" /> back to baselines
-          </button>
-          <span className="vt-eyebrow">§ New reference print</span>
+            ADVISORY
+          </div>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13.5px',
+              lineHeight: 1.5,
+              color: 'var(--ink-1)',
+              margin: 0,
+            }}
+          >
+            Most users click{' '}
+            <span style={{ color: 'var(--accent)' }}>Set as baseline</span>{' '}
+            directly on an execution page. This sheet is the drafting bench —
+            use it to rename a baseline, pull from an older run, or establish a
+            print for a test that has never passed.
+          </p>
         </div>
-        <h1 className="vt-display" style={{ fontSize: 'clamp(36px, 5vw, 56px)', lineHeight: 0.98 }}>
-          Promote an <em>execution</em>.
-        </h1>
-        <p className="mt-4 vt-italic" style={{ fontVariationSettings: '"opsz" 24', fontSize: '17px', color: 'var(--ink-1)', maxWidth: '56ch' }}>
-          Pick a run; we&apos;ll promote its screenshots. Future tests with
-          the same name will compare against these.
-        </p>
-      </header>
 
-      <div className="border border-blue-800/50 bg-blue-900/10 rounded-md p-3 flex items-start gap-2 text-sm">
-        <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-        <div className="text-blue-200">
-          Most people use the{' '}
-          <strong className="font-medium">Set as baseline</strong>{' '}
-          button on a specific execution instead. This page is for when
-          you want to name or rebrand the baseline, or pick an older run.
-        </div>
-      </div>
+        {/* §01 — pick execution */}
+        <section aria-labelledby="pick-head">
+          <div className="vt-section-head">
+            <span className="num">§ 01</span>
+            <span className="ttl" id="pick-head">pick an execution</span>
+            <span className="rule" />
+            <span className="stamp">
+              {isLoading
+                ? 'LOADING…'
+                : !executions || executions.length === 0
+                ? 'NIL · NO RUNS'
+                : `${executions.length} RECENT`}
+            </span>
+          </div>
 
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-base">Pick an execution</CardTitle>
-          <CardDescription>
-            Recent runs from this project. Passing runs are the obvious
-            choice, but you can pick any run with screenshots.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
           {isLoading ? (
-            <div className="flex items-center gap-2 text-muted-foreground py-4">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading…
-            </div>
+            <DashedFrame>loading recent runs…</DashedFrame>
           ) : !executions || executions.length === 0 ? (
-            <div className="text-sm text-muted-foreground italic">
-              No executions yet. Run a test first — then the Set-as-
-              baseline button will show up inline on the execution page.
-            </div>
+            <DashedFrame>
+              no runs on file — run a test first, the inline set-as-baseline
+              button will appear.
+            </DashedFrame>
           ) : (
-            <div className="space-y-1 max-h-[400px] overflow-y-auto">
-              {executions.map((e: any) => {
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+                maxHeight: 420,
+                overflowY: 'auto',
+              }}
+            >
+              <div
+                className="grid grid-cols-[28px_110px_1fr_140px_100px] gap-0"
+                style={{
+                  borderBottom: '1px solid var(--rule-strong)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '9.5px',
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                {['', 'RUN', 'TEST', 'STAMP', 'STATUS'].map((h, i) => (
+                  <div
+                    key={i}
+                    className="py-3 px-3"
+                    style={{
+                      borderRight: i < 4 ? '1px solid var(--rule)' : 'none',
+                      textAlign: i === 4 ? 'right' : 'left',
+                    }}
+                  >
+                    {h}
+                  </div>
+                ))}
+              </div>
+
+              {executions.map((e: any, i: number) => {
                 const meta = STATUS_META[e.status] ?? STATUS_META.PENDING;
                 const Icon = meta.icon;
                 const isSelected = e.id === selected;
@@ -166,95 +203,287 @@ export default function NewBaselinePage() {
                       setSelected(e.id);
                       if (!name && e.test?.name) setName(e.test.name);
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${
-                      isSelected
-                        ? 'bg-blue-900/20 border border-blue-700/50'
-                        : 'hover:bg-accent border border-transparent'
-                    }`}
+                    className="grid grid-cols-[28px_110px_1fr_140px_100px] gap-0 w-full text-left group"
+                    style={{
+                      borderBottom: i < executions.length - 1 ? '1px solid var(--rule-soft)' : 'none',
+                      background: isSelected
+                        ? 'var(--accent-soft)'
+                        : 'transparent',
+                      transition: 'background var(--dur-quick) var(--ease-out)',
+                    }}
+                    onMouseEnter={(ev) => {
+                      if (!isSelected)
+                        ev.currentTarget.style.background =
+                          'color-mix(in oklab, var(--bg-2) 35%, transparent)';
+                    }}
+                    onMouseLeave={(ev) => {
+                      if (!isSelected) ev.currentTarget.style.background = 'transparent';
+                    }}
                   >
-                    <Icon className={`w-4 h-4 ${meta.color} flex-shrink-0`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-foreground text-sm truncate">
-                        {e.test?.name || 'Untitled execution'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(e.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] flex-shrink-0"
+                    <div
+                      className="py-3 px-3 flex items-center justify-center"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        color: isSelected ? 'var(--accent)' : 'var(--ink-3)',
+                      }}
                     >
-                      {e.status}
-                    </Badge>
+                      <span
+                        className="vt-mono"
+                        style={{ fontSize: '14px', lineHeight: 1 }}
+                      >
+                        {isSelected ? '●' : '○'}
+                      </span>
+                    </div>
+                    <div
+                      className="py-3 px-3 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '10.5px',
+                        letterSpacing: '0.12em',
+                        color: 'var(--accent)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      R-{String(e.id).slice(-6).toUpperCase()}
+                    </div>
+                    <div
+                      className="py-3 px-3 flex items-center gap-2 min-w-0"
+                      style={{ borderRight: '1px solid var(--rule-soft)' }}
+                    >
+                      <Icon
+                        className="w-3.5 h-3.5 flex-shrink-0"
+                        strokeWidth={1.5}
+                        style={{ color: meta.tone }}
+                      />
+                      <span
+                        className="truncate"
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: '15px',
+                          color: 'var(--ink-0)',
+                          textTransform: 'lowercase',
+                          lineHeight: 1.15,
+                        }}
+                      >
+                        {e.test?.name || 'untitled execution'}
+                      </span>
+                    </div>
+                    <div
+                      className="py-3 px-3 vt-mono"
+                      style={{
+                        borderRight: '1px solid var(--rule-soft)',
+                        fontSize: '10px',
+                        letterSpacing: '0.08em',
+                        color: 'var(--ink-2)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {new Date(e.createdAt).toISOString().slice(5, 16).replace('T', ' · ')}
+                    </div>
+                    <div className="py-3 px-3 flex items-center justify-end">
+                      <span className={meta.chip} style={{ fontSize: '9.5px', padding: '3px 8px' }}>
+                        {e.status}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </section>
 
-      {selectedExec && (
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-base">Baseline details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Name <span className="text-red-400">*</span>
+        {/* §02 — name + environment */}
+        <section aria-labelledby="meta-head">
+          <div className="vt-section-head">
+            <span className="num">§ 02</span>
+            <span className="ttl" id="meta-head">baseline meta</span>
+            <span className="rule" />
+            <span className="stamp">
+              {selectedExec ? 'READY TO FILL' : 'AWAITING · §01'}
+            </span>
+          </div>
+
+          {!selectedExec ? (
+            <DashedFrame>select a run above before filling the draft sheet.</DashedFrame>
+          ) : (
+            <div
+              style={{
+                border: '1px solid var(--rule-strong)',
+                background: 'color-mix(in oklab, var(--bg-1) 40%, transparent)',
+              }}
+            >
+              <div
+                className="grid grid-cols-1 md:grid-cols-2 gap-0"
+                style={{ borderBottom: '1px solid var(--rule)' }}
+              >
+                <label
+                  className="block p-6"
+                  style={{ borderRight: '1px solid var(--rule)' }}
+                >
+                  <span
+                    className="vt-mono block mb-2"
+                    style={{
+                      fontSize: '9.5px',
+                      letterSpacing: '0.22em',
+                      color: 'var(--ink-2)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    NAME · <span style={{ color: 'var(--fail)' }}>REQUIRED</span>
+                  </span>
+                  <input
+                    className="vt-input"
+                    value={name}
+                    onChange={(ev) => setName(ev.target.value)}
+                    placeholder={(selectedExec as any).test?.name || 'reference print'}
+                  />
+                  <p
+                    className="mt-2 vt-mono"
+                    style={{
+                      fontSize: '9.5px',
+                      letterSpacing: '0.12em',
+                      color: 'var(--ink-2)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    CONVENTION · MATCH THE TEST NAME VERBATIM
+                  </p>
                 </label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={(selectedExec as any).test?.name || 'Run baseline'}
-                  className="bg-muted border-border"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Tests with this name will compare against this
-                  baseline. Convention: use the exact test name.
-                </p>
+                <label className="block p-6">
+                  <span
+                    className="vt-mono block mb-2"
+                    style={{
+                      fontSize: '9.5px',
+                      letterSpacing: '0.22em',
+                      color: 'var(--ink-2)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    ENVIRONMENT · BRANCH
+                  </span>
+                  <input
+                    className="vt-input"
+                    value={branch}
+                    onChange={(ev) => setBranch(ev.target.value)}
+                    placeholder="main"
+                  />
+                  <p
+                    className="mt-2 vt-mono"
+                    style={{
+                      fontSize: '9.5px',
+                      letterSpacing: '0.12em',
+                      color: 'var(--ink-2)',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    BASELINES ARE PER-BRANCH · LEAVE AS <span style={{ color: 'var(--ink-1)' }}>MAIN</span> IF UNSURE
+                  </p>
+                </label>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Branch
-                </label>
-                <Input
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                  placeholder="main"
-                  className="bg-muted border-border"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Baselines are per-branch. Leave as{' '}
-                  <code>main</code> if you&apos;re not branching.
-                </p>
+              {/* Supersede advisory */}
+              <div
+                className="p-5 flex items-start gap-4"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10.5px',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-2)',
+                }}
+              >
+                <span
+                  className="vt-rev-stamp"
+                  style={{ fontSize: '9.5px', padding: '3px 8px' }}
+                >
+                  ON APPROVAL
+                </span>
+                <span>
+                  SUPERSEDES EXISTING REVISION · ESTABLISHES <span style={{ color: 'var(--accent)' }}>REV 02</span>
+                </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="flex items-center justify-end gap-3">
-        <Button variant="ghost" onClick={() => router.push('/baselines')}>
-          Cancel
-        </Button>
-        <Button
-          disabled={!selected || createMutation.isPending}
-          onClick={() => createMutation.mutate()}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          {createMutation.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating…
-            </>
-          ) : (
-            'Create baseline'
           )}
-        </Button>
-      </div>
+        </section>
+
+        {/* §03 — commit */}
+        <section aria-labelledby="commit-head">
+          <div className="vt-section-head">
+            <span className="num">§ 03</span>
+            <span className="ttl" id="commit-head">commit draft</span>
+            <span className="rule" />
+            <span className="stamp">PRESS TO ESTABLISH</span>
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              className="vt-btn vt-btn--ghost"
+              onClick={() => router.push('/baselines')}
+            >
+              CANCEL
+            </button>
+            <button
+              type="button"
+              className="vt-btn vt-btn--primary"
+              disabled={!selected || createMutation.isPending}
+              onClick={() => createMutation.mutate()}
+            >
+              {createMutation.isPending ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
+                  ESTABLISHING…
+                </>
+              ) : (
+                <>
+                  ESTABLISH BASELINE
+                </>
+              )}
+            </button>
+          </div>
+        </section>
+
+        <Colophon projectName={project.name} slug={project.slug} />
+      </EditorialHero>
+    </VtStage>
+  );
+}
+
+/* ───────────────────────────────────────────────── primitives ── */
+
+function DashedFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="p-10 text-center vt-mono"
+      style={{
+        border: '1px dashed var(--rule)',
+        background: 'color-mix(in oklab, var(--bg-1) 20%, transparent)',
+        fontSize: '10.5px',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: 'var(--ink-2)',
+      }}
+    >
+      {children}
     </div>
+  );
+}
+
+function Colophon({ projectName, slug }: { projectName: string; slug?: string }) {
+  return (
+    <footer
+      className="pt-6 flex justify-between gap-4 flex-wrap"
+      style={{
+        borderTop: '1px solid var(--rule)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '10px',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: 'var(--ink-2)',
+      }}
+    >
+      <span>SHEET 07.1 · DRAFT · {projectName}</span>
+      <span>CHECKED · {(slug || 'VT').toUpperCase()}</span>
+      <span>ON APPROVAL · SUPERSEDES PRIOR</span>
+    </footer>
   );
 }
