@@ -48,6 +48,13 @@ import apiTestRoutes from './routes/apiTests';
 import aiProviderRoutes from './routes/aiProviders';
 import aiDiffRoutes from './routes/aiDiff';
 import storybookRoutes, { reconcileAllPollingSchedulers } from './routes/storybook';
+import templateRoutes from './routes/templates';
+import { seedBuiltinTemplates } from './services/templates.service';
+import featureRoutes from './routes/features';
+import credentialRoutes from './routes/credentials';
+import scanRoutes from './routes/scans';
+import anonymousRoutes from './routes/anonymous';
+import { reapExpiredAnonymousSessions } from './services/anonymousSession.service';
 
 const app = express();
 const httpServer = createServer(app);
@@ -78,6 +85,10 @@ app.use(cors({
 app.use(compression());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
+// Cookie parser for the anonymous sandbox vt_anon_session cookie.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 
 // Logging
 app.use(requestId);
@@ -127,6 +138,13 @@ v1Router.use('/api-tests', apiTestRoutes);
 v1Router.use('/ai-providers', aiProviderRoutes);
 v1Router.use('/ai-diff', aiDiffRoutes);
 v1Router.use('/storybook', storybookRoutes);
+v1Router.use('/templates', templateRoutes);
+v1Router.use('/features', featureRoutes);
+v1Router.use('/credentials', credentialRoutes);
+// Scan routes mount at the root of v1 because they span /projects/:id/scan,
+// /scans/smoke, and /executions/:id/nodes — three different resource bases.
+v1Router.use('/', scanRoutes);
+v1Router.use('/anon', anonymousRoutes);
 
 app.use('/api/v1', v1Router);
 
@@ -308,6 +326,30 @@ async function start() {
       } catch (err) {
         logger.error({ err }, 'Failed to reconcile storybook polling schedulers on startup');
       }
+
+      // Seed built-in story templates (Phase 1b). Idempotent upsert.
+      try {
+        await seedBuiltinTemplates();
+      } catch (err) {
+        logger.error({ err }, 'Failed to seed built-in story templates');
+      }
+
+      // Anonymous-sandbox TTL cron (Phase 4). Runs hourly — so
+      // expired sessions don't linger more than an hour past their
+      // expiry. Nightly would be cheaper but an hour feels right for
+      // a self-hosted tool.
+      try {
+        await reapExpiredAnonymousSessions();
+      } catch (err) {
+        logger.error({ err }, 'Initial anon reap failed');
+      }
+      setInterval(async () => {
+        try {
+          await reapExpiredAnonymousSessions();
+        } catch (err) {
+          logger.error({ err }, 'Periodic anon reap failed');
+        }
+      }, 60 * 60 * 1000);
     });
   } catch (error) {
     logger.error({ err: error }, '❌ Failed to start server');

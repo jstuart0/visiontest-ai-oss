@@ -52,6 +52,17 @@ const createTestSchema = z.object({
   coveredFiles: z.array(z.string()).optional(),
   platform: z.enum(['WEB', 'IOS', 'ANDROID', 'MOBILE_WEB']).optional(),
   deviceProfileId: z.string().cuid().optional(),
+  // Story authoring (Phase 1a)
+  goal: z.string().max(5000).optional(),
+  storySource: z.string().max(50000).optional(),
+  storyFormat: z.enum(['natural', 'yaml', 'json']).optional(),
+  // Context fields (Phase 1c)
+  startUrl: z.string().url().optional(),
+  credentialRef: z.string().max(100).optional(),
+  environment: z.string().max(100).optional(),
+  preconditionTestId: z.string().cuid().optional(),
+  featureId: z.string().cuid().optional(),
+  fixtureJson: z.record(z.unknown()).optional(),
 });
 
 const updateTestSchema = z.object({
@@ -65,6 +76,17 @@ const updateTestSchema = z.object({
   coveredFiles: z.array(z.string()).optional(),
   platform: z.enum(['WEB', 'IOS', 'ANDROID', 'MOBILE_WEB']).optional(),
   deviceProfileId: z.string().cuid().optional().nullable(),
+  // Story authoring (Phase 1a)
+  goal: z.string().max(5000).nullable().optional(),
+  storySource: z.string().max(50000).nullable().optional(),
+  storyFormat: z.enum(['natural', 'yaml', 'json']).nullable().optional(),
+  // Context fields (Phase 1c)
+  startUrl: z.string().url().nullable().optional(),
+  credentialRef: z.string().max(100).nullable().optional(),
+  environment: z.string().max(100).nullable().optional(),
+  preconditionTestId: z.string().cuid().nullable().optional(),
+  featureId: z.string().cuid().nullable().optional(),
+  fixtureJson: z.record(z.unknown()).nullable().optional(),
 });
 
 // =============================================================================
@@ -230,6 +252,14 @@ router.post('/', authenticate, mutationLimiter, async (req: Request, res: Respon
       }
     }
 
+    // Layer-1 goal compilation — runs at save so tests without a verifiable
+    // goal never reach the runner. A goal with unresolved clauses and no
+    // LLM configured hard-fails here; see plan §6 Goal evaluation.
+    const goalArtifacts = await resolveGoalForSave({
+      projectId: input.projectId,
+      goal: input.goal,
+    });
+
     const test = await prisma.test.create({
       data: {
         projectId: input.projectId,
@@ -243,6 +273,17 @@ router.post('/', authenticate, mutationLimiter, async (req: Request, res: Respon
         status: TestStatus.ACTIVE,
         platform: (input.platform || 'WEB') as any,
         deviceProfileId: input.deviceProfileId,
+        goal: input.goal || null,
+        goalChecks: goalArtifacts.goalChecks,
+        storySource: input.storySource || null,
+        storyFormat: input.storyFormat || null,
+        source: input.storySource ? 'story' : undefined,
+        startUrl: input.startUrl || null,
+        credentialRef: input.credentialRef || null,
+        environment: input.environment || null,
+        preconditionTestId: input.preconditionTestId || null,
+        featureId: input.featureId || null,
+        fixtureJson: (input.fixtureJson || undefined) as Prisma.InputJsonValue | undefined,
       },
       include: {
         suite: {
@@ -263,6 +304,26 @@ router.post('/', authenticate, mutationLimiter, async (req: Request, res: Respon
         steps: JSON.parse(test.steps as string),
       },
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /tests/goal-patterns
+ *
+ * Emits the Layer-1 pattern vocabulary so the UI's goal textarea can show
+ * an inline reference drawer. MUST be registered before `GET /:testId` so
+ * Express doesn't treat "goal-patterns" as a testId.
+ *
+ * The actual `GOAL_PATTERN_REFERENCE` import happens at the bottom of
+ * this file alongside the other goal endpoints; we reference it via a
+ * lazy getter so the order of the imports doesn't matter.
+ */
+router.get('/goal-patterns', authenticate, async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { GOAL_PATTERN_REFERENCE } = await import('../services/goalCompiler.service');
+    res.json({ success: true, data: { patterns: GOAL_PATTERN_REFERENCE } });
   } catch (error) {
     next(error);
   }
@@ -378,6 +439,17 @@ router.patch('/:testId', authenticate, mutationLimiter, async (req: Request, res
       }
     }
 
+    // Recompile goalChecks when goal changes. A goal may be cleared (null).
+    // A goal with unresolved clauses and no LLM → 400.
+    let goalChecksUpdate: Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue | undefined;
+    if (Object.prototype.hasOwnProperty.call(updates, 'goal')) {
+      const resolved = await resolveGoalForSave({
+        projectId: test.projectId,
+        goal: updates.goal,
+      });
+      goalChecksUpdate = resolved.goalChecks;
+    }
+
     const updated = await prisma.test.update({
       where: { id: test.id },
       data: {
@@ -391,6 +463,12 @@ router.patch('/:testId', authenticate, mutationLimiter, async (req: Request, res
         status: updates.status as TestStatus,
         platform: updates.platform as any,
         deviceProfileId: updates.deviceProfileId,
+        goal: updates.goal === undefined ? undefined : updates.goal,
+        goalChecks: goalChecksUpdate,
+        storySource:
+          updates.storySource === undefined ? undefined : updates.storySource,
+        storyFormat:
+          updates.storyFormat === undefined ? undefined : updates.storyFormat,
       },
       include: {
         suite: {
@@ -666,6 +744,60 @@ router.get('/:testId/history', authenticate, async (req: Request, res: Response,
 
 import { parseTestScript, detectFormat, ScriptFormat } from '../services/testParser.service';
 import { ApiAiService } from '../services/apiAiService';
+import { compileGoal, GOAL_PATTERN_REFERENCE } from '../services/goalCompiler.service';
+import { importBugReport, ImportSource } from '../services/bugReportImport.service';
+
+/**
+ * Resolve a goal into the stored `goalChecks` JSON, enforcing the Phase 1a
+ * contract: a goal with unresolved clauses and no LLM configured cannot be
+ * saved. Returns the compiled Layer-1 checks as a Prisma JSON value. An
+ * empty or absent goal yields Prisma.DbNull so the column clears.
+ */
+async function resolveGoalForSave(opts: {
+  projectId: string;
+  goal?: string | null;
+}): Promise<{ goalChecks: Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue }> {
+  if (!opts.goal || !opts.goal.trim()) {
+    return { goalChecks: Prisma.DbNull };
+  }
+  const compiled = compileGoal(opts.goal);
+  if (compiled.unresolvedClauses.length > 0) {
+    // Try to delegate to Layer 2 (LLM). If no provider → hard fail.
+    const aiService = new ApiAiService();
+    await aiService.loadConfig(opts.projectId);
+    if (!aiService.isAvailable()) {
+      throw BadRequestError(
+        [
+          `Goal has ${compiled.unresolvedClauses.length} clause(s) that cannot be verified without an LLM:`,
+          ...compiled.unresolvedClauses.map((c) => `  • "${c}"`),
+          '',
+          'Options:',
+          '  1. Rewrite each clause in the supported pattern vocabulary',
+          '     (URL is/contains X, "X" is visible, X is NOT visible,',
+          '      #selector is enabled/disabled, N items are visible).',
+          '  2. Configure an LLM provider for this project (Ollama is free).',
+          '',
+          'A test with an unverifiable goal cannot be saved.',
+        ].join('\n'),
+      );
+    }
+    // LLM is configured → Layer-2 clauses ride through as metadata; the
+    // worker will evaluate them at runtime. They are not part of the
+    // deterministic check list, but we keep a record.
+    return {
+      goalChecks: [
+        ...compiled.checks,
+        ...compiled.unresolvedClauses.map((source) => ({
+          kind: 'llm',
+          source,
+        })),
+      ] as unknown as Prisma.InputJsonValue,
+    };
+  }
+  return {
+    goalChecks: compiled.checks as unknown as Prisma.InputJsonValue,
+  };
+}
 
 const parseScriptSchema = z.object({
   script: z.string().min(1).max(50000),
@@ -702,6 +834,198 @@ router.post('/parse', authenticate, mutationLimiter, async (req: Request, res: R
         steps: result.steps,
         format,
         warnings: result.warnings,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// =============================================================================
+// STORY-BASED AUTHORING (Phase 1a)
+// =============================================================================
+
+const storySchema = z.object({
+  projectId: z.string().cuid(),
+  suiteId: z.string().cuid().optional(),
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  story: z.string().min(1).max(50000),
+  storyFormat: z.enum(['natural', 'yaml', 'json']).optional(),
+  goal: z.string().max(5000).optional(),
+  baseUrl: z.string().url().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+/**
+ * POST /tests/story
+ *
+ * Wraps parse + create in one call. Compiles the story into steps (reusing
+ * /tests/parse) and the goal into Layer-1 checks, persisting both on the
+ * Test row. Returns the created test PLUS parse diagnostics (per-sentence
+ * confidence, AI-fallback warnings) and goal compilation diagnostics
+ * (checks + unresolved clauses) so the UI can render confidence badges
+ * and the goal-pattern helper drawer.
+ */
+router.post('/story', authenticate, mutationLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = storySchema.parse(req.body);
+
+    await checkProjectAccess(req.user!.id, body.projectId);
+
+    // Set up AI fallback for story parsing if the project has an LLM provider.
+    const aiService = new ApiAiService();
+    await aiService.loadConfig(body.projectId);
+    const aiFallback = aiService.isAvailable()
+      ? aiService.parseStep.bind(aiService)
+      : undefined;
+
+    const format = body.storyFormat || detectFormat(body.story);
+    const parseResult = await parseTestScript(body.story, format, aiFallback);
+
+    // Prepend baseUrl if the story started with a relative URL.
+    let steps = parseResult.steps;
+    if (body.baseUrl && steps.length > 0 && steps[0].type === 'navigate') {
+      const url = steps[0].url || '';
+      if (url.startsWith('/')) {
+        steps = [{ ...steps[0], url: body.baseUrl.replace(/\/$/, '') + url }, ...steps.slice(1)];
+      }
+    }
+
+    // Compile goal — throws 400 with the unresolved-clause list if no LLM
+    // can cover the gaps.
+    const goalArtifacts = await resolveGoalForSave({
+      projectId: body.projectId,
+      goal: body.goal,
+    });
+
+    const compiledGoal = body.goal ? compileGoal(body.goal) : null;
+
+    if (body.suiteId) {
+      const suite = await prisma.testSuite.findFirst({
+        where: { id: body.suiteId, projectId: body.projectId },
+      });
+      if (!suite) {
+        throw BadRequestError('Suite not found in this project');
+      }
+    }
+
+    const test = await prisma.test.create({
+      data: {
+        projectId: body.projectId,
+        suiteId: body.suiteId,
+        name: body.name,
+        description: body.description,
+        steps: JSON.stringify(steps),
+        tags: body.tags || [],
+        status: TestStatus.ACTIVE,
+        platform: 'WEB',
+        goal: body.goal || null,
+        goalChecks: goalArtifacts.goalChecks,
+        storySource: body.story,
+        storyFormat: format,
+        source: 'story',
+      },
+      include: {
+        suite: { select: { id: true, name: true } },
+      },
+    });
+
+    logger.info(`Story test created: ${test.id} in project ${body.projectId}`);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        test: { ...test, steps: JSON.parse(test.steps as string) },
+        parse: {
+          format,
+          warnings: parseResult.warnings || [],
+          aiAssisted: !!aiFallback,
+        },
+        goal: compiledGoal
+          ? {
+              checks: compiledGoal.checks,
+              unresolvedClauses: compiledGoal.unresolvedClauses,
+              llmAvailable: aiService.isAvailable(),
+            }
+          : null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /tests/compile-goal
+ *
+ * Preview endpoint used by the UI as the user types the goal. Returns
+ * compiled Layer-1 checks + unresolved clauses + whether the project has
+ * an LLM configured (so the UI can render the save-time warning
+ * proactively).
+ */
+const compileGoalSchema = z.object({
+  goal: z.string().max(5000),
+  projectId: z.string().cuid().optional(),
+});
+
+/**
+ * POST /tests/import
+ *
+ * Paste a bug report (Jira / GitHub / Slack / markdown); we extract the
+ * steps-to-reproduce as story, the expected-result as goal (compiled to
+ * pattern vocabulary when possible), and the actual-result as negative
+ * assertions the goal appends. Heuristic-first — no LLM required.
+ */
+const importSchema = z.object({
+  projectId: z.string().cuid(),
+  source: z.enum(['jira', 'github', 'slack', 'markdown']).optional(),
+  text: z.string().min(20).max(100000),
+});
+
+router.post('/import', authenticate, mutationLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = importSchema.parse(req.body);
+    const imported = importBugReport(body.text, body.source as ImportSource);
+    // Append negative assertions to the goal so they run as hidden-checks.
+    const goal = [
+      imported.goal,
+      ...imported.negativeAssertions.map((a) => a.trim()),
+    ]
+      .filter(Boolean)
+      .join('. ');
+    res.json({
+      success: true,
+      data: {
+        title: imported.title,
+        story: imported.story,
+        goal,
+        negativeAssertions: imported.negativeAssertions,
+        leftoverLines: imported.leftoverLines,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/compile-goal', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = compileGoalSchema.parse(req.body);
+    const compiled = compileGoal(body.goal);
+    let llmAvailable = false;
+    if (body.projectId) {
+      const aiService = new ApiAiService();
+      await aiService.loadConfig(body.projectId);
+      llmAvailable = aiService.isAvailable();
+    }
+    res.json({
+      success: true,
+      data: {
+        checks: compiled.checks,
+        unresolvedClauses: compiled.unresolvedClauses,
+        llmAvailable,
+        canSave: compiled.unresolvedClauses.length === 0 || llmAvailable,
       },
     });
   } catch (error) {

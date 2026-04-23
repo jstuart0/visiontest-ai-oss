@@ -7,10 +7,10 @@
 //
 // Uses Redis-backed store for distributed rate limiting across replicas.
 
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import Redis from 'ioredis';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const rateLimitRedis = new Redis(REDIS_URL, {
@@ -41,7 +41,7 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: Request) => req.ip || req.socket.remoteAddress || 'unknown',
+  keyGenerator: (req: Request, res: Response) => ipKeyGenerator(req.ip || req.socket.remoteAddress || '0.0.0.0'),
   store: createRedisStore('auth'),
 });
 
@@ -74,7 +74,8 @@ export const mutationLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: Request) => (req as any).user?.id || req.ip || 'unknown',
+  keyGenerator: (req: Request, res: Response) =>
+    (req as any).user?.id || ipKeyGenerator(req.ip || req.socket.remoteAddress || '0.0.0.0'),
   store: createRedisStore('mutation'),
 });
 

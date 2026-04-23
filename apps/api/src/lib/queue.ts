@@ -56,6 +56,40 @@ export async function queueExecution(data: ExecutionJobData): Promise<string> {
   return job.id!;
 }
 
+export interface ScanJobData {
+  executionId: string;
+  projectId: string;
+  startUrl: string;
+  maxPages?: number;
+  maxClicksPerPage?: number;
+  loginSteps?: unknown[];
+  safety?: {
+    mode?: 'read-only' | 'allow-destructive' | 'sandbox';
+    destructivePhrases?: string[];
+    allowedSelectors?: string[];
+    blockedSelectors?: string[];
+    allowFormSubmit?: boolean;
+    stubNetworkWrites?: boolean;
+    resetHookUrl?: string | null;
+  };
+}
+
+/**
+ * Queue an exploratory-scan job (Phase 2). Same queue as test-execution
+ * so one worker pool serves both — the `scan` job name routes it through
+ * the scan processor in the worker.
+ */
+export async function queueScan(data: ScanJobData): Promise<string> {
+  const job = await testExecutionQueue.add('scan', data, {
+    jobId: data.executionId,
+  });
+  logger.info(
+    { jobId: job.id, executionId: data.executionId },
+    'Queued scan job',
+  );
+  return job.id!;
+}
+
 export interface RecomparisonJobData {
   comparisonId: string;
   executionId: string;
