@@ -138,12 +138,20 @@ Output:
 
 ```json
 {
+  "result_status": "preview_ready",
   "steps": [],
   "diagnostics": [],
   "goal_checks": [],
-  "unresolved_goal_clauses": []
+  "unresolved_goal_clauses": [],
+  "blocking_issues": []
 }
 ```
+
+`result_status` values:
+
+- `preview_ready` — parse succeeded and nothing blocks a later save
+- `preview_needs_attention` — parse succeeded, but ambiguous steps or unresolved goal clauses need user or agent review
+- `preview_blocked` — the request is structurally invalid and cannot proceed without correction
 
 #### `create_test_from_story`
 
@@ -165,13 +173,28 @@ Output:
 
 ```json
 {
-  "saved": true,
+  "result_status": "saved",
   "test_id": "test_123",
   "steps": [],
   "goal_checks": [],
-  "unresolved_goal_clauses": []
+  "unresolved_goal_clauses": [],
+  "blocking_issues": [],
+  "warnings": []
 }
 ```
+
+`result_status` values:
+
+- `saved` — test was persisted successfully
+- `blocked_unresolved_goal` — test was not saved because goal clauses remain unresolved and no valid save path exists
+- `blocked_validation` — test was not saved because required fields or story structure failed validation
+- `saved_with_warnings` — test was persisted, but the caller should inspect warnings such as low-confidence step parses
+
+This is intentionally more explicit than a boolean `saved`. MCP agents need to distinguish:
+
+- successful creation
+- previewable but unsaved authoring state
+- hard blockers that require rewrite or manual intervention
 
 #### `update_test`
 
@@ -280,9 +303,22 @@ Output:
     "id": "exec_123",
     "status": "FAILED"
   },
-  "terminal": true
+  "terminal": true,
+  "timed_out": false,
+  "retry_after_ms": null
 }
 ```
+
+Execution wait semantics:
+
+- The MCP server should prefer VisionTest's existing real-time surfaces where available, and fall back to bounded polling when they are not.
+- Default behavior should be: subscribe to execution updates if the API exposes SSE/WebSocket status for the current deployment; otherwise poll `GET /executions/:id` with exponential backoff.
+- `wait_for_execution` must never block indefinitely. On timeout it returns the latest known execution state with:
+  - `terminal: false`
+  - `timed_out: true`
+  - `retry_after_ms: <suggested backoff>`
+- The tool is resumable. Callers can invoke it again with the same `execution_id`.
+- MCP should not invent its own execution state machine. It relays VisionTest execution status.
 
 #### `get_failure_summary`
 
@@ -314,8 +350,9 @@ Input:
 
 ```json
 {
+  "start_url": "https://app.example.com",
   "project_id": "proj_123",
-  "start_url": "https://app.example.com"
+  "session_mode": "auto"
 }
 ```
 
@@ -325,9 +362,31 @@ Output:
 {
   "execution_id": "exec_789",
   "status": "QUEUED",
-  "tier": "smoke"
+  "tier": "smoke",
+  "session_mode": "anonymous"
 }
 ```
+
+`start_smoke_explore` is intentionally dual-mode because the product requirement is broader than the current API rollout state.
+
+Input rules:
+
+- `start_url` is always required
+- `project_id` is optional
+- `session_mode` may be:
+  - `auto` — prefer anonymous scratch/session-backed smoke explore when available, otherwise require or create a project-backed run
+  - `anonymous` — require an anonymous/session-backed smoke path
+  - `project` — require a project-backed smoke run
+
+Output rules:
+
+- `session_mode` reports which mode actually ran
+- if the request cannot satisfy the requested mode, the tool returns a structured error rather than silently switching modes
+
+Design rule:
+
+- The MCP contract models the intended product capability, not a temporary implementation limitation.
+- If Phase 4 is not yet shipped and the backing API still requires `projectId`, the MCP adapter may enforce `project` mode temporarily, but that should be treated as an implementation constraint, not the stable product shape.
 
 #### `start_project_scan`
 
@@ -475,6 +534,7 @@ To keep the MCP server thin, add or confirm these API surfaces exist:
 - `POST /api/v1/tests/story`
 - `GET /api/v1/executions/:id`
 - `GET /api/v1/executions/:id/failure-summary`
+- `POST /api/v1/scans/smoke` should accept anonymous/session-backed requests without forcing a durable project id once Phase 4 is complete
 - `POST /api/v1/scans/:executionId/nodes/:nodeId/promote`
 
 If a route does not exist, create it in the API rather than putting business logic into `apps/mcp`.

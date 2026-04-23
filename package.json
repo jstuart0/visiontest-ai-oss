@@ -13,6 +13,8 @@
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
     "lint": "turbo run lint",
+    "mcp:dev": "npm run dev --workspace=@visiontest/mcp",
+    "mcp:build": "npm run build --workspace=@visiontest/mcp",
     "db:generate": "npm run generate --workspace=@visiontest/database",
     "db:migrate": "npm run migrate --workspace=@visiontest/database",
     "db:seed": "npm run seed --workspace=@visiontest/database",

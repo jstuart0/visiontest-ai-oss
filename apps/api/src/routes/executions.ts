@@ -182,6 +182,7 @@ router.get('/', authenticate, async (req: Request, res: Response, next: NextFunc
 router.post('/', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const input = createExecutionSchema.parse(req.body);
+    let requestedTest: { id: string; projectId: string; status: string; startUrl: string | null } | null = null;
 
     // Check access
     const project = await prisma.project.findUnique({
@@ -199,11 +200,12 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
 
     // Validate test/suite exists
     if (input.testId) {
-      const test = await prisma.test.findFirst({
+      requestedTest = await prisma.test.findFirst({
         where: { id: input.testId, projectId: input.projectId },
+        select: { id: true, projectId: true, status: true, startUrl: true },
       });
-      if (!test) throw BadRequestError('Test not found');
-      if (test.status === 'QUARANTINED') {
+      if (!requestedTest) throw BadRequestError('Test not found');
+      if (requestedTest.status === 'QUARANTINED') {
         throw BadRequestError('Cannot run quarantined test');
       }
     }
@@ -214,6 +216,11 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
       });
       if (!suite) throw BadRequestError('Suite not found');
     }
+
+    const resolvedConfig = {
+      ...(input.config || {}),
+      baseUrl: input.config?.baseUrl || requestedTest?.startUrl || undefined,
+    };
 
     const execution = await prisma.execution.create({
       data: {
@@ -227,7 +234,7 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
         appVersion: input.appVersion,
         metadata: {
           ...input.metadata,
-          config: input.config,
+          config: resolvedConfig,
           testIds: input.testIds,
         },
       },
@@ -244,7 +251,7 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
       projectId: input.projectId,
       testId: input.testId,
       suiteId: input.suiteId,
-      config: input.config,
+      config: resolvedConfig,
       platform: input.platform,
       deviceProfileId: input.deviceProfileId,
     });
@@ -523,6 +530,109 @@ router.get('/:executionId', authenticate, async (req: Request, res: Response, ne
     res.json({
       success: true,
       data: execution,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /executions/:executionId/failure-summary
+ *
+ * MCP- and agent-friendly aggregation endpoint. This keeps failure-oriented
+ * summarization in the API layer so external adapters do not need to understand
+ * the execution result schema, comparison approval semantics, or goal-eval
+ * fields.
+ */
+router.get('/:executionId/failure-summary', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const execution = await prisma.execution.findUnique({
+      where: { id: req.params.executionId },
+      include: {
+        project: {
+          include: {
+            org: {
+              include: { users: { where: { userId: req.user!.id } } },
+            },
+          },
+        },
+        screenshots: {
+          orderBy: { stepNumber: 'asc' },
+          select: { id: true, name: true, url: true, stepNumber: true },
+        },
+        videos: {
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, url: true, createdAt: true },
+        },
+        comparisons: {
+          include: {
+            baseline: { select: { id: true, name: true } },
+            screenshot: { select: { id: true, name: true, url: true } },
+          },
+        },
+      },
+    });
+
+    if (!execution) {
+      throw NotFoundError('Execution');
+    }
+
+    if (execution.project.org.users.length === 0) {
+      throw ForbiddenError('No access');
+    }
+
+    const result = (execution.result ?? {}) as Record<string, unknown>;
+    const resultSteps = Array.isArray(result.steps) ? result.steps as Array<Record<string, unknown>> : [];
+    const failedSteps = resultSteps
+      .map((step, index) => ({
+        stepNumber: typeof step.stepNumber === 'number' ? step.stepNumber : index + 1,
+        status: typeof step.status === 'string' ? step.status : null,
+        error: typeof step.error === 'string' ? step.error : null,
+        name: typeof step.name === 'string' ? step.name : null,
+        type: typeof step.type === 'string' ? step.type : null,
+      }))
+      .filter((step) => step.status === 'failed' || !!step.error);
+
+    const failedComparisons = execution.comparisons
+      .filter((comparison) => !['APPROVED', 'AUTO_APPROVED'].includes(comparison.status))
+      .map((comparison) => ({
+        comparisonId: comparison.id,
+        status: comparison.status,
+        diffScore: comparison.diffScore,
+        diffUrl: comparison.diffUrl,
+        baseline: comparison.baseline ? { id: comparison.baseline.id, name: comparison.baseline.name } : null,
+        screenshot: comparison.screenshot
+          ? {
+              id: comparison.screenshot.id,
+              name: comparison.screenshot.name,
+              url: comparison.screenshot.url,
+            }
+          : null,
+        aiClassification: comparison.aiClassification,
+        aiExplanation: comparison.aiExplanation,
+      }));
+
+    const goalFailure = execution.goalAchieved === false
+      ? {
+          achieved: false,
+          reasoning: execution.goalReasoning,
+          checks: execution.goalChecks,
+        }
+      : null;
+
+    res.json({
+      success: true,
+      data: {
+        executionId: execution.id,
+        status: execution.status,
+        failedSteps,
+        failedComparisons,
+        goalFailure,
+        artifactRefs: {
+          screenshots: execution.screenshots,
+          videos: execution.videos,
+        },
+      },
     });
   } catch (error) {
     next(error);

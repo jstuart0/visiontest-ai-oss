@@ -211,6 +211,7 @@ router.get('/', authenticate, async (req: Request, res: Response, next: NextFunc
         const lastExecution = t.executions[0];
         return {
           ...t,
+          steps: JSON.parse(t.steps as string),
           executions: undefined, // Don't expose full array
           executionCount: t._count.executions,
           lastRun: lastExecution?.createdAt || null,
@@ -583,6 +584,11 @@ router.post('/:testId/run', authenticate, mutationLimiter, async (req: Request, 
         metadata: {
           browser: req.body.browser || 'chromium',
           viewport: req.body.viewport,
+          config: {
+            browser: req.body.browser || 'chromium',
+            viewport: req.body.viewport,
+            baseUrl: req.body.baseUrl || test.startUrl || undefined,
+          },
         },
       },
     });
@@ -595,6 +601,7 @@ router.post('/:testId/run', authenticate, mutationLimiter, async (req: Request, 
       config: {
         browser: req.body.browser || 'chromium',
         viewport: req.body.viewport,
+        baseUrl: req.body.baseUrl || test.startUrl || undefined,
       },
     });
     logger.info(`Execution created and queued: ${execution.id} for test ${test.id}`);
@@ -805,6 +812,14 @@ const parseScriptSchema = z.object({
   projectId: z.string().optional(),
 });
 
+const storyPreviewSchema = z.object({
+  projectId: z.string().cuid(),
+  story: z.string().min(1).max(50000),
+  storyFormat: z.enum(['natural', 'yaml', 'json']).optional(),
+  goal: z.string().max(5000).optional(),
+  baseUrl: z.string().url().optional(),
+});
+
 /**
  * POST /tests/parse
  * Parse a test script (natural language, YAML, or JSON) into steps.
@@ -834,6 +849,66 @@ router.post('/parse', authenticate, mutationLimiter, async (req: Request, res: R
         steps: result.steps,
         format,
         warnings: result.warnings,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /tests/story-preview
+ *
+ * Preview-only variant of /tests/story. Parses the story into executable steps
+ * and compiles the goal into deterministic checks where possible, but does not
+ * persist a Test row. The MCP server uses this to expose a stable
+ * "parse_story_to_steps" tool without reimplementing story parsing or goal
+ * compilation outside the API.
+ */
+router.post('/story-preview', authenticate, mutationLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = storyPreviewSchema.parse(req.body);
+
+    await checkProjectAccess(req.user!.id, body.projectId);
+
+    const aiService = new ApiAiService();
+    await aiService.loadConfig(body.projectId);
+    const aiFallback = aiService.isAvailable()
+      ? aiService.parseStep.bind(aiService)
+      : undefined;
+
+    const format = body.storyFormat || detectFormat(body.story);
+    const parseResult = await parseTestScript(body.story, format as ScriptFormat, aiFallback);
+
+    let steps = parseResult.steps;
+    if (body.baseUrl && steps.length > 0 && steps[0].type === 'navigate') {
+      const url = steps[0].url || '';
+      if (url.startsWith('/')) {
+        steps = [{ ...steps[0], url: body.baseUrl.replace(/\/$/, '') + url }, ...steps.slice(1)];
+      }
+    }
+
+    const compiledGoal = body.goal ? compileGoal(body.goal) : null;
+    const warnings = parseResult.warnings || [];
+    const unresolvedGoalClauses = compiledGoal?.unresolvedClauses || [];
+    const resultStatus =
+      warnings.length > 0 || unresolvedGoalClauses.length > 0
+        ? 'preview_needs_attention'
+        : 'preview_ready';
+
+    res.json({
+      success: true,
+      data: {
+        resultStatus,
+        steps,
+        diagnostics: {
+          format,
+          warnings,
+          aiAssisted: !!aiFallback,
+        },
+        goalChecks: compiledGoal?.checks || [],
+        unresolvedGoalClauses,
+        blockingIssues: [],
       },
     });
   } catch (error) {
@@ -952,6 +1027,7 @@ router.post('/story', authenticate, mutationLimiter, async (req: Request, res: R
         storySource: body.story,
         storyFormat: format,
         source: 'story',
+        startUrl: body.baseUrl || null,
       },
       include: {
         suite: { select: { id: true, name: true } },

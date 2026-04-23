@@ -744,7 +744,13 @@ export class TestRunner {
         break;
 
       case 'waitFor':
-        await page.waitForSelector(step.selector!, { timeout });
+        if (step.selector) {
+          await page.waitForSelector(step.selector, { timeout });
+        } else if (step.options?.loadState && typeof step.options.loadState === 'string') {
+          await page.waitForLoadState(step.options.loadState as 'load' | 'domcontentloaded' | 'networkidle', { timeout });
+        } else {
+          await page.waitForTimeout(timeout);
+        }
         break;
 
       case 'assert':

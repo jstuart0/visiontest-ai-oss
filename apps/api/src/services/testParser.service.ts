@@ -221,10 +221,14 @@ export async function parseNaturalLanguage(
  * implementation used for goals.
  */
 function splitIntoSentences(text: string): string[] {
+  const normalizedText = text
+    // Strip common numbered or bulleted list prefixes before sentence splitting
+    // so "1. Navigate…" becomes "Navigate…" instead of ["1", "Navigate…"].
+    .replace(/^\s*(?:\d+[.)]|[-*])\s+/gm, '');
   const URL_DOT = '\x00URLDOT\x00';
   // Match URL body but strip trailing sentence punctuation so ". Click…"
   // still splits at the period after the URL.
-  const protectedText = text.replace(
+  const protectedText = normalizedText.replace(
     /\b(?:https?:\/\/|\/\/)[^\s]+?(?=[.,;!?]?(?:\s|$))/gi,
     (m) => m.replace(/\./g, URL_DOT),
   );
@@ -271,8 +275,6 @@ function splitIntoSentences(text: string): string[] {
 }
 
 function parseSentence(sentence: string): TestStep | null {
-  const s = sentence.toLowerCase().trim();
-
   // Navigate patterns
   const navPatterns = [
     /^(?:go to|navigate to|visit|open)\s+(.+)$/i,
@@ -281,10 +283,7 @@ function parseSentence(sentence: string): TestStep | null {
   for (const pattern of navPatterns) {
     const match = sentence.match(pattern);
     if (match) {
-      let url = match[1].trim();
-      if (!url.startsWith('http')) {
-        url = 'https://' + url;
-      }
+      const url = normalizeNavigationTarget(match[1].trim());
       return { type: 'navigate', url };
     }
   }
@@ -329,6 +328,10 @@ function parseSentence(sentence: string): TestStep | null {
   }
 
   // Wait patterns
+  if (/^wait for (?:the )?page to load$/i.test(sentence)) {
+    return { type: 'waitFor', options: { loadState: 'load' } };
+  }
+
   const waitPatterns = [
     /^wait\s+(\d+)\s*(?:ms|milliseconds?)?$/i,
     /^wait\s+(\d+)\s*(?:s|sec|seconds?)$/i,
@@ -363,6 +366,17 @@ function parseSentence(sentence: string): TestStep | null {
   }
 
   // Assert patterns
+  const assertTextVisiblePatterns = [
+    /^(?:verify|check|assert|expect)\s+(?:that )?text\s+["'](.+?)["']\s+(?:is )?visible$/i,
+    /^(?:verify|check|assert|expect)\s+(?:that )?["'](.+?)["']\s+(?:text )?(?:is )?visible$/i,
+  ];
+  for (const pattern of assertTextVisiblePatterns) {
+    const match = sentence.match(pattern);
+    if (match) {
+      return { type: 'assert', selector: `text="${match[1].trim()}"`, assertion: 'visible' };
+    }
+  }
+
   const assertPatterns = [
     /^(?:verify|check|assert|expect)\s+(?:that )?(?:the )?["']?(.+?)["']?\s+(?:is )?visible$/i,
     /^(?:verify|check|assert|expect)\s+(?:that )?(?:the )?["']?(.+?)["']?\s+(?:contains?|has)\s+["'](.+?)["']$/i,
@@ -404,6 +418,35 @@ function parseSentence(sentence: string): TestStep | null {
 
   // If no pattern matches, return null (caller will handle as AI step)
   return null;
+}
+
+function normalizeNavigationTarget(target: string): string {
+  const trimmed = target.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  // Preserve relative paths so the caller can resolve them against a provided
+  // base URL later in the authoring flow.
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('www.')) {
+    return `https://${trimmed}`;
+  }
+
+  // Heuristic: host-like values get https:// prepended, plain-language values
+  // fall back to the original text so they can be handled by AI/runtime later.
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(?:[/?#].*)?$/i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+
+  return trimmed;
 }
 
 /**

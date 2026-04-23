@@ -10,7 +10,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { prisma } from '@visiontest/database';
+import { prisma, TestStatus } from '@visiontest/database';
 import { authenticate } from '../middleware/auth';
 import { mutationLimiter } from '../middleware/rateLimit';
 import {
@@ -40,6 +40,25 @@ const scanSchema = z.object({
     })
     .optional(),
 });
+
+const promoteNodeSchema = z.object({
+  projectId: z.string().cuid().optional(),
+  name: z.string().min(1).max(200).optional(),
+});
+
+function makeClickStep(node: {
+  interactionSelector?: string | null;
+  interactionLabel: string;
+}) {
+  if (node.interactionSelector) {
+    return { type: 'click', selector: node.interactionSelector };
+  }
+  return { type: 'ai', value: `click ${node.interactionLabel}` };
+}
+
+function makeNavigateStep(url: string) {
+  return { type: 'navigate', url };
+}
 
 /**
  * POST /projects/:projectId/scan
@@ -204,6 +223,143 @@ router.get(
           mode: execution.mode,
           summary: execution.exploreSummary,
           nodes,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * POST /scans/:executionId/nodes/:nodeId/promote
+ *
+ * Promote an exploratory node into a durable scripted test. This is an MVP
+ * promotion path: it captures the root navigation plus the interaction chain
+ * from the scan tree. We deliberately keep the business logic in the API so
+ * MCP and future UI actions can share it.
+ */
+router.post(
+  '/scans/:executionId/nodes/:nodeId/promote',
+  authenticate,
+  mutationLimiter,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const body = promoteNodeSchema.parse(req.body);
+      const execution = await prisma.execution.findUnique({
+        where: { id: req.params.executionId },
+        include: {
+          project: {
+            include: {
+              org: { include: { users: { where: { userId: req.user!.id } } } },
+            },
+          },
+        },
+      });
+
+      if (!execution) throw NotFoundError('Execution');
+      if (execution.project.org.users.length === 0) {
+        throw ForbiddenError('No access');
+      }
+      if (execution.mode !== 'EXPLORE') {
+        throw BadRequestError('Only EXPLORE executions can promote scan nodes');
+      }
+
+      if (body.projectId && body.projectId !== execution.projectId) {
+        throw BadRequestError('projectId does not match the execution project');
+      }
+
+      const nodes = await prisma.exploreNode.findMany({
+        where: { executionId: execution.id },
+        orderBy: [{ parentId: 'asc' }, { orderIndex: 'asc' }],
+      });
+
+      const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+      const target = nodeMap.get(req.params.nodeId);
+      if (!target) throw NotFoundError('ExploreNode');
+
+      const chain: typeof nodes = [];
+      let current: typeof target | undefined = target;
+      while (current) {
+        chain.unshift(current);
+        current = current.parentId ? nodeMap.get(current.parentId) : undefined;
+      }
+
+      const root = chain[0];
+      if (!root) {
+        throw BadRequestError('Could not resolve the scan node path');
+      }
+
+      const steps: Array<Record<string, unknown>> = [];
+      steps.push(makeNavigateStep(root.url));
+
+      for (const node of chain.slice(1)) {
+        switch (node.interactionKind) {
+          case 'navigate':
+            if (node.url !== root.url) {
+              steps.push(makeNavigateStep(node.url));
+            }
+            break;
+          case 'click':
+            steps.push(makeClickStep(node));
+            break;
+          case 'type':
+            steps.push({
+              type: 'ai',
+              value: `reproduce the typed interaction ${node.interactionLabel}`,
+            });
+            break;
+          default:
+            steps.push({
+              type: 'ai',
+              value: `reproduce the interaction ${node.interactionLabel}`,
+            });
+            break;
+        }
+      }
+
+      const generatedName =
+        body.name ||
+        `Scan finding: ${target.interactionLabel}`.slice(0, 200);
+
+      const storySource = [
+        `Generated from scan execution ${execution.id}.`,
+        `Target interaction: ${target.interactionLabel}.`,
+        target.errorText ? `Observed error: ${target.errorText}` : null,
+        typeof target.httpStatus === 'number' ? `Observed HTTP status: ${target.httpStatus}.` : null,
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      const test = await prisma.test.create({
+        data: {
+          projectId: execution.projectId,
+          name: generatedName,
+          description: `Promoted from exploratory scan node ${target.id}`,
+          steps: JSON.stringify(steps),
+          tags: ['scan-promotion'],
+          status: TestStatus.ACTIVE,
+          platform: 'WEB',
+          source: 'manual',
+          storySource,
+          storyFormat: 'natural',
+          startUrl: root.url,
+          config: {
+            generatedFromScan: true,
+            sourceExecutionId: execution.id,
+            sourceNodeId: target.id,
+          },
+        },
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          testId: test.id,
+          name: test.name,
+          generatedSteps: steps,
+          sourceExecutionId: execution.id,
+          sourceNodeId: target.id,
         },
       });
     } catch (error) {

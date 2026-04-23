@@ -52,4 +52,23 @@ describe('parseNaturalLanguage — sentence splitter', () => {
     expect(r.steps[0].type).toBe('navigate');
     expect(r.steps[2].type).toBe('screenshot');
   });
+
+  it('strips numbered list markers instead of turning them into AI steps', async () => {
+    const r = await parseNaturalLanguage(
+      '1. Navigate to /\n2. Wait for page to load\n3. Assert that text "VisionTest" is visible',
+    );
+    expect(r.steps).toHaveLength(3);
+    expect(r.steps[0]).toMatchObject({ type: 'navigate', url: '/' });
+    expect(r.steps[1]).toMatchObject({ type: 'waitFor', options: { loadState: 'load' } });
+    expect(r.steps[2]).toMatchObject({ type: 'assert', selector: 'text="VisionTest"', assertion: 'visible' });
+  });
+
+  it('preserves relative navigation targets for later base-url resolution', async () => {
+    const r = await parseNaturalLanguage('Navigate to /settings');
+    expect(r.steps).toHaveLength(1);
+    expect(r.steps[0]).toMatchObject({
+      type: 'navigate',
+      url: '/settings',
+    });
+  });
 });
