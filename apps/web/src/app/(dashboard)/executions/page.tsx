@@ -21,13 +21,13 @@ interface Execution {
   suite?: { id: string; name: string };
 }
 
-// Revision-log status labels — lower-case small-caps where they appear.
+// Status labels for display — plain vocabulary.
 const statusLabels: Record<Execution['status'], string> = {
   PENDING: 'pending',
   QUEUED: 'queued',
   RUNNING: 'running',
   PASSED: 'pass',
-  FAILED: 'reject',
+  FAILED: 'fail',
   CANCELLED: 'cancelled',
   TIMEOUT: 'timeout',
 };
@@ -36,7 +36,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'all', label: 'ALL' },
   { key: 'RUNNING', label: 'RUNNING' },
   { key: 'PASSED', label: 'PASS' },
-  { key: 'FAILED', label: 'REJECT' },
+  { key: 'FAILED', label: 'FAIL' },
   { key: 'CANCELLED', label: 'CANCELLED' },
 ];
 
@@ -124,30 +124,29 @@ export default function ExecutionsPage() {
             <h1
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(42px, 6.5vw, 84px)',
-                lineHeight: 0.96,
+                fontSize: 'clamp(28px, 3.5vw, 46px)',
+                lineHeight: 1.0,
                 letterSpacing: '-0.01em',
                 textTransform: 'lowercase',
                 color: 'var(--ink-0)',
                 margin: 0,
               }}
             >
-              revision<br />
-              <span style={{ color: 'var(--accent)' }}>register</span>
+              <span style={{ color: 'var(--accent)' }}>runs</span>
               <span style={{ color: 'var(--ink-2)' }}> — </span>
-              <span>every run, logged.</span>
+              <span>every execution, logged.</span>
             </h1>
             <p
               style={{
                 fontFamily: 'var(--font-body)',
-                fontSize: '15px',
+                fontSize: '14px',
                 color: 'var(--ink-1)',
                 maxWidth: '58ch',
-                lineHeight: 1.6,
-                marginTop: '22px',
+                lineHeight: 1.5,
+                marginTop: '10px',
               }}
             >
-              Each execution is a revision entry against the drawing set. Passes carry the approval stamp; rejects are redlined for review. Read top-down, most recent first.
+              All test runs for this project, most recent first. Live runs update every 5 seconds.
             </p>
           </div>
 
@@ -163,7 +162,7 @@ export default function ExecutionsPage() {
             {[
               { k: 'ENTRIES', v: String(total).padStart(3, '0') },
               { k: 'PASS', v: String(passedTotal).padStart(3, '0'), c: 'var(--pass)' },
-              { k: 'REJECT', v: String(failedTotal).padStart(3, '0'), c: 'var(--fail)' },
+              { k: 'FAIL', v: String(failedTotal).padStart(3, '0'), c: 'var(--fail)' },
             ].map((x, i) => (
               <div
                 key={x.k}
@@ -326,7 +325,7 @@ export default function ExecutionsPage() {
                       {[
                         { k: 'ENTRIES', v: String(rows.length).padStart(2, '0'), c: 'var(--ink-1)' },
                         { k: 'PASS', v: String(dayPass).padStart(2, '0'), c: 'var(--pass)' },
-                        { k: 'REJECT', v: String(dayFail).padStart(2, '0'), c: 'var(--fail)' },
+                        { k: 'FAIL', v: String(dayFail).padStart(2, '0'), c: 'var(--fail)' },
                       ].map((t, i) => (
                         <div
                           key={t.k}

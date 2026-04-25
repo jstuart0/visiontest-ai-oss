@@ -2,19 +2,43 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { FlaskConical, Eye, EyeOff, Loader2, Check, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Eye, EyeOff, Loader2, Check, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const passwordRequirements = [
   { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
-  { label: 'Contains uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
-  { label: 'Contains lowercase letter', test: (p: string) => /[a-z]/.test(p) },
-  { label: 'Contains number', test: (p: string) => /\d/.test(p) },
+  { label: 'Uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
+  { label: 'Lowercase letter', test: (p: string) => /[a-z]/.test(p) },
+  { label: 'Number', test: (p: string) => /\d/.test(p) },
 ];
+
+function Field({
+  id,
+  label,
+  children,
+}: {
+  id: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="vt-mono block mb-2"
+        style={{
+          fontSize: '10px',
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-2)',
+        }}
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
 
 export default function RegisterPage() {
   const { register, isRegistering } = useAuth();
@@ -25,217 +49,226 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const passwordStrength = passwordRequirements.filter((req) =>
-    req.test(password)
-  ).length;
+  const passwordStrength = passwordRequirements.filter((req) => req.test(password)).length;
   const passwordsMatch = password === confirmPassword && password.length > 0;
   const isPasswordValid = passwordStrength === passwordRequirements.length;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill in all fields');
+      setError('All fields are required.');
       return;
     }
-
     if (!isPasswordValid) {
-      setError('Please meet all password requirements');
+      setError('Password does not meet all requirements.');
       return;
     }
-
     if (!passwordsMatch) {
-      setError('Passwords do not match');
+      setError('Passwords do not match.');
       return;
     }
-
     register({ name, email, password });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
-        <div className="flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-4">
-            <FlaskConical className="w-8 h-8 text-white" />
+    <div
+      className="min-h-screen flex items-center justify-center p-6"
+      style={{ background: 'var(--bg-0)' }}
+    >
+      <div style={{ width: '100%', maxWidth: '420px' }}>
+        {/* Brand */}
+        <div className="mb-8">
+          <div
+            className="vt-display mb-1"
+            style={{ fontSize: '28px', color: 'var(--ink-0)' }}
+          >
+            visiontest<span style={{ color: 'var(--accent)' }}>·</span>ai
           </div>
-          <h1 className="text-2xl font-bold text-foreground">VisionTest.ai</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Hospital-grade visual regression testing
+          <p
+            className="vt-mono"
+            style={{
+              fontSize: '10px',
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            Create your account
           </p>
         </div>
 
-        {/* Register Card */}
-        <Card className="bg-card border-border">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl text-foreground">Create account</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Get started with VisionTest.ai
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive" className="bg-red-900/20 border-red-900 text-red-400">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+        {/* Form */}
+        <div
+          style={{
+            border: '1px solid var(--rule-strong)',
+            background: 'var(--bg-1)',
+            padding: '28px',
+          }}
+        >
+          <form onSubmit={handleSubmit} noValidate>
+            {error && (
+              <div
+                className="mb-5 px-4 py-3 vt-mono"
+                style={{
+                  background: 'var(--fail-soft)',
+                  borderLeft: '2px solid var(--fail)',
+                  fontSize: '12px',
+                  letterSpacing: '0.06em',
+                  color: 'var(--fail)',
+                }}
+              >
+                {error}
+              </div>
+            )}
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="name"
-                  className="text-sm font-medium text-muted-foreground"
-                >
-                  Full Name
-                </label>
-                <Input
+            <div className="space-y-5">
+              <Field id="name" label="Full name">
+                <input
                   id="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="John Doe"
-                  className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500"
-                  disabled={isRegistering}
+                  placeholder="Ada Lovelace"
                   autoComplete="name"
+                  disabled={isRegistering}
+                  className="vt-input"
+                  style={{ fontSize: '14px' }}
                 />
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="text-sm font-medium text-muted-foreground"
-                >
-                  Email
-                </label>
-                <Input
+              <Field id="email" label="Email">
+                <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500"
-                  disabled={isRegistering}
                   autoComplete="email"
+                  disabled={isRegistering}
+                  className="vt-input"
+                  style={{ fontSize: '14px' }}
                 />
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-medium text-muted-foreground"
-                >
-                  Password
-                </label>
+              <Field id="password" label="Password">
                 <div className="relative">
-                  <Input
+                  <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 pr-10"
-                    disabled={isRegistering}
                     autoComplete="new-password"
+                    disabled={isRegistering}
+                    className="vt-input"
+                    style={{ fontSize: '14px', paddingRight: '44px' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground/80"
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    style={{ color: 'var(--ink-2)' }}
                     tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
+                      <EyeOff className="w-4 h-4" strokeWidth={1.5} />
                     ) : (
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-4 h-4" strokeWidth={1.5} />
                     )}
                   </button>
                 </div>
-
-                {/* Password Requirements */}
                 {password.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {passwordRequirements.map((req, index) => (
-                      <div
-                        key={index}
-                        className={`flex items-center gap-2 text-xs ${
-                          req.test(password) ? 'text-green-400' : 'text-muted-foreground'
-                        }`}
+                  <ul
+                    className="mt-2 space-y-1 vt-mono"
+                    style={{ fontSize: '10.5px', letterSpacing: '0.06em' }}
+                  >
+                    {passwordRequirements.map((req) => (
+                      <li
+                        key={req.label}
+                        className="flex items-center gap-2"
+                        style={{ color: req.test(password) ? 'var(--pass)' : 'var(--ink-2)' }}
                       >
                         {req.test(password) ? (
-                          <Check className="w-3 h-3" />
+                          <Check className="w-3 h-3 shrink-0" strokeWidth={2} />
                         ) : (
-                          <X className="w-3 h-3" />
+                          <X className="w-3 h-3 shrink-0" strokeWidth={2} />
                         )}
                         {req.label}
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-medium text-muted-foreground"
-                >
-                  Confirm Password
-                </label>
-                <Input
+              <Field id="confirmPassword" label="Confirm password">
+                <input
                   id="confirmPassword"
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500"
-                  disabled={isRegistering}
                   autoComplete="new-password"
+                  disabled={isRegistering}
+                  className="vt-input"
+                  style={{
+                    fontSize: '14px',
+                    borderColor:
+                      confirmPassword.length > 0 && !passwordsMatch
+                        ? 'var(--fail)'
+                        : undefined,
+                  }}
                 />
                 {confirmPassword.length > 0 && !passwordsMatch && (
-                  <p className="text-xs text-red-400">Passwords do not match</p>
+                  <p
+                    className="vt-mono mt-1"
+                    style={{
+                      fontSize: '10.5px',
+                      letterSpacing: '0.06em',
+                      color: 'var(--fail)',
+                    }}
+                  >
+                    Passwords do not match.
+                  </p>
                 )}
-              </div>
+              </Field>
+            </div>
 
-              <Button
+            <div className="mt-6">
+              <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={isRegistering || !isPasswordValid || !passwordsMatch}
+                className="vt-btn vt-btn--primary"
+                style={{ width: '100%', justifyContent: 'center' }}
               >
                 {isRegistering ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating account...
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Creating account…
                   </>
                 ) : (
                   'Create account'
                 )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <Link
-                href="/login"
-                className="text-blue-400 hover:text-blue-300 font-medium"
-              >
-                Sign in
-              </Link>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </form>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-muted-foreground">
-          By creating an account, you agree to our{' '}
-          <Link href="/terms" className="text-muted-foreground hover:text-foreground/80">
-            Terms of Service
-          </Link>{' '}
-          and{' '}
-          <Link href="/privacy" className="text-muted-foreground hover:text-foreground/80">
-            Privacy Policy
-          </Link>
-        </p>
+          <div
+            className="mt-6 pt-5 vt-mono text-center"
+            style={{
+              borderTop: '1px solid var(--rule)',
+              fontSize: '11px',
+              letterSpacing: '0.1em',
+              color: 'var(--ink-2)',
+            }}
+          >
+            Already have an account?{' '}
+            <Link href="/login" style={{ color: 'var(--accent)' }}>
+              Sign in
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

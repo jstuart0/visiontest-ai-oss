@@ -44,10 +44,10 @@ export function EditorialHero({
     'max-w-[1440px]';
 
   return (
-    <div className={`${max} mx-auto px-6 md:px-12 py-10 vt-reveal`}>
-      <header className="pb-7" style={{ borderBottom: '1px solid var(--rule-strong)' }}>
+    <div className={`${max} mx-auto px-6 md:px-10 py-6 vt-reveal`}>
+      <header className="pb-5" style={{ borderBottom: '1px solid var(--rule-strong)' }}>
         {(back || eyebrow || sheet || revision) && (
-          <div className="flex items-center gap-4 mb-6 flex-wrap">
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
             {back && (
               <button
                 type="button"
@@ -94,8 +94,8 @@ export function EditorialHero({
             <h1
               className="vt-display"
               style={{
-                fontSize: 'clamp(36px, 5.5vw, 68px)',
-                lineHeight: 0.98,
+                fontSize: 'clamp(26px, 3.5vw, 44px)',
+                lineHeight: 1.0,
                 letterSpacing: '-0.01em',
                 color: 'var(--ink-0)',
                 textTransform: 'lowercase',
@@ -121,7 +121,7 @@ export function EditorialHero({
           {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
         </div>
       </header>
-      {children && <div className="mt-10 space-y-10">{children}</div>}
+      {children && <div className="mt-8 space-y-8">{children}</div>}
     </div>
   );
 }

@@ -1,13 +1,9 @@
 'use client';
 
-// AppShell — Blueprint chassis. Top chrome = title block + sheet index,
-// the rest is a drawing surface. No sidebar; dense data belongs inside
-// sheets, not sidebars.
-
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { TopBar } from './TopBar';
-import { ZoneBar } from './ZoneBar';
+import { Sidebar } from './Sidebar';
 import { CommandPalette } from '@/components/CommandPalette';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -17,8 +13,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       <TopBar />
-      <ZoneBar />
-      <main className="flex-1 relative">{children}</main>
+      <div className="flex flex-1 min-h-0">
+        <Sidebar />
+        <main className="flex-1 min-w-0 overflow-auto">{children}</main>
+      </div>
       <CommandPalette />
     </div>
   );
@@ -27,7 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 /**
  * VtStage — page container. Keeps horizontal margins consistent.
  * narrow — 820px. For reading-dominant pages.
- * wide   — 1440px. For data and diffs (matches the proof's sheet width).
+ * wide   — 1440px. For data and diffs.
  * fluid  — no max. For film-strip / full-bleed surfaces.
  */
 export function VtStage({
@@ -42,7 +40,7 @@ export function VtStage({
   const max =
     width === 'narrow' ? 'max-w-[820px]' : width === 'fluid' ? 'max-w-none' : 'max-w-[1440px]';
   return (
-    <div className={`${max} mx-auto px-6 md:px-12 py-10 ${className}`}>
+    <div className={`${max} mx-auto px-6 md:px-10 py-8 ${className}`}>
       {children}
     </div>
   );

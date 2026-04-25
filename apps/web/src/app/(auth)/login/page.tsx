@@ -2,10 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { FlaskConical, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -19,152 +16,174 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError('Both fields are required.');
       return;
     }
-
     login({ email, password });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
-        <div className="flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-4">
-            <FlaskConical className="w-8 h-8 text-white" />
+    <div
+      className="min-h-screen flex items-center justify-center p-6"
+      style={{ background: 'var(--bg-0)' }}
+    >
+      <div style={{ width: '100%', maxWidth: '400px' }}>
+        {/* Brand */}
+        <div className="mb-8">
+          <div
+            className="vt-display mb-1"
+            style={{
+              fontSize: '28px',
+              color: 'var(--ink-0)',
+            }}
+          >
+            visiontest<span style={{ color: 'var(--accent)' }}>·</span>ai
           </div>
-          <h1 className="text-2xl font-bold text-foreground">VisionTest.ai</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Hospital-grade visual regression testing
+          <p
+            className="vt-mono"
+            style={{
+              fontSize: '10px',
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-2)',
+            }}
+          >
+            Sign in to continue
           </p>
         </div>
 
-        {/* Login Card */}
-        <Card className="bg-card border-border">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl text-foreground">Sign in</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive" className="bg-red-900/20 border-red-900 text-red-400">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+        {/* Form */}
+        <div
+          style={{
+            border: '1px solid var(--rule-strong)',
+            background: 'var(--bg-1)',
+            padding: '28px',
+          }}
+        >
+          <form onSubmit={handleSubmit} noValidate>
+            {error && (
+              <div
+                className="mb-5 px-4 py-3 vt-mono"
+                style={{
+                  background: 'var(--fail-soft)',
+                  borderLeft: '2px solid var(--fail)',
+                  fontSize: '12px',
+                  letterSpacing: '0.06em',
+                  color: 'var(--fail)',
+                }}
+              >
+                {error}
+              </div>
+            )}
 
-              <div className="space-y-2">
+            <div className="space-y-5">
+              <div>
                 <label
                   htmlFor="email"
-                  className="text-sm font-medium text-muted-foreground"
+                  className="vt-mono block mb-2"
+                  style={{
+                    fontSize: '10px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                  }}
                 >
                   Email
                 </label>
-                <Input
+                <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500"
-                  disabled={isLoggingIn}
                   autoComplete="email"
+                  disabled={isLoggingIn}
+                  className="vt-input"
+                  style={{ fontSize: '14px' }}
                 />
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <label
                   htmlFor="password"
-                  className="text-sm font-medium text-muted-foreground"
+                  className="vt-mono block mb-2"
+                  style={{
+                    fontSize: '10px',
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-2)',
+                  }}
                 >
                   Password
                 </label>
                 <div className="relative">
-                  <Input
+                  <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 pr-10"
-                    disabled={isLoggingIn}
                     autoComplete="current-password"
+                    disabled={isLoggingIn}
+                    className="vt-input"
+                    style={{ fontSize: '14px', paddingRight: '44px' }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground/80"
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    style={{ color: 'var(--ink-2)' }}
                     tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
+                      <EyeOff className="w-4 h-4" strokeWidth={1.5} />
                     ) : (
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-4 h-4" strokeWidth={1.5} />
                     )}
                   </button>
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    className="rounded border-border bg-muted text-blue-600 focus:ring-blue-500"
-                  />
-                  Remember me
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-blue-400 hover:text-blue-300"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <Button
+            <div className="mt-6">
+              <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={isLoggingIn}
+                className="vt-btn vt-btn--primary"
+                style={{ width: '100%', justifyContent: 'center' }}
               >
                 {isLoggingIn ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Signing in...
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Signing in…
                   </>
                 ) : (
                   'Sign in'
                 )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <Link
-                href="/register"
-                className="text-blue-400 hover:text-blue-300 font-medium"
-              >
-                Sign up
-              </Link>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </form>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-muted-foreground">
-          By signing in, you agree to our{' '}
-          <Link href="/terms" className="text-muted-foreground hover:text-foreground/80">
-            Terms of Service
-          </Link>{' '}
-          and{' '}
-          <Link href="/privacy" className="text-muted-foreground hover:text-foreground/80">
-            Privacy Policy
-          </Link>
-        </p>
+          <div
+            className="mt-6 pt-5 vt-mono text-center"
+            style={{
+              borderTop: '1px solid var(--rule)',
+              fontSize: '11px',
+              letterSpacing: '0.1em',
+              color: 'var(--ink-2)',
+            }}
+          >
+            No account?{' '}
+            <Link
+              href="/register"
+              style={{ color: 'var(--accent)' }}
+            >
+              Register
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

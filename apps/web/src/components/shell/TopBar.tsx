@@ -22,7 +22,6 @@ export function TopBar() {
   const project = currentProject;
 
   const kbd = typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform) ? '⌘' : 'Ctrl';
-  const isoDate = new Date().toISOString().slice(0, 10);
 
   return (
     <header
@@ -59,24 +58,6 @@ export function TopBar() {
           visiontest<span style={{ color: 'var(--accent)' }}>·</span>ai
         </span>
       </Link>
-
-      {/* Sheet identifier — always visible */}
-      <div
-        className="hidden md:flex items-center gap-4 px-6 shrink-0"
-        style={{
-          borderRight: '1px solid var(--rule)',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '10px',
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase',
-          color: 'var(--ink-2)',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        <span>SHT · {isoDate.replace(/-/g, '.')}</span>
-        <span style={{ color: 'var(--accent)' }}>REV ·</span>
-        <span style={{ color: 'var(--accent)' }}>02</span>
-      </div>
 
       {/* Project switcher — rendered as a dimensioned field */}
       {project && projects && projects.length > 0 && (

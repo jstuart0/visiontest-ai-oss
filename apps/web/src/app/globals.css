@@ -194,15 +194,6 @@
   }
   body {
     background: var(--bg-0);
-    background-image:
-      linear-gradient(to right, var(--grid-fine) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--grid-fine) 1px, transparent 1px),
-      linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px),
-      radial-gradient(ellipse at 20% 0%, color-mix(in oklab, var(--bg-1) 50%, transparent) 0%, transparent 40%),
-      radial-gradient(ellipse at 100% 100%, var(--bg-3) 0%, transparent 60%);
-    background-size: 8px 8px, 8px 8px, 64px 64px, 64px 64px, 100% 100%, 100% 100%;
-    background-attachment: fixed;
     color: var(--ink-0);
     font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
